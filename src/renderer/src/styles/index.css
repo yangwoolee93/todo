@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 /* 다크 모드: html.dark 클래스 기준 */
 @custom-variant dark (&:where(.dark, .dark *));
@@ -26,9 +26,16 @@
   --color-failed: #ea580c;
   --color-failed-soft: #ffedd5;
   --color-today-ring: #2563eb;
-  --font-sans: 'Segoe UI', system-ui, sans-serif;
+  --font-sans: "Segoe UI", system-ui, sans-serif;
   --radius-card: 0.75rem;
   --radius-btn: 0.5rem;
+}
+
+/* 스크롤바 토큰 — :root에 두어 var()가 Electron에서 확실히 해석되게 */
+:root {
+  --scrollbar-size: 8px;
+  --scrollbar-thumb: #cbd5e1;
+  --scrollbar-thumb-hover: #94a3b8;
 }
 
 /* 어두운 모드 팔레트 — 중립 다크 그레이 */
@@ -51,6 +58,8 @@
   --color-failed: #fb923c;
   --color-failed-soft: #431407;
   --color-today-ring: #3b82f6;
+  --scrollbar-thumb: #404040;
+  --scrollbar-thumb-hover: #525252;
 }
 
 @layer base {
@@ -110,23 +119,46 @@
   .nav-tab-active {
     @apply bg-accent-soft text-accent font-medium;
   }
+
+  /* 가로 드래그 스크롤 (스크롤바 모양은 .scrollbar와 동일 규칙) */
+  .scroll-x-drag {
+    cursor: grab;
+    overflow-x: auto;
+  }
+
+  .scroll-x-drag:active {
+    cursor: grabbing;
+  }
 }
 
-/* 가로 드래그 스크롤 영역 */
-.scroll-x-drag {
-  cursor: grab;
-  overflow-x: auto;
-  scrollbar-width: thin;
+/*
+ * 스크롤바 — Electron(Chromium) webkit 전용, 규칙은 여기만
+ * html: 페이지 전체 스크롤 / .scrollbar: overflow 영역
+ * (바닥 고정 버튼 시 html 제거, 스크롤 div에 .scrollbar만)
+ */
+html::-webkit-scrollbar,
+.scrollbar::-webkit-scrollbar {
+  width: var(--scrollbar-size);
+  height: var(--scrollbar-size);
 }
 
-.scroll-x-drag:active {
-  cursor: grabbing;
+html::-webkit-scrollbar-track,
+.scrollbar::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-.scroll-x-drag::-webkit-scrollbar {
-  height: 6px;
+html::-webkit-scrollbar-thumb,
+.scrollbar::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border-radius: 9999px;
 }
 
-.scroll-x-drag::-webkit-scrollbar-thumb {
-  @apply bg-border-strong rounded-full;
+html::-webkit-scrollbar-thumb:hover,
+.scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
+}
+
+html::-webkit-scrollbar-corner,
+.scrollbar::-webkit-scrollbar-corner {
+  background: transparent;
 }

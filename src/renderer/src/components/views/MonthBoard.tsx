@@ -79,7 +79,7 @@ export function MonthBoard({ yearMonth, summaries, loading, onChangeMonth }: Mon
       ) : (
         <div
           ref={scrollRef}
-          className="scroll-x-drag flex gap-3 pb-2"
+          className="scrollbar scroll-x-drag flex gap-3 pb-2"
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
@@ -102,7 +102,7 @@ export function MonthBoard({ yearMonth, summaries, loading, onChangeMonth }: Mon
                   {column.day}일
                 </div>
 
-                <ul className="flex max-h-64 flex-col gap-1 overflow-y-auto p-2">
+                <ul className="scrollbar flex max-h-64 flex-col gap-1 overflow-y-auto p-2">
                   {column.todos.length === 0 ? (
                     <li className="py-4 text-center text-xs text-fg-muted">—</li>
                   ) : (

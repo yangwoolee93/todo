@@ -67,7 +67,7 @@ export function CalendarBar({ activeDate, onSelectDate, onChangeMonth }: Calenda
 
       <div
         ref={scrollRef}
-        className="scroll-x-drag flex gap-2 pb-1"
+        className="scrollbar scroll-x-drag flex gap-2 pb-1"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
