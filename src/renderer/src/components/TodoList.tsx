@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { DisplayTodo, TodoStatus } from '@shared/types/todo'
 import { DeleteBatchModal } from '@renderer/components/DeleteBatchModal'
+import { DeleteConfirmModal } from '@renderer/components/DeleteConfirmModal'
 import { EditTodoModal } from '@renderer/components/EditTodoModal'
 import { TodoItemMenu } from '@renderer/components/TodoItemMenu'
 import { getTodoTextClass, TodoStatusIcon } from '@renderer/components/TodoStatusIcon'
@@ -33,6 +34,8 @@ export function TodoList({
 }: TodoListProps) {
   /** batch_id 있는 항목 삭제 시 범위 선택 모달 대상 */
   const [deleteTarget, setDeleteTarget] = useState<DisplayTodo | null>(null)
+  /** 단독 항목 삭제 확인 모달 대상 */
+  const [confirmDeleteTarget, setConfirmDeleteTarget] = useState<DisplayTodo | null>(null)
   /** ⋮ 수정 클릭 시 열리는 EditTodoModal 대상 */
   const [editTarget, setEditTarget] = useState<DisplayTodo | null>(null)
 
@@ -51,15 +54,13 @@ export function TodoList({
     void onToggleCompletion(todo.id)
   }
 
-  /** 삭제 — 묶음이면 DeleteBatchModal, 단독이면 confirm */
+  /** 삭제 — 묶음이면 DeleteBatchModal, 단독이면 DeleteConfirmModal */
   const handleDeleteClick = (todo: DisplayTodo) => {
     if (todo.batch_id) {
       setDeleteTarget(todo)
       return
     }
-    if (confirm('이 투두를 삭제할까요?')) {
-      void onDelete(todo.id, 'day')
-    }
+    setConfirmDeleteTarget(todo)
   }
 
   /** 최초 로드 중에만 전체를 로딩 문구로 대체 (목록 있으면 유지) */
@@ -151,6 +152,16 @@ export function TodoList({
         onDeleteAll={() => {
           if (!deleteTarget) return
           void onDelete(deleteTarget.id, 'batch').then(() => setDeleteTarget(null))
+        }}
+      />
+
+      <DeleteConfirmModal
+        open={confirmDeleteTarget !== null}
+        preview={confirmDeleteTarget?.content}
+        onClose={() => setConfirmDeleteTarget(null)}
+        onConfirm={() => {
+          if (!confirmDeleteTarget) return
+          void onDelete(confirmDeleteTarget.id, 'day').then(() => setConfirmDeleteTarget(null))
         }}
       />
 
