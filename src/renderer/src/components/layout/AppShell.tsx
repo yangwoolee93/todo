@@ -20,8 +20,8 @@ export function AppShell({ view, onChangeView, children }: AppShellProps) {
   ];
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-3xl flex-col px-4 py-5">
-      <header className="mb-5 flex items-center justify-between gap-4">
+    <div className="mx-auto flex h-screen max-w-3xl flex-col overflow-hidden px-4 py-5">
+      <header className="mb-5 flex shrink-0 items-center justify-between gap-4">
         <div>
           <h1 className="text-lg font-semibold text-fg">TODO</h1>
         </div>
@@ -40,7 +40,9 @@ export function AppShell({ view, onChangeView, children }: AppShellProps) {
         </nav>
       </header>
 
-      <main className="flex flex-1 flex-col gap-4">{children}</main>
+      <main className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
+        {children}
+      </main>
     </div>
   );
 }

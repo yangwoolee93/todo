@@ -24,7 +24,7 @@ export function App() {
   );
   /** TodayView 「다른 날짜」→ DatePickerModal */
   const [datePickerOpen, setDatePickerOpen] = useState(false);
-  /** 하단 「+ 투두 추가」→ AddTodoModal */
+  /** TodayView 「+ 할 일 추가」→ AddTodoModal */
   const [addModalOpen, setAddModalOpen] = useState(false);
   /** ⋮ 복제 시 AddTodoModal initialContent */
   const [duplicateContent, setDuplicateContent] = useState<

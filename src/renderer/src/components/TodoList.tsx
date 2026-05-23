@@ -137,7 +137,7 @@ export function TodoList({
           <li className="rounded-(--radius-btn) border border-dashed border-border px-4 py-8 text-center text-sm text-fg-muted">
             등록된 투두가 없습니다.
             <br />
-            <span className="text-xs">아래 「투두 추가」 버튼으로 등록하세요.</span>
+            <span className="text-xs">상단 「+ 할 일 추가」로 등록하세요.</span>
           </li>
         )}
       </ul>
