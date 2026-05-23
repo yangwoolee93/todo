@@ -206,8 +206,8 @@ export function TodayView({
         </div>
       </div>
 
-      <div className="card flex min-h-0 flex-1 flex-col overflow-hidden p-4">
-        <div className="scrollbar scrollbar-y-gutter min-h-0 flex-1 overflow-y-auto">
+      <div className="card flex min-h-0 flex-1 flex-col overflow-hidden p-4 pr-[var(--scrollbar-gap)]">
+        <div className="scrollbar scrollbar-y-inset min-h-0 flex-1">
           <TodoList
             todos={todos}
             loading={loading}

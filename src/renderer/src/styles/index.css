@@ -34,6 +34,8 @@
 /* 스크롤바 토큰 — :root에 두어 var()가 Electron에서 확실히 해석되게 */
 :root {
   --scrollbar-size: 8px;
+  --scrollbar-inset: 1rem; /* p-4 — 콘텐츠↔카드 우측 테두리 총 16px */
+  --scrollbar-gap: calc((var(--scrollbar-inset) - var(--scrollbar-size)) / 2);
   --scrollbar-thumb: #cbd5e1;
   --scrollbar-thumb-hover: #94a3b8;
 }
@@ -164,10 +166,10 @@
 }
 
 /*
- * 세로 스크롤 — 카드 p-4와 좌우 대칭 유지
- * 스크롤바 레인을 카드 우측 패딩 안에 두어, 스크롤 유무와 관계없이 콘텐츠 여백 동일
+ * 세로 스크롤 — 카드 p-4 우측 16px: gap(4) + bar(8) + gap(4)
+ * overflow-y: scroll 로 바 슬롯 항상 확보 → 스크롤 유무에 레이아웃 변화 없음
  */
-.scrollbar-y-gutter {
-  margin-right: calc(-1 * var(--scrollbar-size));
-  padding-right: var(--scrollbar-size);
+.scrollbar-y-inset {
+  overflow-y: scroll;
+  padding-right: var(--scrollbar-gap);
 }
