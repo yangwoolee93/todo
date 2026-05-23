@@ -7,6 +7,54 @@ import {
 } from "@renderer/utils/dateUtils";
 import { TodoList } from "@renderer/components/TodoList";
 
+/** 좌측 꺾쇠 (전날) */
+function ChevronLeftIcon({
+  className = "h-4 w-4 shrink-0",
+}: {
+  className?: string;
+}) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 20 20"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M12.5 15 7.5 10 12.5 5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+/** 우측 꺾쇠 (다음날) */
+function ChevronRightIcon({
+  className = "h-4 w-4 shrink-0",
+}: {
+  className?: string;
+}) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 20 20"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M7.5 5 12.5 10 7.5 15"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 /** TodayView — 오늘 탭에서 받는 props */
 interface TodayViewProps {
   /** 현재 보고 있는 날짜 (YYYY-MM-DD) */
@@ -78,10 +126,12 @@ export function TodayView({
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              className="btn btn-ghost text-xs"
+              className="btn btn-ghost inline-flex items-center gap-1 text-xs pl-1.5"
+              aria-label="전날"
               onClick={() => onChangeDate(shiftDate(activeDate, -1))}
             >
-              ‹ 전날
+              <ChevronLeftIcon />
+              전날
             </button>
             <button
               type="button"
@@ -92,10 +142,12 @@ export function TodayView({
             </button>
             <button
               type="button"
-              className="btn btn-ghost text-xs"
+              className="btn btn-ghost inline-flex items-center gap-1 text-xs pr-1.5"
+              aria-label="다음날"
               onClick={() => onChangeDate(shiftDate(activeDate, 1))}
             >
-              다음날 ›
+              다음날
+              <ChevronRightIcon />
             </button>
           </div>
         </div>
