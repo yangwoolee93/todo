@@ -1,14 +1,15 @@
-import { FormEvent, useEffect, useState } from 'react'
+import { FormEvent, useEffect, useRef, useState } from 'react'
 
 interface EditTodoModalProps {
   open: boolean
   initialContent: string
+  /** batch_id 있으면 묶음 전체 내용 수정 */
   isBatch: boolean
   onClose: () => void
   onSave: (content: string) => Promise<boolean>
 }
 
-/** 투두 내용 수정 모달 — batch_id 있으면 묶음 전체 수정 */
+/** TodoList ⋮ 수정 — 단건 또는 batch_id 묶음 수정 */
 export function EditTodoModal({
   open,
   initialContent,
@@ -18,9 +19,16 @@ export function EditTodoModal({
 }: EditTodoModalProps) {
   const [content, setContent] = useState(initialContent)
   const [submitting, setSubmitting] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+  /** 열릴 때만 initialContent 반영 + 포커스 */
+  const wasOpenRef = useRef(false)
 
   useEffect(() => {
-    if (open) setContent(initialContent)
+    if (open && !wasOpenRef.current) {
+      setContent(initialContent)
+      requestAnimationFrame(() => inputRef.current?.focus())
+    }
+    wasOpenRef.current = open
   }, [open, initialContent])
 
   const handleSubmit = async (event: FormEvent) => {
@@ -57,10 +65,10 @@ export function EditTodoModal({
         )}
         <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-3">
           <input
+            ref={inputRef}
             type="text"
             className="input"
             value={content}
-            autoFocus
             onChange={(e) => setContent(e.target.value.replace(/[\r\n]+/g, ''))}
           />
           <div className="flex justify-end gap-2">

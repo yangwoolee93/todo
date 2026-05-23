@@ -1,11 +1,13 @@
 interface DeleteBatchModalProps {
   open: boolean
   onClose: () => void
+  /** batch_id 묶음 중 activeDate 해당 1건만 삭제 */
   onDeleteDay: () => void
+  /** 같은 batch_id 전체 삭제 */
   onDeleteAll: () => void
 }
 
-/** 일괄 추가 투두 삭제 확인 모달 */
+/** batch_id 투두 삭제 시 — 해당 날만 / 묶음 전체 선택 */
 export function DeleteBatchModal({ open, onClose, onDeleteDay, onDeleteAll }: DeleteBatchModalProps) {
   if (!open) return null
 

@@ -10,6 +10,7 @@ import type {
   DisplayTodo,
   IpcResult,
   ReorderTodoPayload,
+  SetTodoStatusPayload,
   TodoItem,
   UpdateTodoContentPayload
 } from '@shared/types/todo'
@@ -22,7 +23,8 @@ import {
   getMonthSummary,
   getTodosByDate,
   reorderTodo,
-  toggleComplete,
+  setTodoStatus,
+  toggleCompletion,
   updateTodoContent
 } from './database/todoRepository'
 
@@ -104,16 +106,31 @@ export function registerIpcHandlers(): void {
   )
 
   ipcMain.handle(
-    IPC_CHANNELS.TOGGLE_COMPLETE,
+    IPC_CHANNELS.TOGGLE_COMPLETION,
     (_event, todoId: number): IpcResult => {
       try {
-        const changed = toggleComplete(todoId)
+        const changed = toggleCompletion(todoId)
         if (!changed) {
-          return fail('항목을 찾을 수 없습니다.')
+          return fail('항목을 찾을 수 없거나 상태를 변경할 수 없습니다.')
         }
         return ok()
       } catch (error) {
-        return fail(error instanceof Error ? error.message : '체크 변경 실패')
+        return fail(error instanceof Error ? error.message : '상태 변경 실패')
+      }
+    }
+  )
+
+  ipcMain.handle(
+    IPC_CHANNELS.SET_TODO_STATUS,
+    (_event, payload: SetTodoStatusPayload): IpcResult => {
+      try {
+        const changed = setTodoStatus(payload.id, payload.status)
+        if (!changed) {
+          return fail('항목을 찾을 수 없거나 동일한 상태입니다.')
+        }
+        return ok()
+      } catch (error) {
+        return fail(error instanceof Error ? error.message : '상태 변경 실패')
       }
     }
   )

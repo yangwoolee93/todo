@@ -1,32 +1,57 @@
-import { useState } from 'react'
-import type { DisplayTodo } from '@shared/types/todo'
+import { useEffect, useState } from 'react'
+import type { DisplayTodo, TodoStatus } from '@shared/types/todo'
 import { DeleteBatchModal } from '@renderer/components/DeleteBatchModal'
 import { EditTodoModal } from '@renderer/components/EditTodoModal'
+import { TodoItemMenu } from '@renderer/components/TodoItemMenu'
+import { getTodoTextClass, TodoStatusIcon } from '@renderer/components/TodoStatusIcon'
 
 interface TodoListProps {
   todos: DisplayTodo[]
   loading: boolean
-  onToggle: (todoId: number) => Promise<boolean>
+  onToggleCompletion: (todoId: number) => Promise<boolean>
+  onSetStatus: (todoId: number, status: TodoStatus) => Promise<boolean>
   onDelete: (todoId: number, scope: 'day' | 'batch') => Promise<boolean>
   onUpdateContent: (todoId: number, content: string) => Promise<boolean>
   onReorder: (todoId: number, direction: 'up' | 'down') => Promise<boolean>
+  onDuplicate: (content: string) => void
 }
 
 /**
- * 일별 투두 리스트 — 체크·수정·삭제·순서 변경
+ * 오늘 탭 일별 투두 리스트
+ * - 행: ↑↓ / 상태 네모 / 텍스트 / ⋮
+ * - 체크는 pending↔completed만 (failed는 ⋮에서 처리)
  */
 export function TodoList({
   todos,
   loading,
-  onToggle,
+  onToggleCompletion,
+  onSetStatus,
   onDelete,
   onUpdateContent,
-  onReorder
+  onReorder,
+  onDuplicate
 }: TodoListProps) {
+  /** batch_id 있는 항목 삭제 시 범위 선택 모달 대상 */
   const [deleteTarget, setDeleteTarget] = useState<DisplayTodo | null>(null)
+  /** ⋮ 수정 클릭 시 열리는 EditTodoModal 대상 */
   const [editTarget, setEditTarget] = useState<DisplayTodo | null>(null)
 
-  /** 삭제 버튼 — 묶음이면 확인 모달 */
+  /** 수정 모달 열린 동안 부모 todos가 바뀌면 initialContent 동기화 */
+  useEffect(() => {
+    if (!editTarget) return
+    const updated = todos.find((todo) => todo.id === editTarget.id)
+    if (updated && updated.content !== editTarget.content) {
+      setEditTarget(updated)
+    }
+  }, [todos, editTarget])
+
+  /** 아이콘·텍스트 클릭 — failed 상태는 토글하지 않음 */
+  const handleStatusClick = (todo: DisplayTodo) => {
+    if (todo.status === 'failed') return
+    void onToggleCompletion(todo.id)
+  }
+
+  /** 삭제 — 묶음이면 DeleteBatchModal, 단독이면 confirm */
   const handleDeleteClick = (todo: DisplayTodo) => {
     if (todo.batch_id) {
       setDeleteTarget(todo)
@@ -37,7 +62,8 @@ export function TodoList({
     }
   }
 
-  if (loading) {
+  /** 최초 로드 중에만 전체를 로딩 문구로 대체 (목록 있으면 유지) */
+  if (loading && todos.length === 0) {
     return <p className="text-sm text-fg-secondary">불러오는 중...</p>
   }
 
@@ -70,32 +96,40 @@ export function TodoList({
               </button>
             </div>
 
-            <label className="flex flex-1 cursor-pointer items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                className="accent-accent"
-                checked={todo.is_completed}
-                onChange={() => void onToggle(todo.id)}
-              />
-              <span className={todo.is_completed ? 'text-fg-muted line-through' : 'text-fg'}>
-                {todo.content}
-              </span>
-            </label>
+            <button
+              type="button"
+              className="shrink-0 rounded p-0.5 hover:bg-muted disabled:cursor-default disabled:opacity-100"
+              disabled={todo.status === 'failed'}
+              aria-label={
+                todo.status === 'completed'
+                  ? '완료 — 클릭하면 미완료로'
+                  : todo.status === 'failed'
+                    ? '실패'
+                    : '미완료 — 클릭하면 완료로'
+              }
+              onClick={() => handleStatusClick(todo)}
+            >
+              <TodoStatusIcon status={todo.status} />
+            </button>
 
             <button
               type="button"
-              className="btn btn-ghost shrink-0 text-xs"
-              onClick={() => setEditTarget(todo)}
+              className={`min-w-0 flex-1 truncate text-left text-sm ${getTodoTextClass(todo.status)} ${
+                todo.status !== 'failed' ? 'hover:opacity-80' : 'cursor-default'
+              }`}
+              disabled={todo.status === 'failed'}
+              onClick={() => handleStatusClick(todo)}
             >
-              수정
+              {todo.content}
             </button>
-            <button
-              type="button"
-              className="btn btn-danger shrink-0 text-xs"
-              onClick={() => handleDeleteClick(todo)}
-            >
-              삭제
-            </button>
+
+            <TodoItemMenu
+              todo={todo}
+              onEdit={() => setEditTarget(todo)}
+              onDuplicate={() => onDuplicate(todo.content)}
+              onDelete={() => handleDeleteClick(todo)}
+              onSetStatus={(status) => void onSetStatus(todo.id, status)}
+            />
           </li>
         ))}
         {todos.length === 0 && (

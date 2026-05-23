@@ -15,8 +15,8 @@ interface AppShellProps {
 export function AppShell({ view, onChangeView, children }: AppShellProps) {
   const tabs: { id: AppView; label: string }[] = [
     { id: "today", label: "오늘" },
-    { id: "month", label: "월별" },
-    { id: "settings", label: "설정" },
+    // { id: "month", label: "월별" },
+    // { id: "settings", label: "설정" },
   ];
 
   return (

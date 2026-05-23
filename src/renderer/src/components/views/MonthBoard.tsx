@@ -1,5 +1,6 @@
 import { useRef, type MouseEvent } from 'react'
 import type { DaySummary } from '@shared/types/todo'
+import { getTodoTextClass } from '@renderer/components/TodoStatusIcon'
 import { getTodayString, shiftMonth } from '@renderer/utils/dateUtils'
 
 interface MonthBoardProps {
@@ -73,7 +74,7 @@ export function MonthBoard({ yearMonth, summaries, loading, onChangeMonth }: Mon
         </div>
       </div>
 
-      {loading ? (
+      {loading && summaries.length === 0 ? (
         <p className="text-sm text-fg-secondary">불러오는 중...</p>
       ) : (
         <div
@@ -108,9 +109,7 @@ export function MonthBoard({ yearMonth, summaries, loading, onChangeMonth }: Mon
                     column.todos.map((todo) => (
                       <li
                         key={`${column.date}-${todo.id}`}
-                        className={`rounded px-1.5 py-1 text-xs leading-snug ${
-                          todo.is_completed ? 'text-fg-muted line-through' : 'text-fg'
-                        }`}
+                        className={`rounded px-1.5 py-1 text-xs leading-snug ${getTodoTextClass(todo.status)}`}
                       >
                         {todo.content}
                       </li>

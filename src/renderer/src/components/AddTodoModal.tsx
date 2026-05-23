@@ -1,12 +1,16 @@
-import { FormEvent, useEffect, useState } from 'react'
+import { FormEvent, useEffect, useRef, useState } from 'react'
 import type { CreateTodoMonthPayload, CreateTodoRangePayload } from '@shared/types/todo'
 import { countDaysInRange, getMonthDateRange, toShortLabel, toYearMonth } from '@renderer/utils/dateUtils'
 
+/** 추가 모달 탭 — 하루 / 기간 / 한 달 */
 type AddMode = 'single' | 'range' | 'month'
 
 interface AddTodoModalProps {
   open: boolean
+  /** 하루 탭 기본 날짜 (보통 activeDate) */
   defaultDate: string
+  /** ⋮ 복제 시 미리 채울 내용 */
+  initialContent?: string
   onClose: () => void
   onCreateSingle: (content: string, targetDate: string) => Promise<boolean>
   onCreateRange: (payload: CreateTodoRangePayload) => Promise<boolean>
@@ -14,11 +18,13 @@ interface AddTodoModalProps {
 }
 
 /**
- * 투두 추가 모달 — 하루 / 기간 / 한 달
+ * 투두 추가 모달 (오늘 탭 하단 「+ 투두 추가」 / ⋮ 복제)
+ * - 하루·기간·한 달 탭
  */
 export function AddTodoModal({
   open,
   defaultDate,
+  initialContent,
   onClose,
   onCreateSingle,
   onCreateRange,
@@ -31,16 +37,24 @@ export function AddTodoModal({
   const [endDate, setEndDate] = useState(defaultDate)
   const [yearMonth, setYearMonth] = useState(() => toYearMonth(defaultDate))
   const [submitting, setSubmitting] = useState(false)
+  const contentInputRef = useRef<HTMLInputElement>(null)
+  /** false→true 전환 시에만 폼 초기화 (열린 채 defaultDate 변경 시 입력 유지) */
+  const wasOpenRef = useRef(false)
 
   useEffect(() => {
-    if (open) {
+    if (open && !wasOpenRef.current) {
+      setContent(initialContent ?? '')
+      setMode('single')
       setTargetDate(defaultDate)
       setStartDate(defaultDate)
       setEndDate(defaultDate)
       setYearMonth(toYearMonth(defaultDate))
+      requestAnimationFrame(() => contentInputRef.current?.focus())
     }
-  }, [open, defaultDate])
+    wasOpenRef.current = open
+  }, [open, defaultDate, initialContent])
 
+  /** 줄바꿈 제거 — 1줄 입력만 허용 */
   const sanitize = (value: string) => value.replace(/[\r\n]+/g, '')
 
   const handleClose = () => {
@@ -49,6 +63,7 @@ export function AddTodoModal({
     onClose()
   }
 
+  /** 탭별 create IPC 호출 */
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
     setSubmitting(true)
@@ -132,12 +147,12 @@ export function AddTodoModal({
               내용 (1줄)
             </label>
             <input
+              ref={contentInputRef}
               id="todo-content"
               type="text"
               className="input"
               value={content}
               placeholder="할 일을 입력..."
-              autoFocus
               onChange={(e) => setContent(sanitize(e.target.value))}
             />
           </div>

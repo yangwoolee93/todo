@@ -7,6 +7,7 @@ import type {
   DeleteTodoScope,
   DisplayTodo,
   TodoItem,
+  TodoStatus,
   TodoStore
 } from '@shared/types/todo'
 import {
@@ -19,6 +20,17 @@ import { mutateStore, readStore } from './storage'
 /** 새 batch_id 생성 */
 function newBatchId(): string {
   return `batch-${Date.now()}`
+}
+
+/** 구/신 스키마에서 status 파싱 */
+function parseStatus(raw: Record<string, unknown>): TodoStatus {
+  if (raw.status === 'pending' || raw.status === 'completed' || raw.status === 'failed') {
+    return raw.status
+  }
+  if (raw.is_completed === true) {
+    return 'completed'
+  }
+  return 'pending'
 }
 
 /**
@@ -49,7 +61,7 @@ function normalizeItem(raw: Record<string, unknown>): TodoItem | null {
     id,
     content,
     target_date: targetDate,
-    is_completed: raw.is_completed === true,
+    status: parseStatus(raw),
     created_at: typeof raw.created_at === 'number' ? raw.created_at : id,
     sort_order: typeof raw.sort_order === 'number' ? raw.sort_order : 0,
     batch_id: typeof raw.batch_id === 'string' ? raw.batch_id : null
@@ -68,7 +80,7 @@ function toDisplay(item: TodoItem): DisplayTodo {
   return {
     id: item.id,
     content: item.content,
-    is_completed: item.is_completed,
+    status: item.status,
     sort_order: item.sort_order,
     created_at: item.created_at,
     batch_id: item.batch_id
@@ -141,7 +153,7 @@ export function createTodo(payload: CreateTodoPayload): TodoItem | null {
     id: now,
     content,
     target_date: payload.target_date,
-    is_completed: false,
+    status: 'pending',
     created_at: now,
     sort_order: 0,
     batch_id: null
@@ -181,7 +193,7 @@ export function createTodosInRange(payload: CreateTodoRangePayload): CreateBatch
         id: now,
         content,
         target_date: date,
-        is_completed: false,
+        status: 'pending',
         created_at: now,
         sort_order: baseOrder + index,
         batch_id: batchId
@@ -205,15 +217,40 @@ export function createTodosForMonth(payload: CreateTodoMonthPayload): CreateBatc
 }
 
 /**
- * 완료 상태 토글 — 해당 레코드만
+ * 미완료 ↔ 완료 토글 — failed 상태에서는 변경 없음
  */
-export function toggleComplete(todoId: number): boolean {
+export function toggleCompletion(todoId: number): boolean {
   let changed = false
 
   mutateStore((store) => {
     const item = findById(store, todoId)
     if (!item) return
-    item.is_completed = !item.is_completed
+
+    if (item.status === 'pending') {
+      item.status = 'completed'
+      changed = true
+      return
+    }
+
+    if (item.status === 'completed') {
+      item.status = 'pending'
+      changed = true
+    }
+  })
+
+  return changed
+}
+
+/**
+ * 상태 직접 설정 — 실패 표시·다시 시도 등
+ */
+export function setTodoStatus(todoId: number, status: TodoStatus): boolean {
+  let changed = false
+
+  mutateStore((store) => {
+    const item = findById(store, todoId)
+    if (!item || item.status === status) return
+    item.status = status
     changed = true
   })
 

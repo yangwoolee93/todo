@@ -23,29 +23,33 @@
   --color-danger: #dc2626;
   --color-danger-soft: #fee2e2;
   --color-success: #16a34a;
+  --color-failed: #ea580c;
+  --color-failed-soft: #ffedd5;
   --color-today-ring: #2563eb;
   --font-sans: 'Segoe UI', system-ui, sans-serif;
   --radius-card: 0.75rem;
   --radius-btn: 0.5rem;
 }
 
-/* 어두운 모드 팔레트 */
+/* 어두운 모드 팔레트 — 중립 다크 그레이 */
 .dark {
-  --color-base: #0c1017;
-  --color-surface: #151c28;
-  --color-surface-raised: #1c2636;
-  --color-muted: #243044;
-  --color-fg: #f1f5f9;
-  --color-fg-secondary: #94a3b8;
-  --color-fg-muted: #64748b;
+  --color-base: #121212;
+  --color-surface: #1a1a1a;
+  --color-surface-raised: #222222;
+  --color-muted: #2a2a2a;
+  --color-fg: #ececec;
+  --color-fg-secondary: #a3a3a3;
+  --color-fg-muted: #737373;
   --color-accent: #3b82f6;
   --color-accent-hover: #60a5fa;
-  --color-accent-soft: #1e3a5f;
-  --color-border: #2d3a4f;
-  --color-border-strong: #3d4f6a;
+  --color-accent-soft: #333333;
+  --color-border: #333333;
+  --color-border-strong: #404040;
   --color-danger: #f87171;
   --color-danger-soft: #450a0a;
   --color-success: #4ade80;
+  --color-failed: #fb923c;
+  --color-failed-soft: #431407;
   --color-today-ring: #3b82f6;
 }
 

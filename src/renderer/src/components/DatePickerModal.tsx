@@ -14,7 +14,8 @@ interface DatePickerModalProps {
 }
 
 /**
- * 다른 날짜 선택 모달 — CalendarBar를 오버레이로 표시
+ * 다른 날짜 선택 모달 (TodayView 「다른 날짜」)
+ * - CalendarBar 오버레이
  */
 export function DatePickerModal({
   open,

@@ -10,6 +10,7 @@ import type {
   DisplayTodo,
   IpcResult,
   ReorderTodoPayload,
+  SetTodoStatusPayload,
   TodoItem,
   UpdateTodoContentPayload
 } from '@shared/types/todo'
@@ -35,8 +36,12 @@ const api = {
     return ipcRenderer.invoke(IPC_CHANNELS.CREATE_TODO_MONTH, payload)
   },
 
-  toggleComplete(todoId: number): Promise<IpcResult> {
-    return ipcRenderer.invoke(IPC_CHANNELS.TOGGLE_COMPLETE, todoId)
+  toggleCompletion(todoId: number): Promise<IpcResult> {
+    return ipcRenderer.invoke(IPC_CHANNELS.TOGGLE_COMPLETION, todoId)
+  },
+
+  setTodoStatus(payload: SetTodoStatusPayload): Promise<IpcResult> {
+    return ipcRenderer.invoke(IPC_CHANNELS.SET_TODO_STATUS, payload)
   },
 
   deleteTodo(payload: DeleteTodoPayload): Promise<IpcResult> {

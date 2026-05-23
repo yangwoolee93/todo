@@ -20,13 +20,13 @@ function todoToInsertSql(item: TodoItem): string {
     item.id,
     `'${item.content.replace(/'/g, "''")}'`,
     `'${item.target_date}'`,
-    item.is_completed ? 1 : 0,
+    `'${item.status}'`,
     item.created_at,
     item.sort_order,
     item.batch_id ? `'${item.batch_id}'` : 'NULL'
   ]
 
-  return `INSERT INTO todos (id, content, target_date, is_completed, created_at, sort_order, batch_id) VALUES (${values.join(', ')});`
+  return `INSERT INTO todos (id, content, target_date, status, created_at, sort_order, batch_id) VALUES (${values.join(', ')});`
 }
 
 /**
@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS todos (
   id INTEGER PRIMARY KEY,
   content TEXT NOT NULL,
   target_date TEXT NOT NULL,
-  is_completed INTEGER NOT NULL,
+  status TEXT NOT NULL,
   created_at INTEGER NOT NULL,
   sort_order INTEGER NOT NULL,
   batch_id TEXT
