@@ -1,23 +1,23 @@
 import type { ReactNode } from "react";
 import type { AppView } from "@renderer/types/views";
+import { useUIStore } from "@renderer/stores/useUIStore";
 
 interface AppShellProps {
-  /** 현재 활성 뷰 */
-  view: AppView;
-  /** 뷰 전환 핸들러 */
-  onChangeView: (view: AppView) => void;
   children: ReactNode;
 }
 
 /**
  * 앱 공통 레이아웃 — 상단 네비게이션 + 콘텐츠 영역
  */
-export function AppShell({ view, onChangeView, children }: AppShellProps) {
+export function AppShell({ children }: AppShellProps) {
   const tabs: { id: AppView; label: string }[] = [
     { id: "today", label: "오늘" },
-    // { id: "month", label: "월별" },
-    // { id: "settings", label: "설정" },
+    { id: "month", label: "월별" },
+    { id: "settings", label: "설정" },
   ];
+
+  const view = useUIStore((s) => s.view);
+  const setView = useUIStore((s) => s.setView);
 
   return (
     <div className="mx-auto flex h-screen max-w-3xl flex-col overflow-hidden px-4 py-5">
@@ -32,7 +32,7 @@ export function AppShell({ view, onChangeView, children }: AppShellProps) {
               key={tab.id}
               type="button"
               className={view === tab.id ? "nav-tab nav-tab-active" : "nav-tab"}
-              onClick={() => onChangeView(tab.id)}
+              onClick={() => setView(tab.id)}
             >
               {tab.label}
             </button>

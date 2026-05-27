@@ -7,16 +7,16 @@ import { MonthBoard } from "@renderer/components/views/MonthBoard";
 import { SettingsView } from "@renderer/components/views/SettingsView";
 import { useTodos } from "@renderer/hooks/useTodos";
 import { useTheme } from "@renderer/hooks/useTheme";
-import type { AppView } from "@renderer/types/views";
 import {
   buildDateString,
   getTodayString,
   toYearMonth,
 } from "@renderer/utils/dateUtils";
+import { useUIStore } from "@renderer/stores/useUIStore";
 
 /** 앱 루트 — 오늘 탭 상태·공통 모달·useTodos 연동 */
 export function App() {
-  const [view, setView] = useState<AppView>("today");
+  const view = useUIStore((s) => s.view);
   /** 오늘 탭에서 보고 있는 날짜 */
   const [activeDate, setActiveDate] = useState(getTodayString);
   const [monthYearMonth, setMonthYearMonth] = useState(() =>
@@ -75,7 +75,7 @@ export function App() {
   }, []);
 
   return (
-    <AppShell view={view} onChangeView={setView}>
+    <AppShell>
       {error && (
         <div className="rounded-(--radius-btn) border border-danger/30 bg-danger-soft px-3 py-2 text-sm text-danger">
           {error}
@@ -99,6 +99,8 @@ export function App() {
         />
       )}
 
+      {view === "month" && <p>월별은 준비중입니다.</p>}
+
       {/* {view === 'month' && (
         <MonthBoard
           yearMonth={monthYearMonth}
@@ -107,6 +109,8 @@ export function App() {
           onChangeMonth={setMonthYearMonth}
         />
       )} */}
+
+      {view === "settings" && <p>설정은 준비중입니다.</p>}
 
       {/* {view === 'settings' && (
         <SettingsView

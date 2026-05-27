@@ -19,5 +19,8 @@
     "react-dom": "^19.0.0",
     "tailwindcss": "^4.0.9",
     "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "zustand": "^5.0.13"
   }
 }
