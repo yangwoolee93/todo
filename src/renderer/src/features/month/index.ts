@@ -1,1 +1,1 @@
-export { MonthBoard } from './ui/MonthBoard'
+export { default as MonthBoard } from "./ui/MonthBoard";

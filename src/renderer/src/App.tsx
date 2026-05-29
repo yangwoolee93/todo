@@ -4,12 +4,16 @@ import { DatePickerModal } from "@renderer/features/today";
 import { AddTodoModal } from "@renderer/features/todo";
 import { useUIStore } from "@renderer/stores/useUIStore";
 import { useTodoStore } from "@renderer/features/todo/model/useTodoStore";
+import { useMonthStore } from "@renderer/features/month/model/useMonthStore";
 import { TodayPage } from "./pages/today";
+import { MonthPage } from "./pages/month";
 
 /** 앱 루트 — 뷰 분기 + 공통 모달 */
 export function App() {
   const view = useUIStore((s) => s.view);
-  const error = useTodoStore((s) => s.error);
+  const todoError = useTodoStore((s) => s.error);
+  const monthError = useMonthStore((s) => s.error);
+  const error = view === "month" ? monthError : todoError;
 
   useTheme();
 
@@ -23,7 +27,7 @@ export function App() {
 
       {view === "today" && <TodayPage />}
 
-      {view === "month" && <p>월별은 준비중입니다.</p>}
+      {view === "month" && <MonthPage />}
 
       {view === "settings" && <p>설정은 준비중입니다.</p>}
 
