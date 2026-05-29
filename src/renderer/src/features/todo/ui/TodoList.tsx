@@ -1,11 +1,8 @@
 import { useEffect } from "react";
 import { useUIStore } from "@renderer/stores/useUIStore";
 import { useTodoStore } from "../model/useTodoStore";
-import {
-  getTodoTextClass,
-  TodoStatusIcon,
-} from "@renderer/components/TodoStatusIcon";
-import { TodoItemMenu } from "@renderer/components/TodoItemMenu";
+import { getTodoTextClass, TodoStatusIcon } from "./TodoStatusIcon";
+import { TodoItemMenu } from "./TodoItemMenu";
 import type { DisplayTodo } from "@shared/types/todo";
 
 export default function TodoList() {

@@ -1,7 +1,7 @@
 import { useTheme } from "@renderer/hooks/useTheme";
-import { AppShell } from "@renderer/components/layout/AppShell";
-import { DatePickerModal } from "@renderer/components/DatePickerModal";
-import { AddTodoModal } from "@renderer/components/AddTodoModal";
+import { AppShell } from "./app/AppShell";
+import { DatePickerModal } from "@renderer/features/today";
+import { AddTodoModal } from "@renderer/features/todo";
 import { useUIStore } from "@renderer/stores/useUIStore";
 import { useTodoStore } from "@renderer/features/todo/model/useTodoStore";
 import { TodayPage } from "./pages/today";

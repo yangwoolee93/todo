@@ -1,8 +1,5 @@
 import { TodayHeader } from "@renderer/features/today";
-import { TodoList } from "@renderer/features/todo";
-import { EditTodoModal } from "@renderer/components/EditTodoModal";
-import { DeleteConfirmModal } from "@renderer/components/DeleteConfirmModal";
-import { DeleteBatchModal } from "@renderer/components/DeleteBatchModal";
+import { TodoList, EditTodoModal, DeleteConfirmModal, DeleteBatchModal } from "@renderer/features/todo";
 
 export default function TodayWidget() {
   return (
@@ -12,7 +9,6 @@ export default function TodayWidget() {
         <div className="scrollbar scrollbar-y-inset min-h-0 flex-1">
           <TodoList />
         </div>
-
       </div>
 
       <EditTodoModal />

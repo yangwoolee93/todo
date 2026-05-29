@@ -1,6 +1,6 @@
 import { useRef, type MouseEvent } from 'react'
 import type { DaySummary } from '@shared/types/todo'
-import { getTodoTextClass } from '@renderer/components/TodoStatusIcon'
+import { getTodoTextClass } from '@renderer/features/todo'
 import { getTodayString, shiftMonth } from '@renderer/utils/dateUtils'
 
 interface MonthBoardProps {
@@ -23,7 +23,6 @@ export function MonthBoard({ yearMonth, summaries, loading, onChangeMonth }: Mon
   const dragState = useRef({ isDragging: false, startX: 0, scrollLeft: 0 })
   const today = getTodayString()
 
-  /** 가로 드래그 스크롤 시작 */
   const handleMouseDown = (event: MouseEvent<HTMLDivElement>) => {
     const el = scrollRef.current
     if (!el) return
@@ -34,7 +33,6 @@ export function MonthBoard({ yearMonth, summaries, loading, onChangeMonth }: Mon
     }
   }
 
-  /** 드래그 중 스크롤 */
   const handleMouseMove = (event: MouseEvent<HTMLDivElement>) => {
     const el = scrollRef.current
     if (!el || !dragState.current.isDragging) return
@@ -42,7 +40,6 @@ export function MonthBoard({ yearMonth, summaries, loading, onChangeMonth }: Mon
     el.scrollLeft = dragState.current.scrollLeft - (x - dragState.current.startX)
   }
 
-  /** 드래그 종료 */
   const handleMouseUp = () => {
     dragState.current.isDragging = false
   }
@@ -90,7 +87,7 @@ export function MonthBoard({ yearMonth, summaries, loading, onChangeMonth }: Mon
             return (
               <div
                 key={column.date}
-                className={`flex w-36 shrink-0 flex-col rounded-[var(--radius-card)] border bg-surface ${
+                className={`flex w-36 shrink-0 flex-col rounded-(--radius-card) border bg-surface ${
                   isTodayColumn ? 'border-accent ring-2 ring-today-ring/30' : 'border-border'
                 }`}
               >

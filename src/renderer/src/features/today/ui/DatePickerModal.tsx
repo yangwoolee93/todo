@@ -1,4 +1,4 @@
-import { CalendarBar } from "@renderer/components/CalendarBar";
+import { CalendarBar } from "./CalendarBar";
 import { useUIStore } from "@renderer/stores/useUIStore";
 
 /**
@@ -16,7 +16,6 @@ export function DatePickerModal() {
 
   if (!open) return null;
 
-  /** 날짜 선택 후 모달을 닫는다. */
   const handleSelect = (date: string) => {
     setActiveDate(date);
     closeDatePicker();
