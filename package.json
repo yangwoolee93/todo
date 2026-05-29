@@ -1,7 +1,7 @@
 {
-  "name": "my-todo-app",
+  "name": "simple-todo",
   "version": "0.1.0",
-  "description": "가로 스크롤형 데스크톱 투두 애플리케이션",
+  "description": "Simple Todo Windows Application",
   "main": "./out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
