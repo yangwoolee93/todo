@@ -1,8 +1,4 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
-import type {
-  CreateTodoMonthPayload,
-  CreateTodoRangePayload,
-} from "@shared/types/todo";
 import {
   countDaysInRange,
   getMonthDateRange,
@@ -10,6 +6,7 @@ import {
   toYearMonth,
 } from "@renderer/utils/dateUtils";
 import { useUIStore } from "@renderer/stores/useUIStore";
+import { useTodoStore } from "@renderer/features/todo/model/useTodoStore";
 
 /** 모달 닫기 X 아이콘 */
 function CloseIcon({ className = "h-4 w-4" }: { className?: string }) {
@@ -33,25 +30,19 @@ function CloseIcon({ className = "h-4 w-4" }: { className?: string }) {
 /** 추가 모달 탭 — 하루 / 기간 / 한 달 */
 type AddMode = "single" | "range" | "month";
 
-interface AddTodoModalProps {
-  onCreateSingle: (content: string, targetDate: string) => Promise<boolean>;
-  onCreateRange: (payload: CreateTodoRangePayload) => Promise<boolean>;
-  onCreateMonth: (payload: CreateTodoMonthPayload) => Promise<boolean>;
-}
-
 /**
  * 투두 추가 모달 (오늘 탭 하단 「+ 투두 추가」 / ⋮ 복제)
  * - 하루·기간·한 달 탭
  */
-export function AddTodoModal({
-  onCreateSingle,
-  onCreateRange,
-  onCreateMonth,
-}: AddTodoModalProps) {
+export function AddTodoModal() {
   const addModalOpen = useUIStore((s) => s.addModalOpen);
   const activeDate = useUIStore((s) => s.activeDate);
   const duplicateContent = useUIStore((s) => s.duplicateContent);
   const closeAddModal = useUIStore((s) => s.closeAddModal);
+
+  const createTodo = useTodoStore((s) => s.createTodo);
+  const createTodoRange = useTodoStore((s) => s.createTodoRange);
+  const createTodoMonth = useTodoStore((s) => s.createTodoMonth);
 
   //
   //
@@ -97,15 +88,15 @@ export function AddTodoModal({
       let success = false;
 
       if (mode === "single") {
-        success = await onCreateSingle(content, targetDate);
+        success = await createTodo(content, targetDate);
       } else if (mode === "range") {
-        success = await onCreateRange({
+        success = await createTodoRange({
           content,
           start_date: startDate,
           end_date: endDate,
         });
       } else {
-        success = await onCreateMonth({ content, year_month: yearMonth });
+        success = await createTodoMonth({ content, year_month: yearMonth });
       }
 
       if (success) handleClose();

@@ -1,42 +1,41 @@
 import { FormEvent, useEffect, useRef, useState } from 'react'
-
-interface EditTodoModalProps {
-  open: boolean
-  initialContent: string
-  /** batch_id 있으면 묶음 전체 내용 수정 */
-  isBatch: boolean
-  onClose: () => void
-  onSave: (content: string) => Promise<boolean>
-}
+import { useUIStore } from '@renderer/stores/useUIStore'
+import { useTodoStore } from '@renderer/features/todo/model/useTodoStore'
 
 /** TodoList ⋮ 수정 — 단건 또는 batch_id 묶음 수정 */
-export function EditTodoModal({
-  open,
-  initialContent,
-  isBatch,
-  onClose,
-  onSave
-}: EditTodoModalProps) {
-  const [content, setContent] = useState(initialContent)
+export function EditTodoModal() {
+  const editTarget = useUIStore((s) => s.editTarget)
+  const setEditTarget = useUIStore((s) => s.setEditTarget)
+  const updateTodoContent = useTodoStore((s) => s.updateTodoContent)
+
+  const open = editTarget !== null
+  const isBatch = Boolean(editTarget?.batch_id)
+
+  const [content, setContent] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
-  /** 열릴 때만 initialContent 반영 + 포커스 */
   const wasOpenRef = useRef(false)
 
   useEffect(() => {
     if (open && !wasOpenRef.current) {
-      setContent(initialContent)
+      setContent(editTarget?.content ?? '')
       requestAnimationFrame(() => inputRef.current?.focus())
     }
     wasOpenRef.current = open
-  }, [open, initialContent])
+  }, [open, editTarget])
+
+  const handleClose = () => setEditTarget(null)
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
+    if (!editTarget) return
     setSubmitting(true)
     try {
-      const success = await onSave(content.replace(/[\r\n]+/g, '').trim())
-      if (success) onClose()
+      const success = await updateTodoContent(
+        editTarget.id,
+        content.replace(/[\r\n]+/g, '').trim(),
+      )
+      if (success) handleClose()
     } finally {
       setSubmitting(false)
     }
@@ -47,7 +46,7 @@ export function EditTodoModal({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-      onClick={onClose}
+      onClick={handleClose}
       role="presentation"
     >
       <div
@@ -72,10 +71,14 @@ export function EditTodoModal({
             onChange={(e) => setContent(e.target.value.replace(/[\r\n]+/g, ''))}
           />
           <div className="flex justify-end gap-2">
-            <button type="button" className="btn btn-ghost" onClick={onClose}>
+            <button type="button" className="btn btn-ghost" onClick={handleClose}>
               취소
             </button>
-            <button type="submit" className="btn btn-primary" disabled={submitting || !content.trim()}>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={submitting || !content.trim()}
+            >
               {submitting ? '저장 중...' : '저장'}
             </button>
           </div>

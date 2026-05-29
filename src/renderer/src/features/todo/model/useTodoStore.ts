@@ -1,6 +1,30 @@
 import { useUIStore } from "@renderer/stores/useUIStore";
-import { DisplayTodo, TodoStatus } from "@shared/types/todo";
+import {
+  CreateTodoMonthPayload,
+  CreateTodoRangePayload,
+  DisplayTodo,
+  TodoItem,
+  TodoStatus,
+} from "@shared/types/todo";
 import { create } from "zustand";
+
+function sortTodos(items: DisplayTodo[]): DisplayTodo[] {
+  return [...items].sort((a, b) => {
+    if (a.sort_order !== b.sort_order) return a.sort_order - b.sort_order;
+    return a.created_at - b.created_at;
+  });
+}
+
+function toDisplay(item: TodoItem): DisplayTodo {
+  return {
+    id: item.id,
+    content: item.content,
+    status: item.status,
+    sort_order: item.sort_order,
+    created_at: item.created_at,
+    batch_id: item.batch_id,
+  };
+}
 
 type TodoState = {
   todos: DisplayTodo[];
@@ -12,6 +36,12 @@ type TodoActions = {
   loadTodosByDate: (date: string) => Promise<void>;
   reorderTodo: (todoId: number, direction: "up" | "down") => Promise<boolean>;
   toggleCompletion: (todoId: number) => Promise<boolean>;
+  setTodoStatus: (todoId: number, status: TodoStatus) => Promise<boolean>;
+  deleteTodo: (todoId: number, scope: "day" | "batch") => Promise<boolean>;
+  updateTodoContent: (todoId: number, content: string) => Promise<boolean>;
+  createTodo: (content: string, targetDate: string) => Promise<boolean>;
+  createTodoRange: (payload: CreateTodoRangePayload) => Promise<boolean>;
+  createTodoMonth: (payload: CreateTodoMonthPayload) => Promise<boolean>;
 };
 
 type TodoStore = TodoState & TodoActions;
@@ -25,90 +55,185 @@ const initialState: TodoState = {
 const createActions = (
   set: (fn: (prev: TodoStore) => Partial<TodoStore>) => void,
   get: () => TodoStore,
-): TodoActions => ({
-  // 특정일의 할일 조회회
-  loadTodosByDate: async (date: string) => {
-    set((state) => ({ loading: true, error: null }));
-    try {
-      const result = await window.api.getTodosByDate(date);
-      if (!result.success)
-        throw new Error(result.error ?? "일별 데이터 조회 실패");
-      set((state) => ({ todos: result.data ?? [] }));
-    } catch (err) {
-      set((state) => ({
-        error: err instanceof Error ? err.message : "데이터 로드 실패",
-      }));
-    } finally {
-      set((state) => ({ loading: false }));
-    }
-  },
-  // 특정일의 할일 순서 변경
-  reorderTodo: async (todoId, direction) => {
-    const current = get().todos;
-    const index = current.findIndex((todo) => todo.id === todoId);
-    const swapIndex = direction === "up" ? index - 1 : index + 1;
-    if (index === -1 || swapIndex < 0 || swapIndex >= current.length) {
-      return false;
-    }
-    const previousTodos = current;
-    const next = [...current];
-    [next[index], next[swapIndex]] = [next[swapIndex], next[index]];
-
-    // 1) 화면 먼저 바꿈 (낙관적 업데이트)
-    set((state) => ({ todos: next, error: null }));
-
+): TodoActions => {
+  const syncDaily = async () => {
     const activeDate = useUIStore.getState().activeDate;
-    const result = await window.api.reorderTodo({
-      target_date: activeDate,
-      id: todoId,
-      direction,
-    });
-    // 2) 실패하면 되돌림
-    if (!result.success) {
-      set((state) => ({
-        todos: previousTodos,
-        error: result.error ?? "순서 변경 실패",
-      }));
-      return false;
-    }
-    return true;
-  },
-  // 할일 상태 변경
-  toggleCompletion: async (todoId) => {
-    const flipCompletionStatus = (status: TodoStatus): TodoStatus | null => {
-      if (status === "pending") return "completed";
-      if (status === "completed") return "pending";
-      return null;
-    };
+    const result = await window.api.getTodosByDate(activeDate);
+    if (result.success) set(() => ({ todos: result.data ?? [] }));
+  };
 
-    const current = get().todos;
-    const target = current.find((todo) => todo.id === todoId);
-    const nextStatus = target ? flipCompletionStatus(target.status) : null;
-    if (!target || !nextStatus) {
-      return false;
-    }
-    const previousTodos = current;
-    // 1) 화면 먼저 (낙관적 업데이트)
-    set((state) => ({
-      todos: current.map((todo) =>
-        todo.id === todoId ? { ...todo, status: nextStatus } : todo,
-      ),
-      error: null,
-    }));
-    // 2) DB 변경 (IPC → main → SQLite)
-    const result = await window.api.toggleCompletion(todoId);
-    // 3) 실패 시 화면 되돌림
-    if (!result.success) {
-      set((state) => ({
-        todos: previousTodos,
-        error: result.error ?? "상태 변경 실패",
+  return {
+    loadTodosByDate: async (date) => {
+      set(() => ({ loading: true, error: null }));
+      try {
+        const result = await window.api.getTodosByDate(date);
+        if (!result.success)
+          throw new Error(result.error ?? "일별 데이터 조회 실패");
+        set(() => ({ todos: result.data ?? [] }));
+      } catch (err) {
+        set(() => ({
+          error: err instanceof Error ? err.message : "데이터 로드 실패",
+        }));
+      } finally {
+        set(() => ({ loading: false }));
+      }
+    },
+
+    reorderTodo: async (todoId, direction) => {
+      const current = get().todos;
+      const index = current.findIndex((todo) => todo.id === todoId);
+      const swapIndex = direction === "up" ? index - 1 : index + 1;
+      if (index === -1 || swapIndex < 0 || swapIndex >= current.length)
+        return false;
+
+      const previousTodos = current;
+      const next = [...current];
+      [next[index], next[swapIndex]] = [next[swapIndex], next[index]];
+      set(() => ({ todos: next, error: null }));
+
+      const activeDate = useUIStore.getState().activeDate;
+      const result = await window.api.reorderTodo({
+        target_date: activeDate,
+        id: todoId,
+        direction,
+      });
+      if (!result.success) {
+        set(() => ({ todos: previousTodos, error: result.error ?? "순서 변경 실패" }));
+        return false;
+      }
+      return true;
+    },
+
+    toggleCompletion: async (todoId) => {
+      const flip = (s: TodoStatus): TodoStatus | null =>
+        s === "pending" ? "completed" : s === "completed" ? "pending" : null;
+
+      const current = get().todos;
+      const target = current.find((t) => t.id === todoId);
+      const nextStatus = target ? flip(target.status) : null;
+      if (!target || !nextStatus) return false;
+
+      const previousTodos = current;
+      set(() => ({
+        todos: current.map((t) =>
+          t.id === todoId ? { ...t, status: nextStatus } : t,
+        ),
+        error: null,
       }));
-      return false;
-    }
-    return true;
-  },
-  //
-});
+
+      const result = await window.api.toggleCompletion(todoId);
+      if (!result.success) {
+        set(() => ({ todos: previousTodos, error: result.error ?? "상태 변경 실패" }));
+        return false;
+      }
+      return true;
+    },
+
+    setTodoStatus: async (todoId, status) => {
+      const current = get().todos;
+      const target = current.find((t) => t.id === todoId);
+      if (!target || target.status === status) return false;
+
+      const previousTodos = current;
+      set(() => ({
+        todos: current.map((t) => (t.id === todoId ? { ...t, status } : t)),
+        error: null,
+      }));
+
+      const result = await window.api.setTodoStatus({ id: todoId, status });
+      if (!result.success) {
+        set(() => ({ todos: previousTodos, error: result.error ?? "상태 변경 실패" }));
+        return false;
+      }
+      return true;
+    },
+
+    deleteTodo: async (todoId, scope) => {
+      if (scope === "batch") {
+        const result = await window.api.deleteTodo({ id: todoId, scope });
+        if (!result.success) {
+          set(() => ({ error: result.error ?? "삭제 실패" }));
+          return false;
+        }
+        await syncDaily();
+        return true;
+      }
+
+      const current = get().todos;
+      const previousTodos = current;
+      set(() => ({
+        todos: current.filter((t) => t.id !== todoId),
+        error: null,
+      }));
+
+      const result = await window.api.deleteTodo({ id: todoId, scope: "day" });
+      if (!result.success) {
+        set(() => ({ todos: previousTodos, error: result.error ?? "삭제 실패" }));
+        return false;
+      }
+      return true;
+    },
+
+    updateTodoContent: async (todoId, content) => {
+      const current = get().todos;
+      const target = current.find((t) => t.id === todoId);
+      if (!target) return false;
+
+      const result = await window.api.updateTodoContent({ id: todoId, content });
+      if (!result.success) {
+        set(() => ({ error: result.error ?? "수정 실패" }));
+        return false;
+      }
+
+      if (target.batch_id) {
+        await syncDaily();
+      } else {
+        set(() => ({
+          todos: current.map((t) => (t.id === todoId ? { ...t, content } : t)),
+        }));
+      }
+      return true;
+    },
+
+    createTodo: async (content, targetDate) => {
+      const result = await window.api.createTodo({
+        content,
+        target_date: targetDate,
+      });
+      if (!result.success || !result.data) {
+        set(() => ({ error: result.error ?? "생성 실패" }));
+        return false;
+      }
+
+      const activeDate = useUIStore.getState().activeDate;
+      if (result.data.target_date === activeDate) {
+        const created = toDisplay(result.data);
+        set((state) => ({ todos: sortTodos([...state.todos, created]) }));
+      }
+      return true;
+    },
+
+    createTodoRange: async (payload) => {
+      const result = await window.api.createTodoRange(payload);
+      if (!result.success) {
+        set(() => ({ error: result.error ?? "기간 일괄 생성 실패" }));
+        return false;
+      }
+      await syncDaily();
+      return true;
+    },
+
+    createTodoMonth: async (payload) => {
+      const result = await window.api.createTodoMonth(payload);
+      if (!result.success) {
+        set(() => ({ error: result.error ?? "한 달 일괄 생성 실패" }));
+        return false;
+      }
+      await syncDaily();
+      return true;
+    },
+  };
+};
 
 export const useTodoStore = create<TodoStore>()((set, get) => ({
   ...initialState,

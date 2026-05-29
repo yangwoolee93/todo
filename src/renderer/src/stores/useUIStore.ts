@@ -1,15 +1,17 @@
 import { create } from "zustand";
 import type { AppView } from "@renderer/types/views";
+import type { DisplayTodo } from "@shared/types/todo";
 import { getTodayString } from "@renderer/utils/dateUtils";
 import { shiftDate, buildDateString } from "@renderer/utils/dateUtils";
 
 type UIState = {
-  // 화면 뷰
-  view: AppView; // 화면 타입
-  activeDate: string; // 선택된 날짜
-  datePickerOpen: boolean; // 날짜 모달
-  addModalOpen: boolean; // 할일 모달
-  duplicateContent: string | undefined; // 복제 내용
+  view: AppView;
+  activeDate: string;
+  datePickerOpen: boolean;
+  addModalOpen: boolean;
+  duplicateContent: string | undefined;
+  editTarget: DisplayTodo | null;
+  deleteTarget: DisplayTodo | null;
 };
 
 type UIActions = {
@@ -30,6 +32,9 @@ type UIActions = {
   openAddModal: () => void;
   openAddModalWithDuplicate: (content: string) => void;
   closeAddModal: () => void;
+  // 편집/삭제 모달 대상
+  setEditTarget: (todo: DisplayTodo | null) => void;
+  setDeleteTarget: (todo: DisplayTodo | null) => void;
 };
 
 type UIStore = UIState & UIActions;
@@ -40,6 +45,8 @@ const initialState: UIState = {
   datePickerOpen: false,
   addModalOpen: false,
   duplicateContent: undefined,
+  editTarget: null,
+  deleteTarget: null,
 };
 
 const createActions = (
@@ -67,6 +74,8 @@ const createActions = (
     set(() => ({ addModalOpen: true, duplicateContent: content })),
   closeAddModal: () =>
     set(() => ({ addModalOpen: false, duplicateContent: undefined })),
+  setEditTarget: (todo) => set(() => ({ editTarget: todo })),
+  setDeleteTarget: (todo) => set(() => ({ deleteTarget: todo })),
 });
 
 export const useUIStore = create<UIStore>()((set) => ({

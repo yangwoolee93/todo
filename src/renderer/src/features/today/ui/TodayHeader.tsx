@@ -1,7 +1,7 @@
 import { useUIStore } from "@renderer/stores/useUIStore";
+import { useTodoStore } from "@renderer/features/todo/model/useTodoStore";
 import { ChevronLeftIcon, ChevronRightIcon } from "./ChevronIcons";
 import {
-  shiftDate,
   getTodayString,
   toFullLabel,
   isToday,
@@ -14,6 +14,7 @@ export default function TodayHeader() {
   const goNextDate = useUIStore((s) => s.goNextDate);
   const openDatePicker = useUIStore((s) => s.openDatePicker);
   const openAddModal = useUIStore((s) => s.openAddModal);
+  const todoCount = useTodoStore((s) => s.todos.length);
 
   const showingToday = isToday(activeDate);
 
@@ -75,7 +76,7 @@ export default function TodayHeader() {
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3">
-          {/* <p className="text-sm text-fg-secondary">{todos.length}건의 할 일</p> */}
+          <p className="text-sm text-fg-secondary">{todoCount}건의 할 일</p>
 
           <button
             type="button"
