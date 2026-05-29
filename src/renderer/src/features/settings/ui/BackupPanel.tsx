@@ -1,13 +1,24 @@
-interface BackupPanelProps {
-  /** 데이터 새로고침 (임포트 후 호출) */
-  onRefresh: () => Promise<void>
-}
+import { useUIStore } from '@renderer/stores/useUIStore'
+import { useTodoStore } from '@renderer/features/todo/model/useTodoStore'
+import { useMonthStore } from '@renderer/features/month/model/useMonthStore'
 
 /**
  * 데이터 백업·복원 패널 (F-04)
  */
-export function BackupPanel({ onRefresh }: BackupPanelProps) {
-  /** JSON 파일로 익스포트 */
+export function BackupPanel() {
+  const activeDate = useUIStore((s) => s.activeDate)
+  const yearMonth = useMonthStore((s) => s.yearMonth)
+  const loadTodosByDate = useTodoStore((s) => s.loadTodosByDate)
+  const loadMonthSummary = useMonthStore((s) => s.loadMonthSummary)
+
+  /** 임포트 후 오늘·월별 데이터 재조회 */
+  const refresh = async () => {
+    await Promise.all([
+      loadTodosByDate(activeDate),
+      loadMonthSummary(yearMonth),
+    ])
+  }
+
   const handleExportJson = async () => {
     const result = await window.api.exportJson()
     if (result.success && result.data?.filePath) {
@@ -17,7 +28,6 @@ export function BackupPanel({ onRefresh }: BackupPanelProps) {
     }
   }
 
-  /** SQL INSERT 스크립트로 익스포트 */
   const handleExportSql = async () => {
     const result = await window.api.exportSql()
     if (result.success && result.data?.filePath) {
@@ -27,7 +37,6 @@ export function BackupPanel({ onRefresh }: BackupPanelProps) {
     }
   }
 
-  /** JSON 파일 임포트 (전체 교체) */
   const handleImportJson = async () => {
     const confirmed = confirm('현재 데이터를 선택한 JSON으로 교체합니다. 계속할까요?')
     if (!confirmed) return
@@ -35,7 +44,7 @@ export function BackupPanel({ onRefresh }: BackupPanelProps) {
     const result = await window.api.importJson()
     if (result.success && result.data?.filePath) {
       alert(`JSON 불러오기 완료:\n${result.data.filePath}`)
-      await onRefresh()
+      await refresh()
     } else if (!result.success && result.error) {
       alert(result.error)
     }
