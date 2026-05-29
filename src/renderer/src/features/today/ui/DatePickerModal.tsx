@@ -1,41 +1,30 @@
-import { CalendarBar } from '@renderer/components/CalendarBar'
-
-interface DatePickerModalProps {
-  /** 모달 표시 여부 */
-  open: boolean
-  /** 현재 선택 날짜 */
-  activeDate: string
-  /** 모달 닫기 */
-  onClose: () => void
-  /** 날짜 선택 시 */
-  onSelectDate: (date: string) => void
-  /** 월 변경 시 */
-  onChangeMonth: (yearMonth: string) => void
-}
+import { CalendarBar } from "./CalendarBar";
+import { useUIStore } from "@renderer/stores/useUIStore";
 
 /**
  * 다른 날짜 선택 모달 (TodayView 「다른 날짜」)
  * - CalendarBar 오버레이
  */
-export function DatePickerModal({
-  open,
-  activeDate,
-  onClose,
-  onSelectDate,
-  onChangeMonth
-}: DatePickerModalProps) {
-  if (!open) return null
+export function DatePickerModal() {
+  const open = useUIStore((s) => s.datePickerOpen);
+  const activeDate = useUIStore((s) => s.activeDate);
+  const setActiveDateByYearMonth = useUIStore(
+    (s) => s.setActiveDateByYearMonth,
+  );
+  const setActiveDate = useUIStore((s) => s.setActiveDate);
+  const closeDatePicker = useUIStore((s) => s.closeDatePicker);
 
-  /** 날짜 선택 후 모달을 닫는다. */
+  if (!open) return null;
+
   const handleSelect = (date: string) => {
-    onSelectDate(date)
-    onClose()
-  }
+    setActiveDate(date);
+    closeDatePicker();
+  };
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-      onClick={onClose}
+      onClick={closeDatePicker}
       role="presentation"
     >
       <div
@@ -47,16 +36,20 @@ export function DatePickerModal({
       >
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-semibold">날짜 선택</h2>
-          <button type="button" className="btn btn-ghost text-xs" onClick={onClose}>
+          <button
+            type="button"
+            className="btn btn-ghost text-xs"
+            onClick={closeDatePicker}
+          >
             닫기
           </button>
         </div>
         <CalendarBar
           activeDate={activeDate}
           onSelectDate={handleSelect}
-          onChangeMonth={onChangeMonth}
+          onChangeMonth={setActiveDateByYearMonth}
         />
       </div>
     </div>
-  )
+  );
 }

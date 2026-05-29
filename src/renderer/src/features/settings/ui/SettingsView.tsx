@@ -1,6 +1,6 @@
 import type { ThemeMode } from '@renderer/hooks/useTheme'
-import { ThemeSelector } from '@renderer/components/ThemeSelector'
-import { BackupPanel } from '@renderer/components/BackupPanel'
+import { ThemeSelector } from './ThemeSelector'
+import { BackupPanel } from './BackupPanel'
 
 interface SettingsViewProps {
   themeMode: ThemeMode

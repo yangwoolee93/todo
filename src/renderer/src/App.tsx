@@ -1,78 +1,17 @@
-import { useCallback, useState } from "react";
-import { AppShell } from "@renderer/components/layout/AppShell";
-import { DatePickerModal } from "@renderer/components/DatePickerModal";
-import { AddTodoModal } from "@renderer/components/AddTodoModal";
-import { TodayView } from "@renderer/components/views/TodayView";
-import { MonthBoard } from "@renderer/components/views/MonthBoard";
-import { SettingsView } from "@renderer/components/views/SettingsView";
-import { useTodos } from "@renderer/hooks/useTodos";
 import { useTheme } from "@renderer/hooks/useTheme";
-import {
-  buildDateString,
-  getTodayString,
-  toYearMonth,
-} from "@renderer/utils/dateUtils";
+import { AppShell } from "./app/AppShell";
+import { DatePickerModal } from "@renderer/features/today";
+import { AddTodoModal } from "@renderer/features/todo";
 import { useUIStore } from "@renderer/stores/useUIStore";
+import { useTodoStore } from "@renderer/features/todo/model/useTodoStore";
+import { TodayPage } from "./pages/today";
 
-/** 앱 루트 — 오늘 탭 상태·공통 모달·useTodos 연동 */
+/** 앱 루트 — 뷰 분기 + 공통 모달 */
 export function App() {
   const view = useUIStore((s) => s.view);
-  /** 오늘 탭에서 보고 있는 날짜 */
-  const [activeDate, setActiveDate] = useState(getTodayString);
-  const [monthYearMonth, setMonthYearMonth] = useState(() =>
-    toYearMonth(getTodayString()),
-  );
-  /** TodayView 「다른 날짜」→ DatePickerModal */
-  const [datePickerOpen, setDatePickerOpen] = useState(false);
-  /** TodayView 「+ 할 일 추가」→ AddTodoModal */
-  const [addModalOpen, setAddModalOpen] = useState(false);
-  /** ⋮ 복제 시 AddTodoModal initialContent */
-  const [duplicateContent, setDuplicateContent] = useState<
-    string | undefined
-  >();
-  const { mode: themeMode, setMode: setThemeMode } = useTheme();
+  const error = useTodoStore((s) => s.error);
 
-  /** useTodos 월별 요약 조회 기준 (오늘 탭: activeDate의 월) */
-  const summaryMonth =
-    view === "month" ? monthYearMonth : toYearMonth(activeDate);
-
-  const {
-    todos,
-    monthSummary,
-    loading,
-    error,
-    refresh,
-    createTodo,
-    createTodoRange,
-    createTodoMonth,
-    toggleCompletion,
-    setTodoStatus,
-    deleteTodo,
-    updateTodoContent,
-    reorderTodo,
-  } = useTodos({ activeDate, summaryMonth });
-
-  /** DatePickerModal에서 월 이동 시 activeDate를 해당 월 1일로 */
-  const handlePickerMonthChange = (yearMonth: string) => {
-    setActiveDate(buildDateString(yearMonth, 1));
-  };
-
-  /** 일반 추가 — 복제 내용 없이 모달 오픈 */
-  const handleOpenAddModal = useCallback(() => {
-    setDuplicateContent(undefined);
-    setAddModalOpen(true);
-  }, []);
-
-  /** ⋮ 복제 — 내용만 채워 AddTodoModal 오픈 */
-  const handleDuplicate = useCallback((content: string) => {
-    setDuplicateContent(content);
-    setAddModalOpen(true);
-  }, []);
-
-  const handleCloseAddModal = useCallback(() => {
-    setAddModalOpen(false);
-    setDuplicateContent(undefined);
-  }, []);
+  useTheme();
 
   return (
     <AppShell>
@@ -82,61 +21,14 @@ export function App() {
         </div>
       )}
 
-      {view === "today" && (
-        <TodayView
-          activeDate={activeDate}
-          todos={todos}
-          loading={loading}
-          onChangeDate={setActiveDate}
-          onOpenDatePicker={() => setDatePickerOpen(true)}
-          onOpenAddModal={handleOpenAddModal}
-          onDuplicate={handleDuplicate}
-          onToggleCompletion={toggleCompletion}
-          onSetStatus={setTodoStatus}
-          onDelete={deleteTodo}
-          onUpdateContent={updateTodoContent}
-          onReorder={reorderTodo}
-        />
-      )}
+      {view === "today" && <TodayPage />}
 
       {view === "month" && <p>월별은 준비중입니다.</p>}
 
-      {/* {view === 'month' && (
-        <MonthBoard
-          yearMonth={monthYearMonth}
-          summaries={monthSummary}
-          loading={loading}
-          onChangeMonth={setMonthYearMonth}
-        />
-      )} */}
-
       {view === "settings" && <p>설정은 준비중입니다.</p>}
 
-      {/* {view === 'settings' && (
-        <SettingsView
-          themeMode={themeMode}
-          onChangeTheme={setThemeMode}
-          onRefresh={refresh}
-        />
-      )} */}
-
-      <DatePickerModal
-        open={datePickerOpen}
-        activeDate={activeDate}
-        onClose={() => setDatePickerOpen(false)}
-        onSelectDate={setActiveDate}
-        onChangeMonth={handlePickerMonthChange}
-      />
-
-      <AddTodoModal
-        open={addModalOpen}
-        defaultDate={activeDate}
-        initialContent={duplicateContent}
-        onClose={handleCloseAddModal}
-        onCreateSingle={createTodo}
-        onCreateRange={createTodoRange}
-        onCreateMonth={createTodoMonth}
-      />
+      <DatePickerModal />
+      <AddTodoModal />
     </AppShell>
   );
 }

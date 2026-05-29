@@ -1,14 +1,12 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
-import type {
-  CreateTodoMonthPayload,
-  CreateTodoRangePayload,
-} from "@shared/types/todo";
 import {
   countDaysInRange,
   getMonthDateRange,
   toShortLabel,
   toYearMonth,
 } from "@renderer/utils/dateUtils";
+import { useUIStore } from "@renderer/stores/useUIStore";
+import { useTodoStore } from "@renderer/features/todo/model/useTodoStore";
 
 /** 모달 닫기 X 아이콘 */
 function CloseIcon({ className = "h-4 w-4" }: { className?: string }) {
@@ -32,54 +30,45 @@ function CloseIcon({ className = "h-4 w-4" }: { className?: string }) {
 /** 추가 모달 탭 — 하루 / 기간 / 한 달 */
 type AddMode = "single" | "range" | "month";
 
-interface AddTodoModalProps {
-  open: boolean;
-  /** 하루 탭 기본 날짜 (보통 activeDate) */
-  defaultDate: string;
-  /** ⋮ 복제 시 미리 채울 내용 */
-  initialContent?: string;
-  onClose: () => void;
-  onCreateSingle: (content: string, targetDate: string) => Promise<boolean>;
-  onCreateRange: (payload: CreateTodoRangePayload) => Promise<boolean>;
-  onCreateMonth: (payload: CreateTodoMonthPayload) => Promise<boolean>;
-}
-
 /**
  * 투두 추가 모달 (오늘 탭 하단 「+ 투두 추가」 / ⋮ 복제)
  * - 하루·기간·한 달 탭
  */
-export function AddTodoModal({
-  open,
-  defaultDate,
-  initialContent,
-  onClose,
-  onCreateSingle,
-  onCreateRange,
-  onCreateMonth,
-}: AddTodoModalProps) {
+export function AddTodoModal() {
+  const addModalOpen = useUIStore((s) => s.addModalOpen);
+  const activeDate = useUIStore((s) => s.activeDate);
+  const duplicateContent = useUIStore((s) => s.duplicateContent);
+  const closeAddModal = useUIStore((s) => s.closeAddModal);
+
+  const createTodo = useTodoStore((s) => s.createTodo);
+  const createTodoRange = useTodoStore((s) => s.createTodoRange);
+  const createTodoMonth = useTodoStore((s) => s.createTodoMonth);
+
+  //
+  //
   const [mode, setMode] = useState<AddMode>("single");
   const [content, setContent] = useState("");
-  const [targetDate, setTargetDate] = useState(defaultDate);
-  const [startDate, setStartDate] = useState(defaultDate);
-  const [endDate, setEndDate] = useState(defaultDate);
-  const [yearMonth, setYearMonth] = useState(() => toYearMonth(defaultDate));
+  const [targetDate, setTargetDate] = useState(activeDate);
+  const [startDate, setStartDate] = useState(activeDate);
+  const [endDate, setEndDate] = useState(activeDate);
+  const [yearMonth, setYearMonth] = useState(() => toYearMonth(activeDate));
   const [submitting, setSubmitting] = useState(false);
   const contentInputRef = useRef<HTMLInputElement>(null);
   /** false→true 전환 시에만 폼 초기화 (열린 채 defaultDate 변경 시 입력 유지) */
   const wasOpenRef = useRef(false);
 
   useEffect(() => {
-    if (open && !wasOpenRef.current) {
-      setContent(initialContent ?? "");
+    if (addModalOpen && !wasOpenRef.current) {
+      setContent(duplicateContent ?? "");
       setMode("single");
-      setTargetDate(defaultDate);
-      setStartDate(defaultDate);
-      setEndDate(defaultDate);
-      setYearMonth(toYearMonth(defaultDate));
+      setTargetDate(activeDate);
+      setStartDate(activeDate);
+      setEndDate(activeDate);
+      setYearMonth(toYearMonth(activeDate));
       requestAnimationFrame(() => contentInputRef.current?.focus());
     }
-    wasOpenRef.current = open;
-  }, [open, defaultDate, initialContent]);
+    wasOpenRef.current = addModalOpen;
+  }, [addModalOpen, activeDate, duplicateContent]);
 
   /** 줄바꿈 제거 — 1줄 입력만 허용 */
   const sanitize = (value: string) => value.replace(/[\r\n]+/g, "");
@@ -87,7 +76,7 @@ export function AddTodoModal({
   const handleClose = () => {
     setContent("");
     setMode("single");
-    onClose();
+    closeAddModal();
   };
 
   /** 탭별 create IPC 호출 */
@@ -99,15 +88,15 @@ export function AddTodoModal({
       let success = false;
 
       if (mode === "single") {
-        success = await onCreateSingle(content, targetDate);
+        success = await createTodo(content, targetDate);
       } else if (mode === "range") {
-        success = await onCreateRange({
+        success = await createTodoRange({
           content,
           start_date: startDate,
           end_date: endDate,
         });
       } else {
-        success = await onCreateMonth({ content, year_month: yearMonth });
+        success = await createTodoMonth({ content, year_month: yearMonth });
       }
 
       if (success) handleClose();
@@ -124,7 +113,7 @@ export function AddTodoModal({
   const monthRange = getMonthDateRange(yearMonth);
   const monthDayCount = countDaysInRange(monthRange.start, monthRange.end);
 
-  if (!open) return null;
+  if (!addModalOpen) return null;
 
   return (
     <div

@@ -10,14 +10,16 @@ interface AppShellProps {
  * 앱 공통 레이아웃 — 상단 네비게이션 + 콘텐츠 영역
  */
 export function AppShell({ children }: AppShellProps) {
-  const tabs: { id: AppView; label: string }[] = [
-    { id: "today", label: "오늘" },
-    { id: "month", label: "월별" },
-    { id: "settings", label: "설정" },
-  ];
-
   const view = useUIStore((s) => s.view);
-  const setView = useUIStore((s) => s.setView);
+  const goTodayView = useUIStore((s) => s.goTodayView);
+  const goMonthView = useUIStore((s) => s.goMonthView);
+  const goSettingsView = useUIStore((s) => s.goSettingsView);
+
+  const tabs: { id: AppView; label: string; onClick: () => void }[] = [
+    { id: "today", label: "오늘", onClick: () => goTodayView() },
+    { id: "month", label: "월별", onClick: () => goMonthView() },
+    { id: "settings", label: "설정", onClick: () => goSettingsView() },
+  ];
 
   return (
     <div className="mx-auto flex h-screen max-w-3xl flex-col overflow-hidden px-4 py-5">
@@ -32,7 +34,7 @@ export function AppShell({ children }: AppShellProps) {
               key={tab.id}
               type="button"
               className={view === tab.id ? "nav-tab nav-tab-active" : "nav-tab"}
-              onClick={() => setView(tab.id)}
+              onClick={tab.onClick}
             >
               {tab.label}
             </button>
