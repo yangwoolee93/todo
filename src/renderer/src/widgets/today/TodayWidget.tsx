@@ -1,4 +1,5 @@
 import { TodayHeader } from "@renderer/features/today";
+import { TodoList } from "@renderer/features/todo";
 
 export default function TodayWidget() {
   return (
@@ -6,17 +7,7 @@ export default function TodayWidget() {
       <TodayHeader />
       <div className="card flex min-h-0 flex-1 flex-col overflow-hidden p-4 pr-[var(--scrollbar-gap)]">
         <div className="scrollbar scrollbar-y-inset min-h-0 flex-1">
-          {/* <TodoList
-            todos={todos}
-            loading={loading}
-            onToggleCompletion={onToggleCompletion}
-            onSetStatus={onSetStatus}
-            onDelete={onDelete}
-            onUpdateContent={onUpdateContent}
-            onReorder={onReorder}
-            onDuplicate={onDuplicate}
-          /> */}
-          <p>TodoList</p>
+          <TodoList />
         </div>
       </div>
     </div>
