@@ -1,11 +1,24 @@
 import { useEffect, useRef, type MouseEvent } from "react";
 import { getTodoTextClass } from "@renderer/features/todo";
-import { getTodayString, shiftMonth, toYearMonth } from "@renderer/utils/dateUtils";
+import {
+  getTodayString,
+  shiftMonth,
+  toYearMonth,
+} from "@renderer/utils/dateUtils";
 import { useMonthStore } from "../model/useMonthStore";
 
-function ChevronLeftIcon({ className = "h-4 w-4 shrink-0" }: { className?: string }) {
+function ChevronLeftIcon({
+  className = "h-4 w-4 shrink-0",
+}: {
+  className?: string;
+}) {
   return (
-    <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+    <svg
+      className={className}
+      viewBox="0 0 20 20"
+      fill="none"
+      aria-hidden="true"
+    >
       <path
         d="M12.5 15 7.5 10 12.5 5"
         stroke="currentColor"
@@ -17,9 +30,18 @@ function ChevronLeftIcon({ className = "h-4 w-4 shrink-0" }: { className?: strin
   );
 }
 
-function ChevronRightIcon({ className = "h-4 w-4 shrink-0" }: { className?: string }) {
+function ChevronRightIcon({
+  className = "h-4 w-4 shrink-0",
+}: {
+  className?: string;
+}) {
   return (
-    <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+    <svg
+      className={className}
+      viewBox="0 0 20 20"
+      fill="none"
+      aria-hidden="true"
+    >
       <path
         d="M7.5 5 12.5 10 7.5 15"
         stroke="currentColor"
@@ -49,6 +71,7 @@ export default function MonthBoard() {
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const dragState = useRef({ isDragging: false, startX: 0, scrollLeft: 0 });
+  const todayColumnRef = useRef<HTMLDivElement>(null);
   const today = getTodayString();
   const currentYearMonth = toYearMonth(today);
   const isCurrentMonth = yearMonth === currentYearMonth;
@@ -56,6 +79,15 @@ export default function MonthBoard() {
   useEffect(() => {
     void loadMonthSummary(yearMonth);
   }, [yearMonth, loadMonthSummary]);
+
+  /** 데이터 로드 완료 시 오늘 열을 가운데로 스크롤 */
+  useEffect(() => {
+    if (summaries.length === 0) return;
+    todayColumnRef.current?.scrollIntoView({
+      inline: "center",
+      block: "nearest",
+    });
+  }, [summaries]);
 
   const handleMouseDown = (event: MouseEvent<HTMLDivElement>) => {
     const el = scrollRef.current;
@@ -71,7 +103,8 @@ export default function MonthBoard() {
     const el = scrollRef.current;
     if (!el || !dragState.current.isDragging) return;
     const x = event.pageX - el.offsetLeft;
-    el.scrollLeft = dragState.current.scrollLeft - (x - dragState.current.startX);
+    el.scrollLeft =
+      dragState.current.scrollLeft - (x - dragState.current.startX);
   };
 
   const handleMouseUp = () => {
@@ -141,7 +174,8 @@ export default function MonthBoard() {
             return (
               <div
                 key={column.date}
-                className={`flex w-36 shrink-0 flex-col rounded-(--radius-card) border bg-surface ${
+                ref={isTodayColumn ? todayColumnRef : undefined}
+                className={`flex w-36 shrink-0 flex-col overflow-hidden rounded-(--radius-card) border bg-surface ${
                   isTodayColumn
                     ? "border-accent ring-2 ring-today-ring/30"
                     : "border-border"
@@ -159,7 +193,9 @@ export default function MonthBoard() {
 
                 <ul className="scrollbar flex max-h-64 flex-col gap-1 overflow-y-auto p-2">
                   {column.todos.length === 0 ? (
-                    <li className="py-4 text-center text-xs text-fg-muted">—</li>
+                    <li className="py-4 text-center text-xs text-fg-muted">
+                      —
+                    </li>
                   ) : (
                     column.todos.map((todo) => (
                       <li
