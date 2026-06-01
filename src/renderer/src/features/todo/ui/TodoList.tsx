@@ -9,7 +9,9 @@ export default function TodoList() {
   const activeDate = useUIStore((s) => s.activeDate);
   const setEditTarget = useUIStore((s) => s.setEditTarget);
   const setDeleteTarget = useUIStore((s) => s.setDeleteTarget);
-  const openAddModalWithDuplicate = useUIStore((s) => s.openAddModalWithDuplicate);
+  const openAddModalWithDuplicate = useUIStore(
+    (s) => s.openAddModalWithDuplicate,
+  );
 
   const todos = useTodoStore((s) => s.todos);
   const loading = useTodoStore((s) => s.loading);
@@ -99,9 +101,9 @@ export default function TodoList() {
 
       {!loading && todos.length === 0 && (
         <li className="rounded-(--radius-btn) border border-dashed border-border px-4 py-8 text-center text-sm text-fg-muted">
-          등록된 투두가 없습니다.
+          등록된 할 일이 없습니다.
           <br />
-          <span className="text-xs">상단 「+ 할 일 추가」로 등록하세요.</span>
+          <span className="text-xs">상단 「할 일 추가」로 등록하세요.</span>
         </li>
       )}
     </ul>

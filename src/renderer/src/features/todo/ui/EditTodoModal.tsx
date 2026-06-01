@@ -1,47 +1,47 @@
-import { FormEvent, useEffect, useRef, useState } from 'react'
-import { useUIStore } from '@renderer/stores/useUIStore'
-import { useTodoStore } from '@renderer/features/todo/model/useTodoStore'
+import { FormEvent, useEffect, useRef, useState } from "react";
+import { useUIStore } from "@renderer/stores/useUIStore";
+import { useTodoStore } from "@renderer/features/todo/model/useTodoStore";
 
 /** TodoList ⋮ 수정 — 단건 또는 batch_id 묶음 수정 */
 export function EditTodoModal() {
-  const editTarget = useUIStore((s) => s.editTarget)
-  const setEditTarget = useUIStore((s) => s.setEditTarget)
-  const updateTodoContent = useTodoStore((s) => s.updateTodoContent)
+  const editTarget = useUIStore((s) => s.editTarget);
+  const setEditTarget = useUIStore((s) => s.setEditTarget);
+  const updateTodoContent = useTodoStore((s) => s.updateTodoContent);
 
-  const open = editTarget !== null
-  const isBatch = Boolean(editTarget?.batch_id)
+  const open = editTarget !== null;
+  const isBatch = Boolean(editTarget?.batch_id);
 
-  const [content, setContent] = useState('')
-  const [submitting, setSubmitting] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
-  const wasOpenRef = useRef(false)
+  const [content, setContent] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const wasOpenRef = useRef(false);
 
   useEffect(() => {
     if (open && !wasOpenRef.current) {
-      setContent(editTarget?.content ?? '')
-      requestAnimationFrame(() => inputRef.current?.focus())
+      setContent(editTarget?.content ?? "");
+      requestAnimationFrame(() => inputRef.current?.focus());
     }
-    wasOpenRef.current = open
-  }, [open, editTarget])
+    wasOpenRef.current = open;
+  }, [open, editTarget]);
 
-  const handleClose = () => setEditTarget(null)
+  const handleClose = () => setEditTarget(null);
 
   const handleSubmit = async (event: FormEvent) => {
-    event.preventDefault()
-    if (!editTarget) return
-    setSubmitting(true)
+    event.preventDefault();
+    if (!editTarget) return;
+    setSubmitting(true);
     try {
       const success = await updateTodoContent(
         editTarget.id,
-        content.replace(/[\r\n]+/g, '').trim(),
-      )
-      if (success) handleClose()
+        content.replace(/[\r\n]+/g, "").trim(),
+      );
+      if (success) handleClose();
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
-  }
+  };
 
-  if (!open) return null
+  if (!open) return null;
 
   return (
     <div
@@ -54,7 +54,7 @@ export function EditTodoModal() {
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
-        aria-label="투두 수정"
+        aria-label="할 일 수정"
       >
         <h2 className="mb-2 text-base font-semibold text-fg">내용 수정</h2>
         {isBatch && (
@@ -62,16 +62,23 @@ export function EditTodoModal() {
             일괄 추가된 항목입니다. 저장 시 묶음 전체가 수정됩니다.
           </p>
         )}
-        <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-3">
+        <form
+          onSubmit={(e) => void handleSubmit(e)}
+          className="flex flex-col gap-3"
+        >
           <input
             ref={inputRef}
             type="text"
             className="input"
             value={content}
-            onChange={(e) => setContent(e.target.value.replace(/[\r\n]+/g, ''))}
+            onChange={(e) => setContent(e.target.value.replace(/[\r\n]+/g, ""))}
           />
           <div className="flex justify-end gap-2">
-            <button type="button" className="btn btn-ghost" onClick={handleClose}>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={handleClose}
+            >
               취소
             </button>
             <button
@@ -79,11 +86,11 @@ export function EditTodoModal() {
               className="btn btn-primary"
               disabled={submitting || !content.trim()}
             >
-              {submitting ? '저장 중...' : '저장'}
+              {submitting ? "저장 중..." : "저장"}
             </button>
           </div>
         </form>
       </div>
     </div>
-  )
+  );
 }
