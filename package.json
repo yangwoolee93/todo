@@ -3,10 +3,33 @@
   "version": "0.1.0",
   "description": "Simple Todo Windows Application",
   "main": "./out/main/index.js",
+  "build":{
+    "appId":"com.simple-todo.app",
+    "productName": "Simple Todo",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "out/**/*"
+    ],
+    "asar": true,
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["universal"]
+        }
+      ]
+    }
+  },
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
-    "preview": "electron-vite preview"
+    "preview": "electron-vite preview",
+    "dist": "pnpm run build && electron-builder --mac",
+    "dist:dir": "pnpm run build && electron-builder --dir"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.9",
@@ -14,6 +37,7 @@
     "@types/react-dom": "^19.0.4",
     "@vitejs/plugin-react": "^4.3.4",
     "electron": "^34.5.8",
+    "electron-builder": "^26.8.1",
     "electron-vite": "^3.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
