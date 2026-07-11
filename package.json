@@ -1,11 +1,11 @@
 {
-  "name": "simple-todo",
-  "version": "0.1.0",
-  "description": "Simple Todo Windows Application",
+  "name": "OX",
+  "version": "0.2.0",
+  "description": "Todo Application",
   "main": "./out/main/index.js",
   "build": {
-    "appId": "com.simple-todo.app",
-    "productName": "Simple Todo",
+    "appId": "com.ox.app",
+    "productName": "OX",
     "directories": {
       "output": "dist",
       "buildResources": "build"
