@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" role="img"
-    aria-label="OX icon">
+    aria-label="TODO icon">
     <defs>
         <!-- 2. 상자와 동일한 좌상→우하 고정 방향 -->
         <linearGradient id="box-gradient" x1="112" y1="112" x2="912" y2="912" gradientUnits="userSpaceOnUse">

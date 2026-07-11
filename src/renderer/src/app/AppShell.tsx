@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import type { AppView } from "@renderer/types/views";
 import { useUIStore } from "@renderer/stores/useUIStore";
-import appIcon from "@renderer/assets/app-icon.svg";
 import { cn } from "@renderer/utils/cn";
 import { APP_VERSION } from "@renderer/constants/appVersion";
 
@@ -30,7 +29,6 @@ export function AppShell({ children }: AppShellProps) {
       <header
         className={cn(
           "relative flex shrink-0 items-center justify-between h-11",
-          // "bg-white",
         )}
       >
         <div
@@ -40,8 +38,9 @@ export function AppShell({ children }: AppShellProps) {
             isMac && "pl-20",
           )}
         >
-          <img src={appIcon} alt="" className="h-6 w-6 shrink-0" />
-          <span className="truncate text-md font-semibold text-fg">OX</span>
+          <span className="truncate text-md font-bold tracking-[-0.8px] text-fg">
+            할일
+          </span>
         </div>
         <nav className={cn("flex gap-1 pr-2")}>
           {tabs.map((tab) => (

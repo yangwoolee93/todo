@@ -1,11 +1,11 @@
 {
-  "name": "OX",
+  "name": "TODO",
   "version": "0.2.0",
   "description": "Todo Application",
   "main": "./out/main/index.js",
   "build": {
-    "appId": "com.ox.app",
-    "productName": "OX",
+    "appId": "com.todo.app",
+    "productName": "TODO",
     "directories": {
       "output": "dist",
       "buildResources": "build"

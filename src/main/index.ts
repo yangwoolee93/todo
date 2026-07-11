@@ -61,7 +61,7 @@ function getPlatformWindowOptions(): Electron.BrowserWindowConstructorOptions {
     return {
       titleBarStyle: "hiddenInset",
       trafficLightPosition: { x: 12, y: 14 },
-      title: "OX",
+      title: "TODO",
     };
   }
 
