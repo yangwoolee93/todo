@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell } from "electron";
+import { app, BrowserWindow, screen, shell } from "electron";
 import { join } from "path";
 import { registerIpcHandlers } from "./ipcHandlers";
 import { ensureNormalizedStore } from "./database/todoRepository";
@@ -6,15 +6,68 @@ import { ensureNormalizedStore } from "./database/todoRepository";
 /** 메인 BrowserWindow 참조 (macOS activate 이벤트용) */
 let mainWindow: BrowserWindow | null = null;
 
+/** UI 레이아웃이 깨지지 않는 최소 창 크기 */
+const MIN_WINDOW_WIDTH = 480;
+const MIN_WINDOW_HEIGHT = 720;
+
+/** 값을 최소·최대 범위 안으로 제한한다. */
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+/**
+ * 주 디스플레이 작업 영역 비율로 초기 창 크기·위치를 계산한다.
+ * 울트라와이드(가로/세로 ≥ 2)는 너비 비율을 낮춰 과도하게 넓어지지 않게 한다.
+ */
+function getDefaultWindowBounds(): {
+  width: number;
+  height: number;
+  x: number;
+  y: number;
+  maxWidth: number;
+  maxHeight: number;
+} {
+  const { workArea } = screen.getPrimaryDisplay();
+  const isUltrawide = workArea.width / workArea.height >= 2;
+  const widthRatio = isUltrawide ? 0.16 : 0.22;
+  const heightRatio = 0.7;
+
+  const width = clamp(
+    Math.round(workArea.width * widthRatio),
+    MIN_WINDOW_WIDTH,
+    workArea.width,
+  );
+  const height = clamp(
+    Math.round(workArea.height * heightRatio),
+    MIN_WINDOW_HEIGHT,
+    workArea.height,
+  );
+
+  return {
+    width,
+    height,
+    x: Math.round(workArea.x + (workArea.width - width) / 2),
+    y: Math.round(workArea.y + (workArea.height - height) / 2),
+    maxWidth: workArea.width,
+    maxHeight: workArea.height,
+  };
+}
+
 /**
  * 메인 BrowserWindow를 생성하고 렌더러를 로드한다.
  */
 function createWindow(): void {
+  const { width, height, x, y, maxWidth, maxHeight } = getDefaultWindowBounds();
+
   mainWindow = new BrowserWindow({
-    width: 720,
-    height: 720,
-    minWidth: 720,
-    minHeight: 560,
+    width,
+    height,
+    x,
+    y,
+    minWidth: MIN_WINDOW_WIDTH,
+    minHeight: MIN_WINDOW_HEIGHT,
+    maxWidth,
+    maxHeight,
     show: false,
     autoHideMenuBar: true,
     webPreferences: {
