@@ -7,11 +7,13 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
+    "resolveJsonModule": true,
     "composite": true,
     "baseUrl": ".",
     "paths": {
       "@shared/*": ["src/shared/*"],
-      "@renderer/*": ["src/renderer/src/*"]
+      "@renderer/*": ["src/renderer/src/*"],
+      "@pkg": ["package.json"]
     }
   },
   "include": ["src/renderer/src/**/*", "src/shared/**/*", "src/preload/*.d.ts"]

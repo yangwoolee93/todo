@@ -3,6 +3,7 @@ import type { AppView } from "@renderer/types/views";
 import { useUIStore } from "@renderer/stores/useUIStore";
 import appIcon from "@renderer/assets/app-icon.svg";
 import { cn } from "@renderer/utils/cn";
+import { APP_VERSION } from "@renderer/constants/appVersion";
 
 interface AppShellProps {
   children: ReactNode;
@@ -42,9 +43,10 @@ export function AppShell({ children }: AppShellProps) {
           <img src={appIcon} alt="" className="h-6 w-6 shrink-0" />
           <span className="truncate text-md font-semibold text-fg">OX</span>
         </div>
-        <nav className={cn("flex gap-1 pr-1")}>
+        <nav className={cn("flex gap-1 pr-2")}>
           {tabs.map((tab) => (
             <div
+              key={tab.id}
               className={cn(
                 "text-sm px-3 py-1 rounded-(--radius-btn)",
                 "cursor-pointer",
@@ -61,11 +63,19 @@ export function AppShell({ children }: AppShellProps) {
       </header>
 
       <div className="mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col overflow-hidden">
-        <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <main className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 py-2">
           {children}
         </main>
       </div>
-      <div className={cn("h-8 bg-gray-600")}></div>
+      <footer
+        className={cn(
+          "flex items-center justify-between px-4 pb-2 shrink-0",
+          "text-xs text-fg-secondary",
+        )}
+      >
+        <div>pre-release</div>
+        <div>v{APP_VERSION}</div>
+      </footer>
     </div>
   );
 }
