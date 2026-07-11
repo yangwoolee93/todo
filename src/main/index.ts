@@ -56,6 +56,18 @@ function getDefaultWindowBounds(): {
 /**
  * 메인 BrowserWindow를 생성하고 렌더러를 로드한다.
  */
+function getPlatformWindowOptions(): Electron.BrowserWindowConstructorOptions {
+  if (process.platform === "darwin") {
+    return {
+      titleBarStyle: "hiddenInset",
+      trafficLightPosition: { x: 12, y: 14 },
+      title: "Simple Todo",
+    };
+  }
+
+  return {};
+}
+
 function createWindow(): void {
   const { width, height, x, y, maxWidth, maxHeight } = getDefaultWindowBounds();
 
@@ -70,6 +82,8 @@ function createWindow(): void {
     maxHeight,
     show: false,
     autoHideMenuBar: true,
+    backgroundColor: "#f4f6f9",
+    ...getPlatformWindowOptions(),
     webPreferences: {
       preload: join(__dirname, "../preload/index.js"),
       contextIsolation: true,

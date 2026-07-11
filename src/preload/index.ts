@@ -70,5 +70,8 @@ const api = {
 }
 
 contextBridge.exposeInMainWorld('api', api)
+contextBridge.exposeInMainWorld('electron', {
+  platform: process.platform
+})
 
 export type TodoApi = typeof api
