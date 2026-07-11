@@ -169,7 +169,11 @@ export function registerIpcHandlers(): void {
     IPC_CHANNELS.REORDER_TODO,
     (_event, payload: ReorderTodoPayload): IpcResult => {
       try {
-        const changed = reorderTodo(payload.target_date, payload.id, payload.direction)
+        const changed = reorderTodo(
+          payload.target_date,
+          Number(payload.id),
+          Number(payload.over_id),
+        )
         if (!changed) {
           return fail('순서를 변경할 수 없습니다.')
         }

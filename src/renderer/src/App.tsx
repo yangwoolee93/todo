@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useTheme } from "@renderer/hooks/useTheme";
 import { AppShell } from "./app/AppShell";
 import { DatePickerModal } from "@renderer/features/today";
@@ -13,16 +14,34 @@ import { SettingsPage } from "./pages/settings";
 export function App() {
   const view = useUIStore((s) => s.view);
   const todoError = useTodoStore((s) => s.error);
+  const clearTodoError = useTodoStore((s) => s.clearError);
   const monthError = useMonthStore((s) => s.error);
   const error = view === "month" ? monthError : todoError;
+  const clearError = view === "month" ? undefined : clearTodoError;
 
   useTheme();
+
+  useEffect(() => {
+    if (!error || !clearError) return;
+    const timer = setTimeout(() => clearError(), 4000);
+    return () => clearTimeout(timer);
+  }, [error, clearError]);
 
   return (
     <AppShell>
       {error && (
-        <div className="rounded-(--radius-btn) border border-danger/30 bg-danger-soft px-3 py-2 text-sm text-danger">
-          {error}
+        <div className="flex items-center justify-between gap-2 rounded-(--radius-btn) border border-danger/30 bg-danger-soft px-3 py-2 text-sm text-danger">
+          <span>{error}</span>
+          {clearError && (
+            <button
+              type="button"
+              className="shrink-0 text-xs text-danger/70 hover:text-danger"
+              onClick={clearError}
+              aria-label="오류 닫기"
+            >
+              ✕
+            </button>
+          )}
         </div>
       )}
 

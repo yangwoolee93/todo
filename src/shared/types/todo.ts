@@ -73,7 +73,7 @@ export interface SetTodoStatusPayload {
 export interface ReorderTodoPayload {
   target_date: string;
   id: number;
-  direction: "up" | "down";
+  over_id: number;
 }
 
 export interface DaySummary {

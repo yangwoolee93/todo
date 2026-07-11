@@ -1,3 +1,4 @@
+import { arrayMove } from "@dnd-kit/sortable";
 import { useUIStore } from "@renderer/stores/useUIStore";
 import {
   CreateTodoMonthPayload,
@@ -34,7 +35,8 @@ type TodoState = {
 
 type TodoActions = {
   loadTodosByDate: (date: string) => Promise<void>;
-  reorderTodo: (todoId: number, direction: "up" | "down") => Promise<boolean>;
+  moveTodo: (activeId: number, overId: number) => Promise<boolean>;
+  clearError: () => void;
   toggleCompletion: (todoId: number) => Promise<boolean>;
   setTodoStatus: (todoId: number, status: TodoStatus) => Promise<boolean>;
   deleteTodo: (todoId: number, scope: "day" | "batch") => Promise<boolean>;
@@ -79,23 +81,26 @@ const createActions = (
       }
     },
 
-    reorderTodo: async (todoId, direction) => {
+    moveTodo: async (activeId, overId) => {
       const current = get().todos;
-      const index = current.findIndex((todo) => todo.id === todoId);
-      const swapIndex = direction === "up" ? index - 1 : index + 1;
-      if (index === -1 || swapIndex < 0 || swapIndex >= current.length)
-        return false;
+      const fromIndex = current.findIndex((todo) => todo.id === activeId);
+      const toIndex = current.findIndex((todo) => todo.id === overId);
+      if (fromIndex === -1 || toIndex === -1) return false;
+      if (fromIndex === toIndex) return true;
 
       const previousTodos = current;
-      const next = [...current];
-      [next[index], next[swapIndex]] = [next[swapIndex], next[index]];
+      const sortOrders = current.map((t) => t.sort_order).sort((a, b) => a - b);
+      const next = arrayMove(current, fromIndex, toIndex).map((item, index) => ({
+        ...item,
+        sort_order: sortOrders[index],
+      }));
       set(() => ({ todos: next, error: null }));
 
       const activeDate = useUIStore.getState().activeDate;
       const result = await window.api.reorderTodo({
         target_date: activeDate,
-        id: todoId,
-        direction,
+        id: activeId,
+        over_id: overId,
       });
       if (!result.success) {
         set(() => ({ todos: previousTodos, error: result.error ?? "순서 변경 실패" }));
@@ -103,6 +108,8 @@ const createActions = (
       }
       return true;
     },
+
+    clearError: () => set(() => ({ error: null })),
 
     toggleCompletion: async (todoId) => {
       const flip = (s: TodoStatus): TodoStatus | null =>

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { arrayMove } from '@dnd-kit/sortable'
 import type {
   CreateTodoMonthPayload,
   CreateTodoRangePayload,
@@ -29,7 +30,7 @@ interface UseTodosReturn {
   setTodoStatus: (todoId: number, status: TodoStatus) => Promise<boolean>
   deleteTodo: (todoId: number, scope: DeleteTodoScope) => Promise<boolean>
   updateTodoContent: (todoId: number, content: string) => Promise<boolean>
-  reorderTodo: (todoId: number, direction: 'up' | 'down') => Promise<boolean>
+  moveTodo: (activeId: number, overId: number) => Promise<boolean>
 }
 
 /** pending ↔ completed 토글. failed는 null */
@@ -378,27 +379,31 @@ export function useTodos({ activeDate, summaryMonth }: UseTodosOptions): UseTodo
     [syncDaily, syncMonth]
   )
 
-  /** ↑↓ 순서 — UI·월 요약 먼저 바꾸고 IPC, 실패 시 롤백 */
-  const reorderTodo = useCallback(
-    (todoId: number, direction: 'up' | 'down'): Promise<boolean> =>
-      withTodoLock(todoId, async () => {
+  /** 드래그앤드롭 순서 — UI·월 요약 먼저 바꾸고 IPC, 실패 시 롤백 */
+  const moveTodo = useCallback(
+    (activeId: number, overId: number): Promise<boolean> =>
+      withTodoLock(activeId, async () => {
         const current = todosRef.current
-        const index = current.findIndex((todo) => todo.id === todoId)
-        const swapIndex = direction === 'up' ? index - 1 : index + 1
-        if (index === -1 || swapIndex < 0 || swapIndex >= current.length) return false
+        const fromIndex = current.findIndex((todo) => todo.id === activeId)
+        const toIndex = current.findIndex((todo) => todo.id === overId)
+        if (fromIndex === -1 || toIndex === -1) return false
+        if (fromIndex === toIndex) return true
 
         const previousTodos = current
         const previousSummary = monthSummaryRef.current
-        const next = [...current]
-        ;[next[index], next[swapIndex]] = [next[swapIndex], next[index]]
+        const sortOrders = current.map((t) => t.sort_order).sort((a, b) => a - b)
+        const next = arrayMove(current, fromIndex, toIndex).map((item, index) => ({
+          ...item,
+          sort_order: sortOrders[index],
+        }))
 
         setTodos(next)
         setMonthSummary((prev) => replaceDayInSummary(prev, activeDateRef.current, next))
 
         const result = await window.api.reorderTodo({
           target_date: activeDateRef.current,
-          id: todoId,
-          direction
+          id: activeId,
+          over_id: overId
         })
 
         if (!result.success) {
@@ -426,6 +431,6 @@ export function useTodos({ activeDate, summaryMonth }: UseTodosOptions): UseTodo
     setTodoStatus,
     deleteTodo,
     updateTodoContent,
-    reorderTodo
+    moveTodo
   }
 }

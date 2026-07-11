@@ -315,31 +315,30 @@ export function updateTodoContent(todoId: number, contentRaw: string): boolean {
 }
 
 /**
- * 순서 변경 (화살표)
+ * 순서 변경 (드래그앤드롭 — active를 over 위치로 이동)
  */
 export function reorderTodo(
   targetDate: string,
-  todoId: number,
-  direction: 'up' | 'down'
+  activeId: number,
+  overId: number
 ): boolean {
   const displayList = getTodosByDate(targetDate)
-  const index = displayList.findIndex((t) => t.id === todoId)
-  if (index === -1) return false
+  const fromIndex = displayList.findIndex((t) => t.id === activeId)
+  const toIndex = displayList.findIndex((t) => t.id === overId)
+  if (fromIndex === -1 || toIndex === -1) return false
+  if (fromIndex === toIndex) return true
 
-  const swapIndex = direction === 'up' ? index - 1 : index + 1
-  if (swapIndex < 0 || swapIndex >= displayList.length) return false
+  const reordered = [...displayList]
+  const [moved] = reordered.splice(fromIndex, 1)
+  reordered.splice(toIndex, 0, moved)
 
-  const current = displayList[index]
-  const neighbor = displayList[swapIndex]
+  const sortOrders = [...displayList.map((t) => t.sort_order)].sort((a, b) => a - b)
 
   mutateStore((store) => {
-    const currentItem = findById(store, current.id)
-    const neighborItem = findById(store, neighbor.id)
-    if (!currentItem || !neighborItem) return
-
-    const temp = currentItem.sort_order
-    currentItem.sort_order = neighborItem.sort_order
-    neighborItem.sort_order = temp
+    reordered.forEach((item, index) => {
+      const storeItem = findById(store, item.id)
+      if (storeItem) storeItem.sort_order = sortOrders[index]
+    })
   })
 
   return true
