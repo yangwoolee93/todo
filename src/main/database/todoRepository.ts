@@ -8,7 +8,7 @@ import type {
   DisplayTodo,
   TodoItem,
   TodoStatus,
-  TodoStore,
+  TodoDatabase,
 } from "@shared/types/todo";
 import { enumerateDateRange, getMonthDateRange, isValidDateString } from "@shared/utils/dateRange";
 import { mutateStore, readStore } from "./storage";
@@ -94,7 +94,7 @@ function sortByOrder(items: DisplayTodo[]): DisplayTodo[] {
 }
 
 /** sort_order 맨 뒤 값 */
-function nextSortOrder(store: TodoStore): number {
+function nextSortOrder(store: TodoDatabase): number {
   if (store.todos.length === 0) return 0;
   return Math.max(...store.todos.map((t) => t.sort_order)) + 1;
 }
@@ -106,7 +106,7 @@ function sanitizeContent(content: string): string | null {
 }
 
 /** ID로 투두 찾기 */
-function findById(store: TodoStore, id: number): TodoItem | undefined {
+function findById(store: TodoDatabase, id: number): TodoItem | undefined {
   return store.todos.find((t) => t.id === id);
 }
 

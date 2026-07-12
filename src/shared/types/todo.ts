@@ -19,7 +19,8 @@ export interface TodoItem {
   batch_id: string | null;
 }
 
-export interface TodoStore {
+/** 디스크에 저장되는 JSON 파일 전체 스키마 */
+export interface TodoDatabase {
   todos: TodoItem[];
 }
 
