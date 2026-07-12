@@ -1,7 +1,8 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getTodoTextClass } from "@renderer/features/todo";
 import { getTodayString, shiftMonth, toYearMonth } from "@renderer/utils/dateUtils";
-import { useDragScroll } from "@renderer/hooks/useDragScroll";
+import { cn } from "@renderer/utils/cn";
+import { useUIStore } from "@renderer/stores/useUIStore";
 import { useMonthStore } from "../model/useMonthStore";
 import { Card, Button, ChevronLeftIcon, ChevronRightIcon } from "@renderer/shared/ui";
 
@@ -13,6 +14,7 @@ function toMonthLabel(yearMonth: string): string {
 /**
  * 월별 모아보기 (F-03)
  * - 일=열, 투두=열 내부 세로 나열, Read-Only
+ * - 열 클릭: 선택 / 재클릭: 선택 해제, 선택 시 하단 이동 버튼
  */
 export default function MonthBoard() {
   const yearMonth = useMonthStore((s) => s.yearMonth);
@@ -20,8 +22,11 @@ export default function MonthBoard() {
   const loading = useMonthStore((s) => s.loading);
   const setYearMonth = useMonthStore((s) => s.setYearMonth);
   const loadMonthSummary = useMonthStore((s) => s.loadMonthSummary);
+  const setActiveDate = useUIStore((s) => s.setActiveDate);
+  const goTodayView = useUIStore((s) => s.goTodayView);
 
-  const { scrollRef, dragHandlers } = useDragScroll<HTMLDivElement>();
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const todayColumnRef = useRef<HTMLDivElement>(null);
   const today = getTodayString();
   const currentYearMonth = toYearMonth(today);
@@ -31,6 +36,11 @@ export default function MonthBoard() {
     void loadMonthSummary(yearMonth);
   }, [yearMonth, loadMonthSummary]);
 
+  const changeYearMonth = (next: string) => {
+    setSelectedDate(null);
+    setYearMonth(next);
+  };
+
   /** 데이터 로드 완료 시 오늘 열을 가운데로 스크롤 */
   useEffect(() => {
     if (summaries.length === 0) return;
@@ -39,6 +49,16 @@ export default function MonthBoard() {
       block: "nearest",
     });
   }, [summaries]);
+
+  const handleColumnClick = (date: string) => {
+    setSelectedDate((prev) => (prev === date ? null : date));
+  };
+
+  const handleGoToDate = (date: string) => {
+    setActiveDate(date);
+    goTodayView();
+    setSelectedDate(null);
+  };
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
@@ -53,7 +73,7 @@ export default function MonthBoard() {
                 <Button
                   variant="ghost"
                   className="bg-[rgba(255,255,255,0.05)] px-2 py-0.5 text-xs hover:bg-[rgba(255,255,255,0.1)]"
-                  onClick={() => setYearMonth(currentYearMonth)}
+                  onClick={() => changeYearMonth(currentYearMonth)}
                 >
                   이번 달로
                 </Button>
@@ -67,7 +87,7 @@ export default function MonthBoard() {
               variant="ghost"
               className="inline-flex items-center gap-1 pl-1.5 text-xs"
               aria-label="이전 달"
-              onClick={() => setYearMonth(shiftMonth(yearMonth, -1))}
+              onClick={() => changeYearMonth(shiftMonth(yearMonth, -1))}
             >
               <ChevronLeftIcon />
               이전 달
@@ -76,7 +96,7 @@ export default function MonthBoard() {
               variant="ghost"
               className="inline-flex items-center gap-1 pr-1.5 text-xs"
               aria-label="다음 달"
-              onClick={() => setYearMonth(shiftMonth(yearMonth, 1))}
+              onClick={() => changeYearMonth(shiftMonth(yearMonth, 1))}
             >
               다음 달
               <ChevronRightIcon />
@@ -88,32 +108,42 @@ export default function MonthBoard() {
       {loading && summaries.length === 0 ? (
         <p className="text-sm text-fg-secondary">불러오는 중...</p>
       ) : (
-        <div
-          ref={scrollRef}
-          className="scrollbar flex min-h-0 flex-1 cursor-grab gap-3 pb-2 overflow-x-auto active:cursor-grabbing"
-          {...dragHandlers}
-        >
+        <div ref={scrollRef} className="scrollbar flex min-h-0 flex-1 gap-3 overflow-x-auto pb-2">
           {summaries.map((column) => {
             const isTodayColumn = column.date === today;
+            const isSelected = selectedDate === column.date;
+
             return (
               <div
                 key={column.date}
                 ref={isTodayColumn ? todayColumnRef : undefined}
-                className={`flex w-36 shrink-0 flex-col overflow-hidden rounded-(--radius-card) border bg-surface ${
-                  isTodayColumn ? "border-accent ring-2 ring-today-ring/30" : "border-border"
-                }`}
+                aria-pressed={isSelected}
+                aria-label={`${column.day}일`}
+                onClick={() => handleColumnClick(column.date)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    handleColumnClick(column.date);
+                  }
+                }}
+                className={cn(
+                  "relative flex w-36 shrink-0 cursor-pointer flex-col overflow-hidden rounded-(--radius-card) border bg-surface transition-colors hover:bg-muted/20",
+                  isTodayColumn ? "border-fg-secondary" : "border-border",
+                  isSelected && "border-accent",
+                )}
               >
                 <div
-                  className={`border-b px-2 py-2 text-center text-sm font-semibold ${
-                    isTodayColumn
-                      ? "border-accent/30 bg-accent-soft text-accent"
-                      : "border-border text-fg"
-                  }`}
+                  className={cn(
+                    "border-b px-2 py-2 text-center text-sm font-semibold",
+                    "border-border text-fg",
+                    isTodayColumn && "bg-accent-soft",
+                    isSelected && !isTodayColumn && "bg-muted/40",
+                  )}
                 >
                   {column.day}일
                 </div>
 
-                <ul className="scrollbar flex max-h-64 flex-col gap-1 overflow-y-auto p-2">
+                <ul className="scrollbar flex flex-col flex-1 gap-1 overflow-y-auto p-2">
                   {column.todos.length === 0 ? (
                     <li className="py-4 text-center text-xs text-fg-muted">—</li>
                   ) : (
@@ -127,6 +157,21 @@ export default function MonthBoard() {
                     ))
                   )}
                 </ul>
+
+                {isSelected && (
+                  <div className="absolute bottom-0 right-0 flex items-center justify-end shrink-0 m-2 rounded-md">
+                    <Button
+                      variant="primary"
+                      className="py-1 text-xs"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleGoToDate(column.date);
+                      }}
+                    >
+                      이동
+                    </Button>
+                  </div>
+                )}
               </div>
             );
           })}

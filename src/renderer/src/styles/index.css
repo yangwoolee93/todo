@@ -90,6 +90,10 @@
  * 스크롤바 — Electron(Chromium) webkit 전용, 규칙은 여기만
  * overflow 영역에 .scrollbar 클래스를 붙인다.
  */
+ .scrollbar {
+  cursor: pointer;
+ }
+ 
 .scrollbar::-webkit-scrollbar {
   width: var(--scrollbar-size);
   height: var(--scrollbar-size);
