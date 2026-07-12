@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { useTheme } from "@renderer/hooks/useTheme";
 import { AppShell } from "./app/AppShell";
-import { DatePickerModal } from "@renderer/features/today";
 import { AddTodoModal } from "@renderer/features/todo";
 import { useUIStore } from "@renderer/stores/useUIStore";
 import { useTodoStore } from "@renderer/features/todo/model/useTodoStore";
@@ -16,8 +15,9 @@ export function App() {
   const todoError = useTodoStore((s) => s.error);
   const clearTodoError = useTodoStore((s) => s.clearError);
   const monthError = useMonthStore((s) => s.error);
+  const clearMonthError = useMonthStore((s) => s.clearError);
   const error = view === "month" ? monthError : todoError;
-  const clearError = view === "month" ? undefined : clearTodoError;
+  const clearError = view === "month" ? clearMonthError : clearTodoError;
 
   useTheme();
 
@@ -51,7 +51,6 @@ export function App() {
 
       {view === "settings" && <SettingsPage />}
 
-      <DatePickerModal />
       <AddTodoModal />
     </AppShell>
   );

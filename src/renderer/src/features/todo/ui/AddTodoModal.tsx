@@ -7,26 +7,14 @@ import {
 } from "@renderer/utils/dateUtils";
 import { useUIStore } from "@renderer/stores/useUIStore";
 import { useTodoStore } from "@renderer/features/todo/model/useTodoStore";
-import { Modal, ModalTitle, Input, Button, Tab } from "@renderer/shared/ui";
-
-/** 모달 닫기 X 아이콘 */
-function CloseIcon({ className = "h-4 w-4" }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 20 20"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M5 5 15 15M15 5 5 15"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
+import {
+  Modal,
+  ModalTitle,
+  Input,
+  Button,
+  Tab,
+  CloseIcon,
+} from "@renderer/shared/ui";
 
 /** 추가 모달 탭 — 하루 / 기간 / 한 달 */
 type AddMode = "single" | "range" | "month";

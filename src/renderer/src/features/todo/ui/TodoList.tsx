@@ -20,26 +20,7 @@ import { useTodoStore } from "../model/useTodoStore";
 import { getTodoTextClass, TodoStatusIcon } from "./TodoStatusIcon";
 import { TodoItemMenu } from "./TodoItemMenu";
 import type { DisplayTodo } from "@shared/types/todo";
-import { Button } from "@renderer/shared/ui";
-
-function DragHandleIcon() {
-  return (
-    <svg
-      width="10"
-      height="16"
-      viewBox="0 0 10 16"
-      fill="currentColor"
-      aria-hidden="true"
-    >
-      <circle cx="2" cy="2" r="1.5" />
-      <circle cx="8" cy="2" r="1.5" />
-      <circle cx="2" cy="8" r="1.5" />
-      <circle cx="8" cy="8" r="1.5" />
-      <circle cx="2" cy="14" r="1.5" />
-      <circle cx="8" cy="14" r="1.5" />
-    </svg>
-  );
-}
+import { Button, DragHandleIcon } from "@renderer/shared/ui";
 
 interface SortableTodoItemProps {
   todo: DisplayTodo;

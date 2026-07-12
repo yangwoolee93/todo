@@ -4,4 +4,10 @@ export { Input } from "./Input";
 export { Card } from "./Card";
 export { Tab } from "./Tab";
 export { Modal, ModalTitle } from "./Modal";
-export { ChevronLeftIcon, ChevronRightIcon } from "./icons";
+export {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  CloseIcon,
+  MoreVerticalIcon,
+  DragHandleIcon,
+} from "./icons";

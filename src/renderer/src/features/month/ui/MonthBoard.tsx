@@ -1,10 +1,11 @@
-import { useEffect, useRef, type MouseEvent } from "react";
+import { useEffect, useRef } from "react";
 import { getTodoTextClass } from "@renderer/features/todo";
 import {
   getTodayString,
   shiftMonth,
   toYearMonth,
 } from "@renderer/utils/dateUtils";
+import { useDragScroll } from "@renderer/hooks/useDragScroll";
 import { useMonthStore } from "../model/useMonthStore";
 import {
   Card,
@@ -29,8 +30,7 @@ export default function MonthBoard() {
   const setYearMonth = useMonthStore((s) => s.setYearMonth);
   const loadMonthSummary = useMonthStore((s) => s.loadMonthSummary);
 
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const dragState = useRef({ isDragging: false, startX: 0, scrollLeft: 0 });
+  const { scrollRef, dragHandlers } = useDragScroll<HTMLDivElement>();
   const todayColumnRef = useRef<HTMLDivElement>(null);
   const today = getTodayString();
   const currentYearMonth = toYearMonth(today);
@@ -48,28 +48,6 @@ export default function MonthBoard() {
       block: "nearest",
     });
   }, [summaries]);
-
-  const handleMouseDown = (event: MouseEvent<HTMLDivElement>) => {
-    const el = scrollRef.current;
-    if (!el) return;
-    dragState.current = {
-      isDragging: true,
-      startX: event.pageX - el.offsetLeft,
-      scrollLeft: el.scrollLeft,
-    };
-  };
-
-  const handleMouseMove = (event: MouseEvent<HTMLDivElement>) => {
-    const el = scrollRef.current;
-    if (!el || !dragState.current.isDragging) return;
-    const x = event.pageX - el.offsetLeft;
-    el.scrollLeft =
-      dragState.current.scrollLeft - (x - dragState.current.startX);
-  };
-
-  const handleMouseUp = () => {
-    dragState.current.isDragging = false;
-  };
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
@@ -124,10 +102,7 @@ export default function MonthBoard() {
         <div
           ref={scrollRef}
           className="scrollbar flex min-h-0 flex-1 cursor-grab gap-3 pb-2 overflow-x-auto active:cursor-grabbing"
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
+          {...dragHandlers}
         >
           {summaries.map((column) => {
             const isTodayColumn = column.date === today;

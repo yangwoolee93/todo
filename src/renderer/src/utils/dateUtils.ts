@@ -21,24 +21,6 @@ export function toYearMonth(dateString: string): string {
   return dateString.slice(0, 7)
 }
 
-/** "YYYY-MM"과 일(day)로 "YYYY-MM-DD"를 만든다. */
-export function buildDateString(yearMonth: string, day: number): string {
-  return `${yearMonth}-${String(day).padStart(2, '0')}`
-}
-
-/** 해당 월의 마지막 일(28~31)을 반환한다. */
-export function getDaysInMonth(yearMonth: string): number {
-  const [yearStr, monthStr] = yearMonth.split('-')
-  const year = Number(yearStr)
-  const month = Number(monthStr)
-  return new Date(year, month, 0).getDate()
-}
-
-/** 해당 월의 1~말일 "YYYY-MM-DD" 배열을 반환한다. */
-export function getDatesInMonth(yearMonth: string): string[] {
-  const days = getDaysInMonth(yearMonth)
-  return Array.from({ length: days }, (_, i) => buildDateString(yearMonth, i + 1))
-}
 export { countDaysInRange, enumerateDateRange, getMonthDateRange } from '@shared/utils/dateRange'
 
 /** 날짜 문자열을 화면용 짧은 라벨로 변환한다 (예: "5/24"). */

@@ -1,13 +1,11 @@
 import { create } from "zustand";
 import type { AppView } from "@renderer/types/views";
 import type { DisplayTodo } from "@shared/types/todo";
-import { getTodayString } from "@renderer/utils/dateUtils";
-import { shiftDate, buildDateString } from "@renderer/utils/dateUtils";
+import { getTodayString, shiftDate } from "@renderer/utils/dateUtils";
 
 type UIState = {
   view: AppView;
   activeDate: string;
-  datePickerOpen: boolean;
   addModalOpen: boolean;
   duplicateContent: string | undefined;
   editTarget: DisplayTodo | null;
@@ -24,10 +22,6 @@ type UIActions = {
   goTodayDate: () => void;
   goPrevDate: () => void;
   goNextDate: () => void;
-  setActiveDateByYearMonth: (yearMonth: string) => void;
-  // datePickerOpen Actions
-  openDatePicker: () => void;
-  closeDatePicker: () => void;
   // addModal Actions
   openAddModal: () => void;
   openAddModalWithDuplicate: (content: string) => void;
@@ -42,7 +36,6 @@ type UIStore = UIState & UIActions;
 const initialState: UIState = {
   view: "today",
   activeDate: getTodayString(),
-  datePickerOpen: false,
   addModalOpen: false,
   duplicateContent: undefined,
   editTarget: null,
@@ -62,11 +55,6 @@ const createActions = (
     set((state) => ({ activeDate: shiftDate(state.activeDate, -1) })),
   goNextDate: () =>
     set((state) => ({ activeDate: shiftDate(state.activeDate, 1) })),
-  setActiveDateByYearMonth: (yearMonth: string) =>
-    set(() => ({ activeDate: buildDateString(yearMonth, 1) })),
-  //
-  openDatePicker: () => set(() => ({ datePickerOpen: true })),
-  closeDatePicker: () => set(() => ({ datePickerOpen: false })),
   //
   openAddModal: () =>
     set(() => ({ addModalOpen: true, duplicateContent: undefined })),

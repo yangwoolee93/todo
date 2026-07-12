@@ -12,6 +12,7 @@ type MonthState = {
 type MonthActions = {
   setYearMonth: (yearMonth: string) => void;
   loadMonthSummary: (yearMonth: string) => Promise<void>;
+  clearError: () => void;
 };
 
 type MonthStore = MonthState & MonthActions;
@@ -43,6 +44,8 @@ const createActions = (
       set(() => ({ loading: false }));
     }
   },
+
+  clearError: () => set(() => ({ error: null })),
 });
 
 export const useMonthStore = create<MonthStore>()((set) => ({

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { DisplayTodo, TodoStatus } from "@shared/types/todo";
-import { Button } from "@renderer/shared/ui";
+import { Button, MoreVerticalIcon } from "@renderer/shared/ui";
 
 interface TodoItemMenuProps {
   todo: DisplayTodo;
@@ -8,22 +8,6 @@ interface TodoItemMenuProps {
   onDuplicate: () => void;
   onDelete: () => void;
   onSetStatus: (status: TodoStatus) => void;
-}
-
-/** 세로 점 3개 — 더보기(케밥) 메뉴 */
-function MoreVerticalIcon({ className = "h-4 w-4" }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 20 20"
-      fill="currentColor"
-      aria-hidden="true"
-    >
-      <circle cx="10" cy="4" r="1.5" />
-      <circle cx="10" cy="10" r="1.5" />
-      <circle cx="10" cy="16" r="1.5" />
-    </svg>
-  );
 }
 
 /**
