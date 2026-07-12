@@ -1,5 +1,5 @@
-import { MonthWidget } from "@renderer/widgets/month";
+import { MonthBoard } from "@renderer/features/month";
 
 export default function MonthPage() {
-  return <MonthWidget />;
+  return <MonthBoard />;
 }

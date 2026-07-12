@@ -1,5 +1,5 @@
-import { SettingsWidget } from '@renderer/widgets/settings'
+import { SettingsView } from '@renderer/features/settings'
 
 export default function SettingsPage() {
-  return <SettingsWidget />
+  return <SettingsView />
 }
