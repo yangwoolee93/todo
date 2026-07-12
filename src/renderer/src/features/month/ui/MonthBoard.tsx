@@ -6,52 +6,12 @@ import {
   toYearMonth,
 } from "@renderer/utils/dateUtils";
 import { useMonthStore } from "../model/useMonthStore";
-
-function ChevronLeftIcon({
-  className = "h-4 w-4 shrink-0",
-}: {
-  className?: string;
-}) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 20 20"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M12.5 15 7.5 10 12.5 5"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function ChevronRightIcon({
-  className = "h-4 w-4 shrink-0",
-}: {
-  className?: string;
-}) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 20 20"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M7.5 5 12.5 10 7.5 15"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
+import {
+  Card,
+  Button,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+} from "@renderer/shared/ui";
 
 function toMonthLabel(yearMonth: string): string {
   const [yearStr, monthStr] = yearMonth.split("-");
@@ -113,7 +73,7 @@ export default function MonthBoard() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
-      <div className="card shrink-0">
+      <Card className="shrink-0">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <div className="mb-1 flex items-center gap-2">
@@ -121,13 +81,13 @@ export default function MonthBoard() {
                 월별
               </span>
               {!isCurrentMonth && (
-                <button
-                  type="button"
-                  className="btn btn-ghost bg-[rgba(255,255,255,0.05)] px-2 py-0.5 text-xs hover:bg-[rgba(255,255,255,0.1)]"
+                <Button
+                  variant="ghost"
+                  className="bg-[rgba(255,255,255,0.05)] px-2 py-0.5 text-xs hover:bg-[rgba(255,255,255,0.1)]"
                   onClick={() => setYearMonth(currentYearMonth)}
                 >
                   이번 달로
-                </button>
+                </Button>
               )}
             </div>
             <h2 className="text-xl font-semibold text-fg">
@@ -136,34 +96,34 @@ export default function MonthBoard() {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              className="btn btn-ghost inline-flex items-center gap-1 pl-1.5 text-xs"
+            <Button
+              variant="ghost"
+              className="inline-flex items-center gap-1 pl-1.5 text-xs"
               aria-label="이전 달"
               onClick={() => setYearMonth(shiftMonth(yearMonth, -1))}
             >
               <ChevronLeftIcon />
               이전 달
-            </button>
-            <button
-              type="button"
-              className="btn btn-ghost inline-flex items-center gap-1 pr-1.5 text-xs"
+            </Button>
+            <Button
+              variant="ghost"
+              className="inline-flex items-center gap-1 pr-1.5 text-xs"
               aria-label="다음 달"
               onClick={() => setYearMonth(shiftMonth(yearMonth, 1))}
             >
               다음 달
               <ChevronRightIcon />
-            </button>
+            </Button>
           </div>
         </div>
-      </div>
+      </Card>
 
       {loading && summaries.length === 0 ? (
         <p className="text-sm text-fg-secondary">불러오는 중...</p>
       ) : (
         <div
           ref={scrollRef}
-          className="scrollbar scroll-x-drag flex min-h-0 flex-1 gap-3 pb-2"
+          className="scrollbar flex min-h-0 flex-1 cursor-grab gap-3 pb-2 overflow-x-auto active:cursor-grabbing"
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}

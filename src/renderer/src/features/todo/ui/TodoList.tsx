@@ -20,6 +20,7 @@ import { useTodoStore } from "../model/useTodoStore";
 import { getTodoTextClass, TodoStatusIcon } from "./TodoStatusIcon";
 import { TodoItemMenu } from "./TodoItemMenu";
 import type { DisplayTodo } from "@shared/types/todo";
+import { Button } from "@renderer/shared/ui";
 
 function DragHandleIcon() {
   return (
@@ -80,15 +81,15 @@ function SortableTodoItem({
       style={style}
       className="flex items-center gap-2 rounded-(--radius-btn) border border-border bg-surface px-2 py-2"
     >
-      <button
-        type="button"
-        className="btn btn-ghost shrink-0 cursor-grab px-1 py-1 text-fg-muted hover:text-fg active:cursor-grabbing"
+      <Button
+        variant="ghost"
+        className="shrink-0 cursor-grab px-1 py-1 text-fg-muted hover:text-fg active:cursor-grabbing"
         aria-label="순서 변경"
         {...attributes}
         {...listeners}
       >
         <DragHandleIcon />
-      </button>
+      </Button>
 
       <button
         type="button"

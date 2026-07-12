@@ -1,7 +1,7 @@
 import { useUIStore } from "@renderer/stores/useUIStore";
 import { useTodoStore } from "@renderer/features/todo/model/useTodoStore";
-import { ChevronLeftIcon, ChevronRightIcon } from "./ChevronIcons";
 import { toFullLabel, isToday } from "@renderer/utils/dateUtils";
+import { Card, Button, ChevronLeftIcon, ChevronRightIcon } from "@renderer/shared/ui";
 
 export default function TodayHeader() {
   const activeDate = useUIStore((s) => s.activeDate);
@@ -14,7 +14,7 @@ export default function TodayHeader() {
   const showingToday = isToday(activeDate);
 
   return (
-    <div className="card shrink-0">
+    <Card className="shrink-0">
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -25,49 +25,45 @@ export default function TodayHeader() {
 
           <div className="flex flex-wrap gap-2">
             {!showingToday && (
-              <button
-                type="button"
-                className="btn btn-ghost px-2 py-0.5 text-xs bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.1)]"
+              <Button
+                variant="ghost"
+                className="px-2 py-0.5 text-xs bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.1)]"
                 onClick={goTodayDate}
               >
                 오늘로
-              </button>
+              </Button>
             )}
 
-            <button
-              type="button"
-              className="btn btn-ghost inline-flex items-center gap-1 text-xs pl-1.5"
+            <Button
+              variant="ghost"
+              className="inline-flex items-center gap-1 text-xs pl-1.5"
               aria-label="전날"
               onClick={goPrevDate}
             >
               <ChevronLeftIcon />
               전날
-            </button>
+            </Button>
 
-            <button
-              type="button"
-              className="btn btn-ghost inline-flex items-center gap-1 text-xs pr-1.5"
+            <Button
+              variant="ghost"
+              className="inline-flex items-center gap-1 text-xs pr-1.5"
               aria-label="다음날"
               onClick={goNextDate}
             >
               다음날
               <ChevronRightIcon />
-            </button>
+            </Button>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-fg-secondary">{todoCount}건의 할 일</p>
 
-          <button
-            type="button"
-            className="btn btn-primary text-sm"
-            onClick={openAddModal}
-          >
+          <Button variant="primary" className="text-sm" onClick={openAddModal}>
             할 일 추가
-          </button>
+          </Button>
         </div>
       </div>
-    </div>
+    </Card>
   );
 }

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { DisplayTodo, TodoStatus } from "@shared/types/todo";
+import { Button } from "@renderer/shared/ui";
 
 interface TodoItemMenuProps {
   todo: DisplayTodo;
@@ -61,15 +62,15 @@ export function TodoItemMenu({
 
   return (
     <div ref={rootRef} className="relative shrink-0">
-      <button
-        type="button"
-        className="btn btn-ghost p-1.5"
+      <Button
+        variant="ghost"
+        className="p-1.5"
         aria-label="더보기"
         aria-expanded={open}
         onClick={() => setOpen((prev) => !prev)}
       >
         <MoreVerticalIcon />
-      </button>
+      </Button>
 
       {open && (
         <div

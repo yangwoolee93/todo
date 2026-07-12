@@ -1,4 +1,4 @@
-/** 좌측 꺾쇠 (전날) */
+/** 좌측 꺾쇠 (전날 / 이전 달) */
 export function ChevronLeftIcon({
   className = "h-4 w-4 shrink-0",
 }: {
@@ -22,7 +22,7 @@ export function ChevronLeftIcon({
   );
 }
 
-/** 우측 꺾쇠 (다음날) */
+/** 우측 꺾쇠 (다음날 / 다음 달) */
 export function ChevronRightIcon({
   className = "h-4 w-4 shrink-0",
 }: {

@@ -7,6 +7,7 @@ import {
 } from "@renderer/utils/dateUtils";
 import { useUIStore } from "@renderer/stores/useUIStore";
 import { useTodoStore } from "@renderer/features/todo/model/useTodoStore";
+import { Modal, ModalTitle, Input, Button, Tab } from "@renderer/shared/ui";
 
 /** 모달 닫기 X 아이콘 */
 function CloseIcon({ className = "h-4 w-4" }: { className?: string }) {
@@ -113,205 +114,172 @@ export function AddTodoModal() {
   const monthRange = getMonthDateRange(yearMonth);
   const monthDayCount = countDaysInRange(monthRange.start, monthRange.end);
 
-  if (!addModalOpen) return null;
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-      onClick={handleClose}
-      role="presentation"
-    >
-      <div
-        className="card w-full max-w-md shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-label="할 일 추가"
-      >
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-fg">할 일 추가</h2>
-          <button
-            type="button"
-            className="btn btn-ghost p-1.5"
-            aria-label="닫기"
-            onClick={handleClose}
-          >
-            <CloseIcon />
-          </button>
-        </div>
-
-        <div className="mb-4 flex gap-1 rounded-(--radius-btn) border border-border bg-muted p-1">
-          <button
-            type="button"
-            className={
-              mode === "single"
-                ? "nav-tab nav-tab-active flex-1"
-                : "nav-tab flex-1"
-            }
-            onClick={() => setMode("single")}
-          >
-            하루
-          </button>
-          <button
-            type="button"
-            className={
-              mode === "range"
-                ? "nav-tab nav-tab-active flex-1"
-                : "nav-tab flex-1"
-            }
-            onClick={() => setMode("range")}
-          >
-            기간
-          </button>
-          <button
-            type="button"
-            className={
-              mode === "month"
-                ? "nav-tab nav-tab-active flex-1"
-                : "nav-tab flex-1"
-            }
-            onClick={() => setMode("month")}
-          >
-            한 달
-          </button>
-        </div>
-
-        <form
-          className="flex flex-col gap-4"
-          onSubmit={(e) => void handleSubmit(e)}
+    <Modal open={addModalOpen} onClose={handleClose} label="할 일 추가" size="md">
+      <div className="mb-4 flex items-center justify-between">
+        <ModalTitle className="text-lg font-semibold text-fg">
+          할 일 추가
+        </ModalTitle>
+        <Button
+          variant="ghost"
+          className="p-1.5"
+          aria-label="닫기"
+          onClick={handleClose}
         >
+          <CloseIcon />
+        </Button>
+      </div>
+
+      <div className="mb-4 flex gap-1 rounded-(--radius-btn) border border-border bg-muted p-1">
+        <Tab
+          active={mode === "single"}
+          className="flex-1"
+          onClick={() => setMode("single")}
+        >
+          하루
+        </Tab>
+        <Tab
+          active={mode === "range"}
+          className="flex-1"
+          onClick={() => setMode("range")}
+        >
+          기간
+        </Tab>
+        <Tab
+          active={mode === "month"}
+          className="flex-1"
+          onClick={() => setMode("month")}
+        >
+          한 달
+        </Tab>
+      </div>
+
+      <form
+        className="flex flex-col gap-4"
+        onSubmit={(e) => void handleSubmit(e)}
+      >
+        <div>
+          <label
+            className="mb-1 block text-xs font-medium text-fg-secondary"
+            htmlFor="todo-content"
+          >
+            내용 (1줄)
+          </label>
+          <Input
+            ref={contentInputRef}
+            id="todo-content"
+            type="text"
+            value={content}
+            placeholder="할 일을 입력..."
+            onChange={(e) => setContent(sanitize(e.target.value))}
+          />
+        </div>
+
+        {mode === "single" && (
           <div>
             <label
               className="mb-1 block text-xs font-medium text-fg-secondary"
-              htmlFor="todo-content"
+              htmlFor="todo-date"
             >
-              내용 (1줄)
+              날짜
             </label>
-            <input
-              ref={contentInputRef}
-              id="todo-content"
-              type="text"
-              className="input"
-              value={content}
-              placeholder="할 일을 입력..."
-              onChange={(e) => setContent(sanitize(e.target.value))}
+            <Input
+              id="todo-date"
+              type="date"
+              value={targetDate}
+              onChange={(e) => setTargetDate(e.target.value)}
             />
           </div>
+        )}
 
-          {mode === "single" && (
-            <div>
-              <label
-                className="mb-1 block text-xs font-medium text-fg-secondary"
-                htmlFor="todo-date"
-              >
-                날짜
-              </label>
-              <input
-                id="todo-date"
-                type="date"
-                className="input"
-                value={targetDate}
-                onChange={(e) => setTargetDate(e.target.value)}
-              />
-            </div>
-          )}
-
-          {mode === "range" && (
-            <>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label
-                    className="mb-1 block text-xs font-medium text-fg-secondary"
-                    htmlFor="range-start"
-                  >
-                    시작일
-                  </label>
-                  <input
-                    id="range-start"
-                    type="date"
-                    className="input"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label
-                    className="mb-1 block text-xs font-medium text-fg-secondary"
-                    htmlFor="range-end"
-                  >
-                    종료일
-                  </label>
-                  <input
-                    id="range-end"
-                    type="date"
-                    className="input"
-                    value={endDate}
-                    min={startDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                  />
-                </div>
-              </div>
-              {rangeDayCount > 0 && startDate <= endDate && (
-                <p className="rounded-(--radius-btn) bg-muted px-3 py-2 text-xs text-fg-secondary">
-                  <strong className="text-fg">{rangeDayCount}일</strong> 동안
-                  매일 추가됩니다. ({toShortLabel(startDate)} ~{" "}
-                  {toShortLabel(endDate)})
-                </p>
-              )}
-              {startDate > endDate && (
-                <p className="text-xs text-danger">
-                  시작일은 종료일보다 늦을 수 없습니다.
-                </p>
-              )}
-            </>
-          )}
-
-          {mode === "month" && (
-            <>
+        {mode === "range" && (
+          <>
+            <div className="grid grid-cols-2 gap-3">
               <div>
                 <label
                   className="mb-1 block text-xs font-medium text-fg-secondary"
-                  htmlFor="todo-month"
+                  htmlFor="range-start"
                 >
-                  대상 월
+                  시작일
                 </label>
-                <input
-                  id="todo-month"
-                  type="month"
-                  className="input"
-                  value={yearMonth}
-                  onChange={(e) => setYearMonth(e.target.value)}
+                <Input
+                  id="range-start"
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
                 />
               </div>
+              <div>
+                <label
+                  className="mb-1 block text-xs font-medium text-fg-secondary"
+                  htmlFor="range-end"
+                >
+                  종료일
+                </label>
+                <Input
+                  id="range-end"
+                  type="date"
+                  value={endDate}
+                  min={startDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+              </div>
+            </div>
+            {rangeDayCount > 0 && startDate <= endDate && (
               <p className="rounded-(--radius-btn) bg-muted px-3 py-2 text-xs text-fg-secondary">
-                <strong className="text-fg">{yearMonth}</strong> —{" "}
-                {monthDayCount}일(1일~말일) 매일 추가됩니다.
+                <strong className="text-fg">{rangeDayCount}일</strong> 동안
+                매일 추가됩니다. ({toShortLabel(startDate)} ~{" "}
+                {toShortLabel(endDate)})
               </p>
-            </>
-          )}
+            )}
+            {startDate > endDate && (
+              <p className="text-xs text-danger">
+                시작일은 종료일보다 늦을 수 없습니다.
+              </p>
+            )}
+          </>
+        )}
 
-          <div className="flex justify-end gap-2 pt-1">
-            <button
-              type="button"
-              className="btn btn-ghost"
-              onClick={handleClose}
-            >
-              취소
-            </button>
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={
-                submitting ||
-                !content.trim() ||
-                (mode === "range" && startDate > endDate)
-              }
-            >
-              {submitting ? "추가 중..." : "추가"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        {mode === "month" && (
+          <>
+            <div>
+              <label
+                className="mb-1 block text-xs font-medium text-fg-secondary"
+                htmlFor="todo-month"
+              >
+                대상 월
+              </label>
+              <Input
+                id="todo-month"
+                type="month"
+                value={yearMonth}
+                onChange={(e) => setYearMonth(e.target.value)}
+              />
+            </div>
+            <p className="rounded-(--radius-btn) bg-muted px-3 py-2 text-xs text-fg-secondary">
+              <strong className="text-fg">{yearMonth}</strong> —{" "}
+              {monthDayCount}일(1일~말일) 매일 추가됩니다.
+            </p>
+          </>
+        )}
+
+        <div className="flex justify-end gap-2 pt-1">
+          <Button type="button" variant="ghost" onClick={handleClose}>
+            취소
+          </Button>
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={
+              submitting ||
+              !content.trim() ||
+              (mode === "range" && startDate > endDate)
+            }
+          >
+            {submitting ? "추가 중..." : "추가"}
+          </Button>
+        </div>
+      </form>
+    </Modal>
   );
 }

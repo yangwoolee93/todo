@@ -1,5 +1,6 @@
 import { useRef, type MouseEvent } from 'react'
 import { getDatesInMonth, shiftMonth, toShortLabel, toYearMonth } from '@renderer/utils/dateUtils'
+import { Button } from '@renderer/shared/ui'
 
 interface CalendarBarProps {
   /** 현재 활성 날짜 "YYYY-MM-DD" */
@@ -56,18 +57,18 @@ export function CalendarBar({ activeDate, onSelectDate, onChangeMonth }: Calenda
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <button type="button" className="btn btn-ghost px-2" onClick={goPrevMonth} aria-label="이전 달">
+        <Button variant="ghost" className="px-2" onClick={goPrevMonth} aria-label="이전 달">
           ◀
-        </button>
+        </Button>
         <span className="text-sm font-medium text-fg">{yearMonth}</span>
-        <button type="button" className="btn btn-ghost px-2" onClick={goNextMonth} aria-label="다음 달">
+        <Button variant="ghost" className="px-2" onClick={goNextMonth} aria-label="다음 달">
           ▶
-        </button>
+        </Button>
       </div>
 
       <div
         ref={scrollRef}
-        className="scrollbar scroll-x-drag flex gap-2 pb-1"
+        className="scrollbar flex cursor-grab gap-2 overflow-x-auto pb-1 active:cursor-grabbing"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -79,7 +80,7 @@ export function CalendarBar({ activeDate, onSelectDate, onChangeMonth }: Calenda
             <button
               key={date}
               type="button"
-              className={`shrink-0 rounded-[var(--radius-btn)] border px-3 py-2 text-sm transition-colors ${
+              className={`shrink-0 rounded-(--radius-btn) border px-3 py-2 text-sm transition-colors ${
                 isActive
                   ? 'border-accent bg-accent text-white'
                   : 'border-border bg-surface text-fg hover:bg-muted'

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useUIStore } from '@renderer/stores/useUIStore'
 import { useTodoStore } from '@renderer/features/todo/model/useTodoStore'
 import { useMonthStore } from '@renderer/features/month/model/useMonthStore'
+import { Modal, ModalTitle, Button } from '@renderer/shared/ui'
 
 type ResultModal = {
   title: string
@@ -60,90 +61,54 @@ export function BackupPanel() {
   return (
     <>
       <div className="flex flex-wrap gap-2">
-        <button type="button" className="btn" onClick={() => void handleExportJson()}>
-          JSON 내보내기
-        </button>
-        <button type="button" className="btn" onClick={() => void handleExportSql()}>
-          SQL 내보내기
-        </button>
-        <button type="button" className="btn" onClick={() => setImportConfirmOpen(true)}>
-          JSON 불러오기
-        </button>
+        <Button onClick={() => void handleExportJson()}>JSON 내보내기</Button>
+        <Button onClick={() => void handleExportSql()}>SQL 내보내기</Button>
+        <Button onClick={() => setImportConfirmOpen(true)}>JSON 불러오기</Button>
       </div>
 
-      {/* JSON 불러오기 확인 모달 */}
-      {importConfirmOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          onClick={() => setImportConfirmOpen(false)}
-          role="presentation"
-        >
-          <div
-            className="card w-full max-w-sm shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-            aria-label="데이터 불러오기 확인"
-          >
-            <h2 className="mb-2 text-base font-semibold text-fg">데이터 불러오기</h2>
-            <p className="text-sm text-fg-secondary">
-              현재 저장된 데이터가 선택한 JSON 파일로 전체 교체됩니다.
-            </p>
-            <p className="mt-2 rounded-(--radius-btn) bg-muted px-3 py-2 text-xs text-fg-secondary">
-              이 작업은 되돌릴 수 없습니다.
-            </p>
-            <div className="mt-4 flex justify-end gap-2">
-              <button
-                type="button"
-                className="btn btn-ghost"
-                onClick={() => setImportConfirmOpen(false)}
-              >
-                취소
-              </button>
-              <button
-                type="button"
-                className="btn btn-danger"
-                onClick={() => void handleImportConfirm()}
-              >
-                불러오기
-              </button>
-            </div>
-          </div>
+      <Modal
+        open={importConfirmOpen}
+        onClose={() => setImportConfirmOpen(false)}
+        label="데이터 불러오기 확인"
+      >
+        <ModalTitle className="mb-2 text-base font-semibold text-fg">
+          데이터 불러오기
+        </ModalTitle>
+        <p className="text-sm text-fg-secondary">
+          현재 저장된 데이터가 선택한 JSON 파일로 전체 교체됩니다.
+        </p>
+        <p className="mt-2 rounded-(--radius-btn) bg-muted px-3 py-2 text-xs text-fg-secondary">
+          이 작업은 되돌릴 수 없습니다.
+        </p>
+        <div className="mt-4 flex justify-end gap-2">
+          <Button variant="ghost" onClick={() => setImportConfirmOpen(false)}>
+            취소
+          </Button>
+          <Button variant="danger" onClick={() => void handleImportConfirm()}>
+            불러오기
+          </Button>
         </div>
-      )}
+      </Modal>
 
-      {/* 결과 안내 모달 (완료 / 오류) */}
-      {result && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          onClick={() => setResult(null)}
-          role="presentation"
+      <Modal
+        open={result !== null}
+        onClose={() => setResult(null)}
+        label={result?.title ?? '결과'}
+      >
+        <ModalTitle
+          className={`mb-2 text-base font-semibold ${result?.isError ? 'text-danger' : 'text-fg'}`}
         >
-          <div
-            className="card w-full max-w-sm shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-            aria-label={result.title}
-          >
-            <h2 className={`mb-2 text-base font-semibold ${result.isError ? 'text-danger' : 'text-fg'}`}>
-              {result.title}
-            </h2>
-            <p className="break-all rounded-(--radius-btn) bg-muted px-3 py-2 text-xs text-fg-secondary">
-              {result.message}
-            </p>
-            <div className="mt-4 flex justify-end">
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={() => setResult(null)}
-              >
-                확인
-              </button>
-            </div>
-          </div>
+          {result?.title}
+        </ModalTitle>
+        <p className="break-all rounded-(--radius-btn) bg-muted px-3 py-2 text-xs text-fg-secondary">
+          {result?.message}
+        </p>
+        <div className="mt-4 flex justify-end">
+          <Button variant="primary" onClick={() => setResult(null)}>
+            확인
+          </Button>
         </div>
-      )}
+      </Modal>
     </>
   )
 }

@@ -3,6 +3,7 @@ import type { AppView } from "@renderer/types/views";
 import { useUIStore } from "@renderer/stores/useUIStore";
 import { cn } from "@renderer/utils/cn";
 import { APP_VERSION } from "@renderer/constants/appVersion";
+import { Tab } from "@renderer/shared/ui";
 
 interface AppShellProps {
   children: ReactNode;
@@ -44,19 +45,9 @@ export function AppShell({ children }: AppShellProps) {
         </div>
         <nav className={cn("flex gap-1 pr-2")}>
           {tabs.map((tab) => (
-            <div
-              key={tab.id}
-              className={cn(
-                "text-sm px-3 py-1 rounded-(--radius-btn)",
-                "cursor-pointer",
-                view === tab.id
-                  ? "bg-accent-soft text-accent"
-                  : "text-fg-secondary hover:bg-muted hover:text-fg",
-              )}
-              onClick={tab.onClick}
-            >
+            <Tab key={tab.id} active={view === tab.id} onClick={tab.onClick}>
               {tab.label}
-            </div>
+            </Tab>
           ))}
         </nav>
       </header>
