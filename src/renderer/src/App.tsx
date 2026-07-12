@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useTheme } from "@renderer/hooks/useTheme";
+import { useThemeSync } from "@renderer/hooks/useThemeSync";
 import { AppShell } from "./app/AppShell";
 import { AddTodoModal } from "@renderer/features/todo";
 import { useUIStore } from "@renderer/stores/useUIStore";
@@ -19,7 +19,7 @@ export function App() {
   const error = view === "month" ? monthError : todoError;
   const clearError = view === "month" ? clearMonthError : clearTodoError;
 
-  useTheme();
+  useThemeSync();
 
   useEffect(() => {
     if (!error || !clearError) return;

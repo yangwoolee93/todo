@@ -1,4 +1,4 @@
-import { type ThemeMode, useTheme } from "@renderer/hooks/useTheme";
+import { type ThemeMode, useThemeStore } from "@renderer/stores/useThemeStore";
 
 const OPTIONS: { value: ThemeMode; label: string; desc: string }[] = [
   { value: "light", label: "밝은 모드", desc: "항상 밝은 배경" },
@@ -10,7 +10,8 @@ const OPTIONS: { value: ThemeMode; label: string; desc: string }[] = [
  * 밝은/어두운/자동 테마 선택 UI
  */
 export function ThemeSelector() {
-  const { mode, setMode } = useTheme();
+  const mode = useThemeStore((s) => s.mode);
+  const setMode = useThemeStore((s) => s.setMode);
 
   return (
     <div className="flex flex-col gap-2">
