@@ -32,7 +32,7 @@ export function AppShell({ children }: AppShellProps) {
           className={cn(
             "flex flex-1 h-full items-center gap-2",
             "[-webkit-app-region:drag]",
-            isMac && "pl-20",
+            isMac ? "pl-20" : "pl-4",
           )}
         >
           <span className="truncate text-md font-bold tracking-[-0.8px] text-fg">할일</span>
