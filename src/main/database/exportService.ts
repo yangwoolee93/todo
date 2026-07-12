@@ -1,15 +1,15 @@
-import { dialog } from 'electron'
-import { readFileSync, writeFileSync } from 'fs'
-import type { TodoItem } from '@shared/types/todo'
-import { getAllTodos, replaceStore } from './todoRepository'
-import { readStore, writeStore } from './storage'
+import { dialog } from "electron";
+import { readFileSync, writeFileSync } from "fs";
+import type { TodoItem } from "@shared/types/todo";
+import { getAllTodos, replaceStore } from "./todoRepository";
+import { readStore, writeStore } from "./storage";
 
 /** IPC 익스포트/임포트 결과 */
 export interface ExportImportResult {
-  success: boolean
-  cancelled?: boolean
-  filePath?: string
-  error?: string
+  success: boolean;
+  cancelled?: boolean;
+  filePath?: string;
+  error?: string;
 }
 
 /**
@@ -23,10 +23,10 @@ function todoToInsertSql(item: TodoItem): string {
     `'${item.status}'`,
     item.created_at,
     item.sort_order,
-    item.batch_id ? `'${item.batch_id}'` : 'NULL'
-  ]
+    item.batch_id ? `'${item.batch_id}'` : "NULL",
+  ];
 
-  return `INSERT INTO todos (id, content, target_date, status, created_at, sort_order, batch_id) VALUES (${values.join(', ')});`
+  return `INSERT INTO todos (id, content, target_date, status, created_at, sort_order, batch_id) VALUES (${values.join(", ")});`;
 }
 
 /**
@@ -46,10 +46,10 @@ CREATE TABLE IF NOT EXISTS todos (
   batch_id TEXT
 );
 
-`
+`;
 
-  const inserts = todos.map(todoToInsertSql).join('\n')
-  return header + inserts + '\n'
+  const inserts = todos.map(todoToInsertSql).join("\n");
+  return header + inserts + "\n";
 }
 
 /**
@@ -59,24 +59,24 @@ CREATE TABLE IF NOT EXISTS todos (
 export async function exportToJson(): Promise<ExportImportResult> {
   try {
     const result = await dialog.showSaveDialog({
-      title: 'JSON 백업 저장',
+      title: "JSON 백업 저장",
       defaultPath: `todos-backup-${Date.now()}.json`,
-      filters: [{ name: 'JSON', extensions: ['json'] }]
-    })
+      filters: [{ name: "JSON", extensions: ["json"] }],
+    });
 
     if (result.canceled || !result.filePath) {
-      return { success: false, cancelled: true }
+      return { success: false, cancelled: true };
     }
 
-    const store = readStore()
-    writeFileSync(result.filePath, JSON.stringify(store, null, 2), 'utf-8')
+    const store = readStore();
+    writeFileSync(result.filePath, JSON.stringify(store, null, 2), "utf-8");
 
-    return { success: true, filePath: result.filePath }
+    return { success: true, filePath: result.filePath };
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'JSON 익스포트 실패'
-    }
+      error: error instanceof Error ? error.message : "JSON 익스포트 실패",
+    };
   }
 }
 
@@ -86,24 +86,24 @@ export async function exportToJson(): Promise<ExportImportResult> {
 export async function exportToSql(): Promise<ExportImportResult> {
   try {
     const result = await dialog.showSaveDialog({
-      title: 'SQL 백업 저장',
+      title: "SQL 백업 저장",
       defaultPath: `todos-backup-${Date.now()}.sql`,
-      filters: [{ name: 'SQL', extensions: ['sql'] }]
-    })
+      filters: [{ name: "SQL", extensions: ["sql"] }],
+    });
 
     if (result.canceled || !result.filePath) {
-      return { success: false, cancelled: true }
+      return { success: false, cancelled: true };
     }
 
-    const sql = buildSqlScript(getAllTodos())
-    writeFileSync(result.filePath, sql, 'utf-8')
+    const sql = buildSqlScript(getAllTodos());
+    writeFileSync(result.filePath, sql, "utf-8");
 
-    return { success: true, filePath: result.filePath }
+    return { success: true, filePath: result.filePath };
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'SQL 익스포트 실패'
-    }
+      error: error instanceof Error ? error.message : "SQL 익스포트 실패",
+    };
   }
 }
 
@@ -113,31 +113,31 @@ export async function exportToSql(): Promise<ExportImportResult> {
 export async function importFromJson(): Promise<ExportImportResult> {
   try {
     const result = await dialog.showOpenDialog({
-      title: 'JSON 백업 불러오기',
-      filters: [{ name: 'JSON', extensions: ['json'] }],
-      properties: ['openFile']
-    })
+      title: "JSON 백업 불러오기",
+      filters: [{ name: "JSON", extensions: ["json"] }],
+      properties: ["openFile"],
+    });
 
     if (result.canceled || result.filePaths.length === 0) {
-      return { success: false, cancelled: true }
+      return { success: false, cancelled: true };
     }
 
-    const filePath = result.filePaths[0]
-    const raw = readFileSync(filePath, 'utf-8')
-    const parsed = JSON.parse(raw) as { todos?: TodoItem[] }
+    const filePath = result.filePaths[0];
+    const raw = readFileSync(filePath, "utf-8");
+    const parsed = JSON.parse(raw) as { todos?: TodoItem[] };
 
     if (!parsed.todos || !Array.isArray(parsed.todos)) {
-      return { success: false, error: '유효하지 않은 JSON 형식입니다.' }
+      return { success: false, error: "유효하지 않은 JSON 형식입니다." };
     }
 
-    replaceStore(parsed.todos)
+    replaceStore(parsed.todos);
 
-    return { success: true, filePath }
+    return { success: true, filePath };
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'JSON 임포트 실패'
-    }
+      error: error instanceof Error ? error.message : "JSON 임포트 실패",
+    };
   }
 }
 
@@ -145,5 +145,5 @@ export async function importFromJson(): Promise<ExportImportResult> {
  * 디스크 저장소를 초기화한다 (개발·디버그용 — UI에서는 미사용).
  */
 export function resetStore(): void {
-  writeStore({ todos: [] })
+  writeStore({ todos: [] });
 }

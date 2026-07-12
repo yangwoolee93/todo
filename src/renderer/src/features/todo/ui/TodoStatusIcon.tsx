@@ -1,12 +1,12 @@
-import type { TodoStatus } from '@shared/types/todo'
+import type { TodoStatus } from "@shared/types/todo";
 
 interface TodoStatusIconProps {
-  status: TodoStatus
-  className?: string
+  status: TodoStatus;
+  className?: string;
 }
 
 /** SVG 둥근 네모 아이콘 공통 치수 */
-const BOX = { x: 3, y: 3, size: 14, radius: 3 }
+const BOX = { x: 3, y: 3, size: 14, radius: 3 };
 
 /**
  * 투두 상태 아이콘 (둥근 네모)
@@ -14,8 +14,8 @@ const BOX = { x: 3, y: 3, size: 14, radius: 3 }
  * - completed: success 채움 + 흰색 ✓
  * - failed: failed 테두리 + ✕
  */
-export function TodoStatusIcon({ status, className = 'h-5 w-5 shrink-0' }: TodoStatusIconProps) {
-  if (status === 'completed') {
+export function TodoStatusIcon({ status, className = "h-5 w-5 shrink-0" }: TodoStatusIconProps) {
+  if (status === "completed") {
     return (
       <svg
         className={`${className} text-success`}
@@ -40,10 +40,10 @@ export function TodoStatusIcon({ status, className = 'h-5 w-5 shrink-0' }: TodoS
           strokeLinejoin="round"
         />
       </svg>
-    )
+    );
   }
 
-  if (status === 'failed') {
+  if (status === "failed") {
     return (
       <svg
         className={`${className} text-failed`}
@@ -68,7 +68,7 @@ export function TodoStatusIcon({ status, className = 'h-5 w-5 shrink-0' }: TodoS
           strokeLinecap="round"
         />
       </svg>
-    )
+    );
   }
 
   return (
@@ -89,17 +89,17 @@ export function TodoStatusIcon({ status, className = 'h-5 w-5 shrink-0' }: TodoS
         strokeWidth="1.5"
       />
     </svg>
-  )
+  );
 }
 
 /** 상태별 투두 텍스트 Tailwind 클래스 (1차 상세 수정안 B안) */
 export function getTodoTextClass(status: TodoStatus): string {
   switch (status) {
-    case 'completed':
-      return 'text-success line-through opacity-70'
-    case 'failed':
-      return 'text-failed line-through border-l-2 border-failed pl-2'
+    case "completed":
+      return "text-success line-through opacity-70";
+    case "failed":
+      return "text-failed line-through border-l-2 border-failed pl-2";
     default:
-      return 'text-fg'
+      return "text-fg";
   }
 }

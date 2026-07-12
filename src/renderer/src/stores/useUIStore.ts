@@ -42,26 +42,20 @@ const initialState: UIState = {
   deleteTarget: null,
 };
 
-const createActions = (
-  set: (fn: (prev: UIStore) => Partial<UIStore>) => void,
-): UIActions => ({
+const createActions = (set: (fn: (prev: UIStore) => Partial<UIStore>) => void): UIActions => ({
   goTodayView: () => set(() => ({ view: "today" })),
   goMonthView: () => set(() => ({ view: "month" })),
   goSettingsView: () => set(() => ({ view: "settings" })),
   //
   setActiveDate: (activeDate: string) => set(() => ({ activeDate })),
   goTodayDate: () => set(() => ({ activeDate: getTodayString() })),
-  goPrevDate: () =>
-    set((state) => ({ activeDate: shiftDate(state.activeDate, -1) })),
-  goNextDate: () =>
-    set((state) => ({ activeDate: shiftDate(state.activeDate, 1) })),
+  goPrevDate: () => set((state) => ({ activeDate: shiftDate(state.activeDate, -1) })),
+  goNextDate: () => set((state) => ({ activeDate: shiftDate(state.activeDate, 1) })),
   //
-  openAddModal: () =>
-    set(() => ({ addModalOpen: true, duplicateContent: undefined })),
+  openAddModal: () => set(() => ({ addModalOpen: true, duplicateContent: undefined })),
   openAddModalWithDuplicate: (content) =>
     set(() => ({ addModalOpen: true, duplicateContent: content })),
-  closeAddModal: () =>
-    set(() => ({ addModalOpen: false, duplicateContent: undefined })),
+  closeAddModal: () => set(() => ({ addModalOpen: false, duplicateContent: undefined })),
   setEditTarget: (todo) => set(() => ({ editTarget: todo })),
   setDeleteTarget: (todo) => set(() => ({ deleteTarget: todo })),
 });

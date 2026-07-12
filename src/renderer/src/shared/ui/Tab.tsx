@@ -6,12 +6,7 @@ interface TabProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 /** 탭 버튼 — 상단 네비게이션, 모달 내부 모드 전환 등 공용 */
-export function Tab({
-  active = false,
-  className,
-  type = "button",
-  ...props
-}: TabProps) {
+export function Tab({ active = false, className, type = "button", ...props }: TabProps) {
   return (
     <button
       type={type}

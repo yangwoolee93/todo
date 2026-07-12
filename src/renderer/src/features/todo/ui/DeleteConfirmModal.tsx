@@ -1,22 +1,22 @@
-import { useUIStore } from '@renderer/stores/useUIStore'
-import { useTodoStore } from '@renderer/features/todo/model/useTodoStore'
-import { Modal, ModalTitle, Button } from '@renderer/shared/ui'
+import { useUIStore } from "@renderer/stores/useUIStore";
+import { useTodoStore } from "@renderer/features/todo/model/useTodoStore";
+import { Modal, ModalTitle, Button } from "@renderer/shared/ui";
 
 /** 단독 할 일 삭제 확인 — batch_id 없는 경우 */
 export function DeleteConfirmModal() {
-  const deleteTarget = useUIStore((s) => s.deleteTarget)
-  const setDeleteTarget = useUIStore((s) => s.setDeleteTarget)
-  const deleteTodo = useTodoStore((s) => s.deleteTodo)
+  const deleteTarget = useUIStore((s) => s.deleteTarget);
+  const setDeleteTarget = useUIStore((s) => s.setDeleteTarget);
+  const deleteTodo = useTodoStore((s) => s.deleteTodo);
 
-  const open = deleteTarget !== null && !deleteTarget.batch_id
+  const open = deleteTarget !== null && !deleteTarget.batch_id;
 
-  const handleClose = () => setDeleteTarget(null)
+  const handleClose = () => setDeleteTarget(null);
 
   const handleConfirm = async () => {
-    if (!deleteTarget) return
-    const success = await deleteTodo(deleteTarget.id, 'day')
-    if (success) handleClose()
-  }
+    if (!deleteTarget) return;
+    const success = await deleteTodo(deleteTarget.id, "day");
+    if (success) handleClose();
+  };
 
   return (
     <Modal open={open} onClose={handleClose} label="삭제 확인">
@@ -36,5 +36,5 @@ export function DeleteConfirmModal() {
         </Button>
       </div>
     </Modal>
-  )
+  );
 }

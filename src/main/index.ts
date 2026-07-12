@@ -32,11 +32,7 @@ function getDefaultWindowBounds(): {
   const widthRatio = isUltrawide ? 0.16 : 0.22;
   const heightRatio = 0.7;
 
-  const width = clamp(
-    Math.round(workArea.width * widthRatio),
-    MIN_WINDOW_WIDTH,
-    workArea.width,
-  );
+  const width = clamp(Math.round(workArea.width * widthRatio), MIN_WINDOW_WIDTH, workArea.width);
   const height = clamp(
     Math.round(workArea.height * heightRatio),
     MIN_WINDOW_HEIGHT,

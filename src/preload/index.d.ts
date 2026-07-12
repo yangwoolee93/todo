@@ -1,14 +1,14 @@
-import type { TodoApi } from '../preload/index'
+import type { TodoApi } from "../preload/index";
 
 declare global {
   interface Window {
     /** Preload에서 노출하는 IPC API */
-    api: TodoApi
+    api: TodoApi;
     /** Preload에서 노출하는 Electron 런타임 정보 */
     electron: {
-      platform: NodeJS.Platform
-    }
+      platform: NodeJS.Platform;
+    };
   }
 }
 
-export {}
+export {};

@@ -7,14 +7,7 @@ import {
 } from "@renderer/utils/dateUtils";
 import { useUIStore } from "@renderer/stores/useUIStore";
 import { useTodoStore } from "@renderer/features/todo/model/useTodoStore";
-import {
-  Modal,
-  ModalTitle,
-  Input,
-  Button,
-  Tab,
-  CloseIcon,
-} from "@renderer/shared/ui";
+import { Modal, ModalTitle, Input, Button, Tab, CloseIcon } from "@renderer/shared/ui";
 
 /** 추가 모달 탭 — 하루 / 기간 / 한 달 */
 type AddMode = "single" | "range" | "month";
@@ -95,9 +88,7 @@ export function AddTodoModal() {
   };
 
   const rangeDayCount =
-    startDate && endDate && startDate <= endDate
-      ? countDaysInRange(startDate, endDate)
-      : 0;
+    startDate && endDate && startDate <= endDate ? countDaysInRange(startDate, endDate) : 0;
 
   const monthRange = getMonthDateRange(yearMonth);
   const monthDayCount = countDaysInRange(monthRange.start, monthRange.end);
@@ -105,47 +96,25 @@ export function AddTodoModal() {
   return (
     <Modal open={addModalOpen} onClose={handleClose} label="할 일 추가" size="md">
       <div className="mb-4 flex items-center justify-between">
-        <ModalTitle className="text-lg font-semibold text-fg">
-          할 일 추가
-        </ModalTitle>
-        <Button
-          variant="ghost"
-          className="p-1.5"
-          aria-label="닫기"
-          onClick={handleClose}
-        >
+        <ModalTitle className="text-lg font-semibold text-fg">할 일 추가</ModalTitle>
+        <Button variant="ghost" className="p-1.5" aria-label="닫기" onClick={handleClose}>
           <CloseIcon />
         </Button>
       </div>
 
       <div className="mb-4 flex gap-1 rounded-(--radius-btn) border border-border bg-muted p-1">
-        <Tab
-          active={mode === "single"}
-          className="flex-1"
-          onClick={() => setMode("single")}
-        >
+        <Tab active={mode === "single"} className="flex-1" onClick={() => setMode("single")}>
           하루
         </Tab>
-        <Tab
-          active={mode === "range"}
-          className="flex-1"
-          onClick={() => setMode("range")}
-        >
+        <Tab active={mode === "range"} className="flex-1" onClick={() => setMode("range")}>
           기간
         </Tab>
-        <Tab
-          active={mode === "month"}
-          className="flex-1"
-          onClick={() => setMode("month")}
-        >
+        <Tab active={mode === "month"} className="flex-1" onClick={() => setMode("month")}>
           한 달
         </Tab>
       </div>
 
-      <form
-        className="flex flex-col gap-4"
-        onSubmit={(e) => void handleSubmit(e)}
-      >
+      <form className="flex flex-col gap-4" onSubmit={(e) => void handleSubmit(e)}>
         <div>
           <label
             className="mb-1 block text-xs font-medium text-fg-secondary"
@@ -165,10 +134,7 @@ export function AddTodoModal() {
 
         {mode === "single" && (
           <div>
-            <label
-              className="mb-1 block text-xs font-medium text-fg-secondary"
-              htmlFor="todo-date"
-            >
+            <label className="mb-1 block text-xs font-medium text-fg-secondary" htmlFor="todo-date">
               날짜
             </label>
             <Input
@@ -215,15 +181,12 @@ export function AddTodoModal() {
             </div>
             {rangeDayCount > 0 && startDate <= endDate && (
               <p className="rounded-(--radius-btn) bg-muted px-3 py-2 text-xs text-fg-secondary">
-                <strong className="text-fg">{rangeDayCount}일</strong> 동안
-                매일 추가됩니다. ({toShortLabel(startDate)} ~{" "}
-                {toShortLabel(endDate)})
+                <strong className="text-fg">{rangeDayCount}일</strong> 동안 매일 추가됩니다. (
+                {toShortLabel(startDate)} ~ {toShortLabel(endDate)})
               </p>
             )}
             {startDate > endDate && (
-              <p className="text-xs text-danger">
-                시작일은 종료일보다 늦을 수 없습니다.
-              </p>
+              <p className="text-xs text-danger">시작일은 종료일보다 늦을 수 없습니다.</p>
             )}
           </>
         )}
@@ -245,8 +208,8 @@ export function AddTodoModal() {
               />
             </div>
             <p className="rounded-(--radius-btn) bg-muted px-3 py-2 text-xs text-fg-secondary">
-              <strong className="text-fg">{yearMonth}</strong> —{" "}
-              {monthDayCount}일(1일~말일) 매일 추가됩니다.
+              <strong className="text-fg">{yearMonth}</strong> — {monthDayCount}일(1일~말일) 매일
+              추가됩니다.
             </p>
           </>
         )}
@@ -258,11 +221,7 @@ export function AddTodoModal() {
           <Button
             type="submit"
             variant="primary"
-            disabled={
-              submitting ||
-              !content.trim() ||
-              (mode === "range" && startDate > endDate)
-            }
+            disabled={submitting || !content.trim() || (mode === "range" && startDate > endDate)}
           >
             {submitting ? "추가 중..." : "추가"}
           </Button>

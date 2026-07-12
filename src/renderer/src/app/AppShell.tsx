@@ -27,11 +27,7 @@ export function AppShell({ children }: AppShellProps) {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-base">
-      <header
-        className={cn(
-          "relative flex shrink-0 items-center justify-between h-11",
-        )}
-      >
+      <header className={cn("relative flex shrink-0 items-center justify-between h-11")}>
         <div
           className={cn(
             "flex flex-1 h-full items-center gap-2",
@@ -39,9 +35,7 @@ export function AppShell({ children }: AppShellProps) {
             isMac && "pl-20",
           )}
         >
-          <span className="truncate text-md font-bold tracking-[-0.8px] text-fg">
-            할일
-          </span>
+          <span className="truncate text-md font-bold tracking-[-0.8px] text-fg">할일</span>
         </div>
         <nav className={cn("flex gap-1 pr-2")}>
           {tabs.map((tab) => (
@@ -53,9 +47,7 @@ export function AppShell({ children }: AppShellProps) {
       </header>
 
       <div className="mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col overflow-hidden">
-        <main className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 py-2">
-          {children}
-        </main>
+        <main className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 py-2">{children}</main>
       </div>
       <footer
         className={cn(

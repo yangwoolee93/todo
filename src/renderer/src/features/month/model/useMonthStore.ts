@@ -33,8 +33,7 @@ const createActions = (
     set(() => ({ loading: true, error: null }));
     try {
       const result = await window.api.getMonthSummary(yearMonth);
-      if (!result.success)
-        throw new Error(result.error ?? "월별 데이터 조회 실패");
+      if (!result.success) throw new Error(result.error ?? "월별 데이터 조회 실패");
       set(() => ({ summaries: result.data ?? [] }));
     } catch (err) {
       set(() => ({

@@ -18,9 +18,7 @@ export default function TodayHeader() {
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 className="text-xl font-semibold text-fg">
-              {toFullLabel(activeDate)}
-            </h2>
+            <h2 className="text-xl font-semibold text-fg">{toFullLabel(activeDate)}</h2>
           </div>
 
           <div className="flex flex-wrap gap-2">

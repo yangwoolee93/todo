@@ -1,14 +1,14 @@
 /// <reference types="vite/client" />
 
-import type { TodoApi } from '../../preload/index'
+import type { TodoApi } from "../../preload/index";
 
 declare global {
   interface Window {
-    api: TodoApi
+    api: TodoApi;
     electron: {
-      platform: NodeJS.Platform
-    }
+      platform: NodeJS.Platform;
+    };
   }
 }
 
-export {}
+export {};

@@ -44,18 +44,13 @@ export function EditTodoModal() {
 
   return (
     <Modal open={open} onClose={handleClose} label="할 일 수정">
-      <ModalTitle className="mb-2 text-base font-semibold text-fg">
-        내용 수정
-      </ModalTitle>
+      <ModalTitle className="mb-2 text-base font-semibold text-fg">내용 수정</ModalTitle>
       {isBatch && (
         <p className="mb-3 text-xs text-fg-secondary">
           일괄 추가된 항목입니다. 저장 시 묶음 전체가 수정됩니다.
         </p>
       )}
-      <form
-        onSubmit={(e) => void handleSubmit(e)}
-        className="flex flex-col gap-3"
-      >
+      <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-3">
         <Input
           ref={inputRef}
           type="text"
@@ -66,11 +61,7 @@ export function EditTodoModal() {
           <Button type="button" variant="ghost" onClick={handleClose}>
             취소
           </Button>
-          <Button
-            type="submit"
-            variant="primary"
-            disabled={submitting || !content.trim()}
-          >
+          <Button type="submit" variant="primary" disabled={submitting || !content.trim()}>
             {submitting ? "저장 중..." : "저장"}
           </Button>
         </div>

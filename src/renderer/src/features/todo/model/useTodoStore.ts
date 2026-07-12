@@ -69,8 +69,7 @@ const createActions = (
       set(() => ({ loading: true, error: null }));
       try {
         const result = await window.api.getTodosByDate(date);
-        if (!result.success)
-          throw new Error(result.error ?? "일별 데이터 조회 실패");
+        if (!result.success) throw new Error(result.error ?? "일별 데이터 조회 실패");
         set(() => ({ todos: result.data ?? [] }));
       } catch (err) {
         set(() => ({
@@ -122,9 +121,7 @@ const createActions = (
 
       const previousTodos = current;
       set(() => ({
-        todos: current.map((t) =>
-          t.id === todoId ? { ...t, status: nextStatus } : t,
-        ),
+        todos: current.map((t) => (t.id === todoId ? { ...t, status: nextStatus } : t)),
         error: null,
       }));
 

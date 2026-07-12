@@ -39,19 +39,12 @@ function SortableTodoItem({
   onDelete,
   onSetStatus,
 }: SortableTodoItemProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: todo.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: todo.id,
+  });
 
   const style = {
-    transform: transform
-      ? CSS.Transform.toString({ ...transform, x: 0 })
-      : undefined,
+    transform: transform ? CSS.Transform.toString({ ...transform, x: 0 }) : undefined,
     transition,
     opacity: isDragging ? 0.5 : 1,
   };
@@ -114,9 +107,7 @@ export default function TodoList() {
   const activeDate = useUIStore((s) => s.activeDate);
   const setEditTarget = useUIStore((s) => s.setEditTarget);
   const setDeleteTarget = useUIStore((s) => s.setDeleteTarget);
-  const openAddModalWithDuplicate = useUIStore(
-    (s) => s.openAddModalWithDuplicate,
-  );
+  const openAddModalWithDuplicate = useUIStore((s) => s.openAddModalWithDuplicate);
 
   const todos = useTodoStore((s) => s.todos);
   const loading = useTodoStore((s) => s.loading);
@@ -154,15 +145,8 @@ export default function TodoList() {
   }
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragEnd={handleDragEnd}
-    >
-      <SortableContext
-        items={todos.map((t) => t.id)}
-        strategy={verticalListSortingStrategy}
-      >
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <SortableContext items={todos.map((t) => t.id)} strategy={verticalListSortingStrategy}>
         <ul className="flex flex-col gap-1">
           {todos.map((todo) => (
             <SortableTodoItem

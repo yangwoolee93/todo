@@ -1,18 +1,9 @@
 import { useEffect, useRef } from "react";
 import { getTodoTextClass } from "@renderer/features/todo";
-import {
-  getTodayString,
-  shiftMonth,
-  toYearMonth,
-} from "@renderer/utils/dateUtils";
+import { getTodayString, shiftMonth, toYearMonth } from "@renderer/utils/dateUtils";
 import { useDragScroll } from "@renderer/hooks/useDragScroll";
 import { useMonthStore } from "../model/useMonthStore";
-import {
-  Card,
-  Button,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-} from "@renderer/shared/ui";
+import { Card, Button, ChevronLeftIcon, ChevronRightIcon } from "@renderer/shared/ui";
 
 function toMonthLabel(yearMonth: string): string {
   const [yearStr, monthStr] = yearMonth.split("-");
@@ -68,9 +59,7 @@ export default function MonthBoard() {
                 </Button>
               )}
             </div>
-            <h2 className="text-xl font-semibold text-fg">
-              {toMonthLabel(yearMonth)}
-            </h2>
+            <h2 className="text-xl font-semibold text-fg">{toMonthLabel(yearMonth)}</h2>
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -111,9 +100,7 @@ export default function MonthBoard() {
                 key={column.date}
                 ref={isTodayColumn ? todayColumnRef : undefined}
                 className={`flex w-36 shrink-0 flex-col overflow-hidden rounded-(--radius-card) border bg-surface ${
-                  isTodayColumn
-                    ? "border-accent ring-2 ring-today-ring/30"
-                    : "border-border"
+                  isTodayColumn ? "border-accent ring-2 ring-today-ring/30" : "border-border"
                 }`}
               >
                 <div
@@ -128,9 +115,7 @@ export default function MonthBoard() {
 
                 <ul className="scrollbar flex max-h-64 flex-col gap-1 overflow-y-auto p-2">
                   {column.todos.length === 0 ? (
-                    <li className="py-4 text-center text-xs text-fg-muted">
-                      —
-                    </li>
+                    <li className="py-4 text-center text-xs text-fg-muted">—</li>
                   ) : (
                     column.todos.map((todo) => (
                       <li

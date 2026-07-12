@@ -27,15 +27,9 @@ export function DeleteBatchModal() {
   return (
     <Modal open={open} onClose={handleClose} label="삭제 확인">
       <ModalTitle className="mb-2 text-base font-semibold text-fg">삭제</ModalTitle>
-      <p className="mb-4 text-sm text-fg-secondary">
-        일괄 추가된 할 일입니다. 어떻게 삭제할까요?
-      </p>
+      <p className="mb-4 text-sm text-fg-secondary">일괄 추가된 할 일입니다. 어떻게 삭제할까요?</p>
       <div className="flex flex-col gap-2">
-        <Button
-          variant="danger"
-          className="w-full"
-          onClick={() => void handleDeleteAll()}
-        >
+        <Button variant="danger" className="w-full" onClick={() => void handleDeleteAll()}>
           전체 삭제
         </Button>
         <Button className="w-full" onClick={() => void handleDeleteDay()}>

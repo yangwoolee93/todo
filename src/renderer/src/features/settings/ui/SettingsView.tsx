@@ -1,6 +1,6 @@
-import { ThemeSelector } from './ThemeSelector'
-import { BackupPanel } from './BackupPanel'
-import { Card } from '@renderer/shared/ui'
+import { ThemeSelector } from "./ThemeSelector";
+import { BackupPanel } from "./BackupPanel";
+import { Card } from "@renderer/shared/ui";
 
 /**
  * 설정 뷰 — 테마 + 데이터 백업
@@ -10,7 +10,9 @@ export function SettingsView() {
     <div className="flex flex-col gap-4">
       <Card as="section">
         <h2 className="mb-1 text-base font-semibold text-fg">테마</h2>
-        <p className="mb-4 text-xs text-fg-secondary">밝은 모드, 어두운 모드, 시스템 자동 중 선택</p>
+        <p className="mb-4 text-xs text-fg-secondary">
+          밝은 모드, 어두운 모드, 시스템 자동 중 선택
+        </p>
         <ThemeSelector />
       </Card>
 
@@ -20,5 +22,5 @@ export function SettingsView() {
         <BackupPanel />
       </Card>
     </div>
-  )
+  );
 }

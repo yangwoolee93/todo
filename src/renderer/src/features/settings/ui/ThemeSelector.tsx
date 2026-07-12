@@ -31,12 +31,8 @@ export function ThemeSelector() {
             onChange={() => setMode(option.value)}
           />
           <span>
-            <span className="block text-sm font-medium text-fg">
-              {option.label}
-            </span>
-            <span className="block text-xs text-fg-secondary">
-              {option.desc}
-            </span>
+            <span className="block text-sm font-medium text-fg">{option.label}</span>
+            <span className="block text-xs text-fg-secondary">{option.desc}</span>
           </span>
         </label>
       ))}
