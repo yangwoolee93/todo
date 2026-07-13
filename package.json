@@ -1,11 +1,11 @@
 {
-  "name": "TODO",
+  "name": "Orbit Todo",
   "version": "0.2.0",
   "description": "Todo Application",
   "main": "./out/main/index.js",
   "build": {
-    "appId": "com.todo.app",
-    "productName": "TODO",
+    "appId": "com.orbit-todo.app",
+    "productName": "Orbit Todo",
     "directories": {
       "output": "dist",
       "buildResources": "build"

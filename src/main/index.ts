@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, screen, shell } from "electron";
+import { app, BrowserWindow, ipcMain, screen, shell, nativeImage } from "electron";
 import { join } from "path";
 import { registerIpcHandlers } from "./ipcHandlers";
 import { ensureNormalizedStore } from "./database/todoRepository";
@@ -63,12 +63,12 @@ function getPlatformWindowOptions(): Electron.BrowserWindowConstructorOptions {
     return {
       titleBarStyle: "hiddenInset",
       trafficLightPosition: { x: 12, y: 14 },
-      title: "TODO",
+      title: "Orbit",
     };
   }
   if (process.platform === "win32") {
     return {
-      title: "TODO",
+      title: "Orbit",
       titleBarStyle: "hidden",
       titleBarOverlay: {
         ...TITLE_BAR_COLORS.light,
@@ -135,6 +135,10 @@ ipcMain.handle("window:setTitleBarOverlay", (_event, isDark: boolean) => {
 
 /** Electron 앱 초기화 — IPC 등록 및 윈도우 생성 */
 app.whenReady().then(() => {
+  if (process.platform === "darwin" && app.dock) {
+    const appIcon = nativeImage.createFromPath(join(__dirname, "../../build/icon_mac.png"));
+    app.dock.setIcon(appIcon);
+  }
   ensureNormalizedStore();
   registerIpcHandlers();
   createWindow();
