@@ -1,7 +1,13 @@
-import { app, BrowserWindow, screen, shell } from "electron";
+import { app, BrowserWindow, ipcMain, screen, shell } from "electron";
 import { join } from "path";
 import { registerIpcHandlers } from "./ipcHandlers";
 import { ensureNormalizedStore } from "./database/todoRepository";
+
+const TITLE_BAR_HEIGHT = 44;
+const TITLE_BAR_COLORS = {
+  light: { color: "#f4f6f9", symbolColor: "#1e293b" },
+  dark: { color: "#121212", symbolColor: "#ececec" },
+} as const;
 
 /** 메인 BrowserWindow 참조 (macOS activate 이벤트용) */
 let mainWindow: BrowserWindow | null = null;
@@ -60,6 +66,16 @@ function getPlatformWindowOptions(): Electron.BrowserWindowConstructorOptions {
       title: "TODO",
     };
   }
+  if (process.platform === "win32") {
+    return {
+      title: "TODO",
+      titleBarStyle: "hidden",
+      titleBarOverlay: {
+        ...TITLE_BAR_COLORS.light,
+        height: TITLE_BAR_HEIGHT,
+      },
+    };
+  }
 
   return {};
 }
@@ -86,11 +102,18 @@ function createWindow(): void {
       nodeIntegration: false,
       sandbox: false,
     },
+    icon: join(__dirname, "../../build/icon.png"),
   });
 
-  mainWindow.on("ready-to-show", () => {
-    mainWindow?.show();
-  });
+  if (process.platform === "win32") {
+    mainWindow.webContents.once("did-finish-load", () => {
+      mainWindow?.show();
+    });
+  } else {
+    mainWindow.on("ready-to-show", () => {
+      mainWindow?.show();
+    });
+  }
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);
@@ -103,6 +126,12 @@ function createWindow(): void {
     mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
   }
 }
+
+ipcMain.handle("window:setTitleBarOverlay", (_event, isDark: boolean) => {
+  if (!mainWindow) return;
+  const theme = isDark ? TITLE_BAR_COLORS.dark : TITLE_BAR_COLORS.light;
+  mainWindow.setTitleBarOverlay({ ...theme, height: TITLE_BAR_HEIGHT });
+});
 
 /** Electron 앱 초기화 — IPC 등록 및 윈도우 생성 */
 app.whenReady().then(() => {

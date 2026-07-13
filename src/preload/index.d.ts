@@ -7,6 +7,7 @@ declare global {
     /** Preload에서 노출하는 Electron 런타임 정보 */
     electron: {
       platform: NodeJS.Platform;
+      setTitleBarOverlay: (isDark: boolean) => void;
     };
   }
 }

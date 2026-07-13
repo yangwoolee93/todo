@@ -4,6 +4,7 @@ import { useUIStore } from "@renderer/stores/useUIStore";
 import { cn } from "@renderer/utils/cn";
 import { APP_VERSION } from "@renderer/constants/appVersion";
 import { Tab } from "@renderer/shared/ui";
+import icon from "@renderer/assets/icon.png";
 
 interface AppShellProps {
   children: ReactNode;
@@ -18,6 +19,7 @@ export function AppShell({ children }: AppShellProps) {
   const goMonthView = useUIStore((s) => s.goMonthView);
   const goSettingsView = useUIStore((s) => s.goSettingsView);
   const isMac = window.electron?.platform === "darwin";
+  const isWin = window.electron?.platform === "win32";
 
   const tabs: { id: AppView; label: string; onClick: () => void }[] = [
     { id: "today", label: "오늘", onClick: () => goTodayView() },
@@ -35,9 +37,10 @@ export function AppShell({ children }: AppShellProps) {
             isMac ? "pl-20" : "pl-4",
           )}
         >
+          {isWin && <img src={icon} className="w-6 h-6" />}
           <span className="truncate text-md font-bold tracking-[-0.8px] text-fg">할일</span>
         </div>
-        <nav className={cn("flex gap-1 pr-2")}>
+        <nav className={cn("flex gap-1", isWin ? "pr-36" : "pr-2")}>
           {tabs.map((tab) => (
             <Tab key={tab.id} active={view === tab.id} onClick={tab.onClick}>
               {tab.label}

@@ -15,6 +15,7 @@ export const IPC_CHANNELS = {
   EXPORT_JSON: "data:exportJson",
   EXPORT_SQL: "data:exportSql",
   IMPORT_JSON: "data:importJson",
+  SET_TITLE_BAR_OVERLAY: "window:setTitleBarOverlay",
 } as const;
 
 export type IpcChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS];

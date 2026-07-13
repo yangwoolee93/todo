@@ -1,9 +1,10 @@
 import { useEffect } from "react";
 import { useThemeStore } from "@renderer/stores/useThemeStore";
 
-/** html 요소에 dark 클래스를 적용/제거한다. */
+/** html 요소에 dark 클래스를 적용/제거하고, 윈도우 타이틀바 overlay 색을 동기화한다. */
 function applyDarkClass(isDark: boolean): void {
   document.documentElement.classList.toggle("dark", isDark);
+  window.electron?.setTitleBarOverlay?.(isDark);
 }
 
 /**

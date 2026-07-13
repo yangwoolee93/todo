@@ -7,6 +7,7 @@ declare global {
     api: TodoApi;
     electron: {
       platform: NodeJS.Platform;
+      setTitleBarOverlay: (isDark: boolean) => void;
     };
   }
 }

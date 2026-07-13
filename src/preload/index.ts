@@ -72,6 +72,10 @@ const api = {
 contextBridge.exposeInMainWorld("api", api);
 contextBridge.exposeInMainWorld("electron", {
   platform: process.platform,
+  setTitleBarOverlay: (isDark: boolean): void => {
+    if (process.platform !== "win32") return;
+    void ipcRenderer.invoke(IPC_CHANNELS.SET_TITLE_BAR_OVERLAY, isDark);
+  },
 });
 
 export type TodoApi = typeof api;
