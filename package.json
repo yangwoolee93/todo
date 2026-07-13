@@ -1,5 +1,5 @@
 {
-  "name": "Orbit Todo",
+  "name": "orbit-todo",
   "version": "0.2.0",
   "description": "Todo Application",
   "main": "./out/main/index.js",
