@@ -136,7 +136,7 @@ ipcMain.handle("window:setTitleBarOverlay", (_event, isDark: boolean) => {
 /** Electron 앱 초기화 — IPC 등록 및 윈도우 생성 */
 app.whenReady().then(() => {
   if (process.platform === "darwin" && app.dock) {
-    const appIcon = nativeImage.createFromPath(join(__dirname, "../../build/icon.png"));
+    const appIcon = nativeImage.createFromPath(join(__dirname, "../../build/icon_win.png"));
     app.dock.setIcon(appIcon);
   }
   ensureNormalizedStore();

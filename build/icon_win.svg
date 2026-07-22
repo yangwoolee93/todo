@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" role="img"
+    aria-label="Orbit Todo Windows icon">
+
+    <defs>
+        <radialGradient id="tipGlowGreen" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#A4E848" stop-opacity="0.6" />
+            <stop offset="20%" stop-color="#A4E848" stop-opacity="0.45" />
+            <stop offset="40%" stop-color="#A4E848" stop-opacity="0.35" />
+            <stop offset="60%" stop-color="#A4E848" stop-opacity="0.2" />
+            <stop offset="80%" stop-color="#A4E848" stop-opacity="0.1" />
+            <stop offset="100%" stop-color="#A4E848" stop-opacity="0" />
+        </radialGradient>
+
+        <mask id="iconOnlyMask" maskUnits="userSpaceOnUse" x="-512" y="-512" width="1024" height="1024">
+            <rect x="-512" y="-512" width="1024" height="1024" fill="black" />
+
+            <path d="M -28 -235 A 28 28 0 0 1 28 -235" fill="none" stroke="#fff" stroke-width="16"
+                stroke-linecap="round" />
+            <path d="M 0 -235 L 20 -235 A 20 20 0 0 0 0 -255 Z" fill="#fff" />
+
+            <circle cx="0" cy="0" r="216" fill="#fff" />
+            <circle cx="0" cy="0" r="184" fill="black" />
+
+            <path d="M 82.63 -155.4
+                    L 115.37 -192.01
+                    A 224 224 0 0 1 192.01 -115.37
+                    L 155.4 -82.63
+                    A 176 176 0 0 0 82.63 -155.4
+                    Z"
+                fill="black" />
+            <path d="M -82.63 155.4
+                    L -115.37 192.01
+                    A 224 224 0 0 1 -192.01 115.37
+                    L -155.4 82.63
+                    A 176 176 0 0 0 -82.63 155.4
+                    Z"
+                fill="black" />
+
+            <g stroke="#fff" stroke-width="12" stroke-linecap="round">
+                <line x1="-150" y1="0" x2="-128" y2="0" />
+                <line x1="128" y1="0" x2="150" y2="0" />
+                <line x1="106" y1="106" x2="91" y2="91" />
+                <line x1="-106" y1="-106" x2="-91" y2="-91" />
+            </g>
+
+            <g transform="translate(0 -120)" stroke="#fff" stroke-width="12" fill="none" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M -22.4 0 L -4.8 19.2 L 27.2 -17.6" />
+            </g>
+
+            <g transform="translate(0 120)" stroke="#fff" stroke-width="12" stroke-linecap="round">
+                <line x1="-17.6" y1="-17.6" x2="17.6" y2="17.6" />
+                <line x1="17.6" y1="-17.6" x2="-17.6" y2="17.6" />
+            </g>
+
+            <g transform="rotate(45)">
+                <path d="M 0 -260 L 40 0 L 0 260 Z" fill="#fff" />
+                <g fill="none" stroke="#fff" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M 0 -260 L 40 0 L 0 260" />
+                    <path d="M 0 -260 L -40 0 L 0 260" />
+                </g>
+            </g>
+
+            <circle cx="0" cy="0" r="26" fill="none" stroke="#fff" stroke-width="14" />
+
+            <g stroke-linecap="round" stroke-linejoin="round">
+                <g stroke="#fff" stroke-width="12">
+                    <line x1="228" y1="-218" x2="262" y2="-250" />
+                    <line x1="168" y1="-228" x2="168" y2="-258" />
+                </g>
+                <g stroke="#fff" stroke-width="12">
+                    <line x1="-202" y1="-192" x2="-202" y2="-224" />
+                    <line x1="-218" y1="-208" x2="-186" y2="-208" />
+                </g>
+                <circle cx="-138" cy="-250" r="8" fill="#fff" />
+                <circle cx="-255" cy="-148" r="8" fill="#fff" />
+                <g stroke="#fff" stroke-width="12">
+                    <line x1="202" y1="192" x2="202" y2="224" />
+                    <line x1="218" y1="208" x2="186" y2="208" />
+                </g>
+                <circle cx="138" cy="250" r="8" fill="#fff" />
+                <circle cx="255" cy="148" r="8" fill="#fff" />
+                <g stroke="#fff" stroke-width="12">
+                    <line x1="-228" y1="218" x2="-262" y2="250" />
+                    <line x1="-168" y1="228" x2="-168" y2="258" />
+                </g>
+                <g stroke="#fff" stroke-width="12">
+                    <line x1="-252" y1="142" x2="-252" y2="174" />
+                    <line x1="-236" y1="158" x2="-268" y2="158" />
+                </g>
+            </g>
+        </mask>
+    </defs>
+
+    <rect id="background" width="1024" height="1024" fill="#fff" opacity="0" />
+
+    <!-- Windows: scale 1.28 (800 to 1024, no outer padding) -->
+    <g transform="translate(512 512) scale(1.28) translate(-512 -512)">
+        <rect x="112" y="112" width="800" height="800" rx="400" fill="#FFFFFF" />
+
+        <g transform="translate(512 512)">
+            <path d="M -28 -235 A 28 28 0 0 1 28 -235" fill="none" stroke="#2A82DA" stroke-width="16"
+                stroke-linecap="round" />
+            <path d="M 0 -235 L 20 -235 A 20 20 0 0 0 0 -255 Z"
+                fill="#A4E848" fill-opacity="0.7" stroke="none" />
+
+            <path d="M -192.01 115.37 A 224 224 0 0 1 115.37 -192.01" fill="none" stroke="#2A82DA" stroke-width="18"
+                stroke-linecap="round" />
+            <path d="M 192.01 -115.37 A 224 224 0 0 1 -115.37 192.01" fill="none" stroke="#2A82DA" stroke-width="18"
+                stroke-linecap="round" />
+
+            <path d="M -155.4 82.63 A 176 176 0 0 1 82.63 -155.4" fill="none" stroke="#2A82DA" stroke-width="18"
+                stroke-linecap="round" />
+            <path d="M 155.4 -82.63 A 176 176 0 0 1 -82.63 155.4" fill="none" stroke="#2A82DA" stroke-width="18"
+                stroke-linecap="round" />
+
+            <g stroke="#CBD5E0" stroke-width="12" stroke-linecap="round">
+                <line x1="-150" y1="0" x2="-128" y2="0" />
+                <line x1="128" y1="0" x2="150" y2="0" />
+                <line x1="106" y1="106" x2="91" y2="91" />
+                <line x1="-106" y1="-106" x2="-91" y2="-91" />
+            </g>
+
+            <g transform="translate(0 -120)" stroke="#2A82DA" stroke-width="12" fill="none" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M -22.4 0 L -4.8 19.2 L 27.2 -17.6" />
+            </g>
+
+            <g transform="translate(0 120)" stroke="#CBD5E0" stroke-width="12" stroke-linecap="round">
+                <line x1="-17.6" y1="-17.6" x2="17.6" y2="17.6" />
+                <line x1="17.6" y1="-17.6" x2="-17.6" y2="17.6" />
+            </g>
+
+            <g transform="rotate(45)">
+                <path d="M 0 -260 L 40 0 L 0 260 Z"
+                    fill="#2A82DA" fill-opacity="0.5" stroke="none" />
+                <g fill="none" stroke-linejoin="round" stroke-linecap="round" stroke-width="16">
+                    <path d="M 0 -260 L 40 0 L 0 260" stroke="#2A82DA" />
+                    <path d="M 0 -260 L -40 0 L 0 260" stroke="#2A82DA" />
+                </g>
+            </g>
+
+            <circle cx="0" cy="0" r="26" fill="#FFFFFF" stroke="#2A82DA" stroke-width="14" />
+        </g>
+
+        <g transform="translate(512 512)" stroke-linecap="round" stroke-linejoin="round">
+            <g stroke="#A4E848" stroke-width="12">
+                <line x1="228" y1="-218" x2="262" y2="-250" />
+                <line x1="168" y1="-228" x2="168" y2="-258" />
+            </g>
+            <g stroke="#2A82DA" stroke-width="12">
+                <line x1="252" y1="-142" x2="252" y2="-174" />
+                <line x1="236" y1="-158" x2="268" y2="-158" />
+            </g>
+            <g stroke="#FFD740" stroke-width="12">
+                <line x1="-202" y1="-192" x2="-202" y2="-224" />
+                <line x1="-218" y1="-208" x2="-186" y2="-208" />
+            </g>
+            <circle cx="-138" cy="-250" r="8" fill="#2A82DA" />
+            <circle cx="-255" cy="-148" r="8" fill="#A4E848" />
+            <g stroke="#FFD740" stroke-width="12">
+                <line x1="202" y1="192" x2="202" y2="224" />
+                <line x1="218" y1="208" x2="186" y2="208" />
+            </g>
+            <circle cx="138" cy="250" r="8" fill="#2A82DA" />
+            <circle cx="255" cy="148" r="8" fill="#A4E848" />
+            <g stroke="#A4E848" stroke-width="12">
+                <line x1="-228" y1="218" x2="-262" y2="250" />
+                <line x1="-168" y1="228" x2="-168" y2="258" />
+            </g>
+            <g stroke="#2A82DA" stroke-width="12">
+                <line x1="-252" y1="142" x2="-252" y2="174" />
+                <line x1="-236" y1="158" x2="-268" y2="158" />
+            </g>
+        </g>
+
+        <g transform="translate(512 512)">
+            <circle cx="184" cy="-184" r="300" fill="url(#tipGlowGreen)" mask="url(#iconOnlyMask)" />
+        </g>
+    </g>
+</svg>

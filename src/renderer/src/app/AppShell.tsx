@@ -4,7 +4,7 @@ import { useUIStore } from "@renderer/stores/useUIStore";
 import { cn } from "@renderer/utils/cn";
 import { APP_VERSION } from "@renderer/constants/appVersion";
 import { Tab } from "@renderer/shared/ui";
-import icon from "@renderer/assets/icon.png";
+import icon from "@renderer/assets/icon_win.png";
 
 interface AppShellProps {
   children: ReactNode;
