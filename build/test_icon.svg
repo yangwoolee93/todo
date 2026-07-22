@@ -1,15 +1,150 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" role="img"
     aria-label="Orbit Todo test icon">
 
+    <defs>
+        <!-- 초록 glow용 방사형 그라데이션 (중심 진함 → 바깥 투명) -->
+        <radialGradient id="tipGlowGreen" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#A4E848" stop-opacity="0.6" />
+            <stop offset="20%" stop-color="#A4E848" stop-opacity="0.45" />
+            <stop offset="40%" stop-color="#A4E848" stop-opacity="0.35" />
+            <stop offset="60%" stop-color="#A4E848" stop-opacity="0.2" />
+            <stop offset="80%" stop-color="#A4E848" stop-opacity="0.1" />
+            <stop offset="100%" stop-color="#A4E848" stop-opacity="0" />
+        </radialGradient>
+
+        <!-- 아이콘 실루엣 마스크: 흰색으로 그려진 부분만 glow가 보임 -->
+        <mask id="iconOnlyMask" maskUnits="userSpaceOnUse" x="-512" y="-512" width="1024" height="1024">
+            <!-- 배경(검정 = glow 안 보임) -->
+            <rect x="-512" y="-512" width="1024" height="1024" fill="black" />
+
+            <!-- top hanging loop -->
+            <path d="M -28 -235 A 28 28 0 0 1 28 -235" fill="none" stroke="#fff" stroke-width="16"
+                stroke-linecap="round" />
+            <!-- 고리 내부 우측 1/4원 -->
+            <path d="M 0 -235 L 20 -235 A 20 20 0 0 0 0 -255 Z" fill="#fff" />
+
+            
+            <!-- 바깥(224)~안쪽(176) 원 사이 전체 영역을 마스크에 포함 -->
+            <circle cx="0" cy="0" r="216" fill="#fff" />
+            <circle cx="0" cy="0" r="184" fill="black" />
+
+            <!-- 파란 테두리가 끊긴 구간만큼 도넛도 제외 (실제 끝점끼리 연결) -->
+            <path d="M 82.63 -155.4
+                    L 115.37 -192.01
+                    A 224 224 0 0 1 192.01 -115.37
+                    L 155.4 -82.63
+                    A 176 176 0 0 0 82.63 -155.4
+                    Z"
+                fill="black" />
+            <path d="M -82.63 155.4
+                    L -115.37 192.01
+                    A 224 224 0 0 1 -192.01 115.37
+                    L -155.4 82.63
+                    A 176 176 0 0 0 -82.63 155.4
+                    Z"
+                fill="black" />
+
+            <!-- outer frame (바깥 원 테두리, 침 지나가는 구간 제외) -->
+            <!-- <path d="M -192.01 115.37 A 224 224 0 0 1 115.37 -192.01" fill="none" stroke="#fff" stroke-width="18"
+                stroke-linecap="round" />
+            <path d="M 192.01 -115.37 A 224 224 0 0 1 -115.37 192.01" fill="none" stroke="#fff" stroke-width="18"
+                stroke-linecap="round" /> -->
+
+            <!-- inner dial (안쪽 원 테두리, 침 지나가는 구간 제외) -->
+            <!-- <path d="M -155.4 82.63 A 176 176 0 0 1 82.63 -155.4" fill="none" stroke="#fff" stroke-width="18"
+                stroke-linecap="round" />
+            <path d="M 155.4 -82.63 A 176 176 0 0 1 -82.63 155.4" fill="none" stroke="#fff" stroke-width="18"
+                stroke-linecap="round" /> -->
+
+
+            <!-- tick marks (9시/3시, 대각 4:30/10:30 눈금) -->
+            <g stroke="#fff" stroke-width="12" stroke-linecap="round">
+                <line x1="-150" y1="0" x2="-128" y2="0" />
+                <line x1="128" y1="0" x2="150" y2="0" />
+                <line x1="106" y1="106" x2="91" y2="91" />
+                <line x1="-106" y1="-106" x2="-91" y2="-91" />
+            </g>
+
+            <!-- north check (12시 체크 표시) -->
+            <g transform="translate(0 -120)" stroke="#fff" stroke-width="12" fill="none" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M -22.4 0 L -4.8 19.2 L 27.2 -17.6" />
+            </g>
+
+            <!-- south x (6시 X 표시) -->
+            <g transform="translate(0 120)" stroke="#fff" stroke-width="12" stroke-linecap="round">
+                <line x1="-17.6" y1="-17.6" x2="17.6" y2="17.6" />
+                <line x1="17.6" y1="-17.6" x2="-17.6" y2="17.6" />
+            </g>
+
+            <!-- needle (나침반 바늘 전체, 45도 회전) -->
+            <g transform="rotate(45)">
+                <path d="M 0 -260 L 40 0 L 0 260 Z" fill="#fff" />
+                <g fill="none" stroke="#fff" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M 0 -260 L 40 0 L 0 260" />
+                    <path d="M 0 -260 L -40 0 L 0 260" />
+                </g>
+            </g>
+
+            <!-- pivot (중심 원 테두리) -->
+            <circle cx="0" cy="0" r="26" fill="none" stroke="#fff" stroke-width="14" />
+
+            <!-- decorative accents (아래 본문 장식과 동일한 위치) -->
+            <g stroke-linecap="round" stroke-linejoin="round">
+                <!-- 우상단(1~2시): 초록 스파크 -->
+                <g stroke="#fff" stroke-width="12">
+                    <line x1="228" y1="-218" x2="262" y2="-250" />
+                    <line x1="168" y1="-228" x2="168" y2="-258" />
+                </g>
+                <!-- 우상단(1~2시): 파란 + -->
+                <!-- <g stroke="#fff" stroke-width="12">
+                    <line x1="252" y1="-142" x2="252" y2="-174" />
+                    <line x1="236" y1="-158" x2="268" y2="-158" />
+                </g> -->
+                <!-- 좌상단(10~11시): 노란 + -->
+                <g stroke="#fff" stroke-width="12">
+                    <line x1="-202" y1="-192" x2="-202" y2="-224" />
+                    <line x1="-218" y1="-208" x2="-186" y2="-208" />
+                </g>
+                <!-- 좌상단: 파란 점 / 초록 점 -->
+                <circle cx="-138" cy="-250" r="8" fill="#fff" />
+                <circle cx="-255" cy="-148" r="8" fill="#fff" />
+                <!-- 우하단(4~5시, 좌상단 대칭): 노란 + -->
+                <g stroke="#fff" stroke-width="12">
+                    <line x1="202" y1="192" x2="202" y2="224" />
+                    <line x1="218" y1="208" x2="186" y2="208" />
+                </g>
+                <!-- 우하단: 파란 점 / 초록 점 -->
+                <circle cx="138" cy="250" r="8" fill="#fff" />
+                <circle cx="255" cy="148" r="8" fill="#fff" />
+                <!-- 좌하단(7~8시, 우상단 대칭): 초록 스파크 -->
+                <g stroke="#fff" stroke-width="12">
+                    <line x1="-228" y1="218" x2="-262" y2="250" />
+                    <line x1="-168" y1="228" x2="-168" y2="258" />
+                </g>
+                <!-- 좌하단: 파란 + -->
+                <g stroke="#fff" stroke-width="12">
+                    <line x1="-252" y1="142" x2="-252" y2="174" />
+                    <line x1="-236" y1="158" x2="-268" y2="158" />
+                </g>
+            </g>
+        </mask>
+    </defs>
+
+    <!-- 캔버스 전체 (투명, export 용도) -->
     <rect id="background" width="1024" height="1024" fill="#fff" opacity="0" />
 
+    <!-- 아이콘 흰 원형 배경 -->
     <g>
         <rect x="112" y="112" width="800" height="800" rx="400" fill="#FFFFFF" />
     </g>
 
+    <!-- 나침반 본체 (중심 512,512 기준 좌표) -->
     <g transform="translate(512 512)">
+        <!-- top hanging loop (상단 고리) -->
         <path d="M -28 -235 A 28 28 0 0 1 28 -235" fill="none" stroke="#2A82DA" stroke-width="16"
             stroke-linecap="round" />
+        <!-- 고리 내부 우측 1/4원 - 초록 -->
         <path d="M 0 -235 L 20 -235 A 20 20 0 0 0 0 -255 Z"
             fill="#A4E848" fill-opacity="0.7" stroke="none" />
 
@@ -60,7 +195,7 @@
 
         <!-- pivot -->
         <circle cx="0" cy="0" r="26" fill="#FFFFFF" stroke="#2A82DA" stroke-width="14" />
-        
+
     </g>
 
     <!-- decorative accents -->
@@ -76,8 +211,6 @@
 
         <!-- 우상단: 파란 + -->
         <g stroke="#2A82DA" stroke-width="12">
-            <!-- <line x1="272" y1="-92" x2="272" y2="-124" />
-            <line x1="256" y1="-108" x2="288" y2="-108" /> -->
             <line x1="252" y1="-142" x2="252" y2="-174" />
             <line x1="236" y1="-158" x2="268" y2="-158" />
         </g>
@@ -86,8 +219,6 @@
 
         <!-- 좌상단: 노란 + -->
         <g stroke="#FFD740" stroke-width="12">
-            <!-- <line x1="-272" y1="-112" x2="-272" y2="-144" />
-            <line x1="-288" y1="-128" x2="-256" y2="-128" /> -->
             <line x1="-202" y1="-192" x2="-202" y2="-224" />
             <line x1="-218" y1="-208" x2="-186" y2="-208" />
         </g>
@@ -121,5 +252,10 @@
             <line x1="-236" y1="158" x2="-268" y2="158" />
         </g>
 
+    </g>
+
+    <!-- 바늘 우상단 꼭짓점 기준 glow (아이콘 요소에만 적용, 흰 배경 제외) -->
+    <g transform="translate(512 512)">
+        <circle cx="184" cy="-184" r="300" fill="url(#tipGlowGreen)" mask="url(#iconOnlyMask)" />
     </g>
 </svg>
