@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" role="img"
+    aria-label="Orbit Todo test icon">
+
+    <rect id="background" width="1024" height="1024" fill="#fff" opacity="0" />
+
+    <g>
+        <rect x="112" y="112" width="800" height="800" rx="400" fill="#FFFFFF" />
+    </g>
+
+    <g transform="translate(512 512)">
+        <path d="M -28 -235 A 28 28 0 0 1 28 -235" fill="none" stroke="#2A82DA" stroke-width="16"
+            stroke-linecap="round" />
+        <path d="M 0 -235 L 20 -235 A 20 20 0 0 0 0 -255 Z"
+            fill="#A4E848" fill-opacity="0.7" stroke="none" />
+
+        <!-- outer frame (gaps where needle crosses) -->
+        <path d="M -192.01 115.37 A 224 224 0 0 1 115.37 -192.01" fill="none" stroke="#2A82DA" stroke-width="18"
+            stroke-linecap="round" />
+        <path d="M 192.01 -115.37 A 224 224 0 0 1 -115.37 192.01" fill="none" stroke="#2A82DA" stroke-width="18"
+            stroke-linecap="round" />
+
+        <!-- inner dial (gaps where needle crosses) -->
+        <path d="M -155.4 82.63 A 176 176 0 0 1 82.63 -155.4" fill="none" stroke="#2A82DA" stroke-width="18"
+            stroke-linecap="round" />
+        <path d="M 155.4 -82.63 A 176 176 0 0 1 -82.63 155.4" fill="none" stroke="#2A82DA" stroke-width="18"
+            stroke-linecap="round" />
+
+        <!-- tick marks -->
+        <g stroke="#CBD5E0" stroke-width="12" stroke-linecap="round">
+            <!-- 9시, 3시 -->
+            <line x1="-150" y1="0" x2="-128" y2="0" />
+            <line x1="128" y1="0" x2="150" y2="0" />
+            <!-- 대각 (4:30, 10:30) -->
+            <line x1="106" y1="106" x2="91" y2="91" />
+            <line x1="-106" y1="-106" x2="-91" y2="-91" />
+        </g>
+
+        <!-- north check -->
+        <g transform="translate(0 -120)" stroke="#2A82DA" stroke-width="12" fill="none" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M -22.4 0 L -4.8 19.2 L 27.2 -17.6" />
+        </g>
+
+        <!-- south x -->
+        <g transform="translate(0 120)" stroke="#CBD5E0" stroke-width="12" stroke-linecap="round">
+            <line x1="-17.6" y1="-17.6" x2="17.6" y2="17.6" />
+            <line x1="17.6" y1="-17.6" x2="-17.6" y2="17.6" />
+        </g>
+
+        <!-- needle -->
+        <g transform="rotate(45)">
+            <!-- 대각선(x=0)으로 나눈 아래쪽 절반 - 파란색 -->
+            <path d="M 0 -260 L 40 0 L 0 260 Z"
+                fill="#2A82DA" fill-opacity="0.5" stroke="none" />
+            <g fill="none" stroke-linejoin="round" stroke-linecap="round" stroke-width="16">
+                <path d="M 0 -260 L 40 0 L 0 260" stroke="#2A82DA" />
+                <path d="M 0 -260 L -40 0 L 0 260" stroke="#2A82DA" />
+            </g>
+        </g>
+
+        <!-- pivot -->
+        <circle cx="0" cy="0" r="26" fill="#FFFFFF" stroke="#2A82DA" stroke-width="14" />
+        
+    </g>
+
+    <!-- decorative accents -->
+    <g transform="translate(512 512)" stroke-linecap="round" stroke-linejoin="round">
+
+        <!-- ── 우상단 (1~2시) ── -->
+
+        <!-- 우상단: 초록 스파크 (바깥으로 퍼지는 짧은 두 줄) -->
+        <g stroke="#A4E848" stroke-width="12">
+            <line x1="228" y1="-218" x2="262" y2="-250" />
+            <line x1="168" y1="-228" x2="168" y2="-258" />
+        </g>
+
+        <!-- 우상단: 파란 + -->
+        <g stroke="#2A82DA" stroke-width="12">
+            <!-- <line x1="272" y1="-92" x2="272" y2="-124" />
+            <line x1="256" y1="-108" x2="288" y2="-108" /> -->
+            <line x1="252" y1="-142" x2="252" y2="-174" />
+            <line x1="236" y1="-158" x2="268" y2="-158" />
+        </g>
+
+        <!-- ── 좌상단 (10~11시) ── -->
+
+        <!-- 좌상단: 노란 + -->
+        <g stroke="#FFD740" stroke-width="12">
+            <!-- <line x1="-272" y1="-112" x2="-272" y2="-144" />
+            <line x1="-288" y1="-128" x2="-256" y2="-128" /> -->
+            <line x1="-202" y1="-192" x2="-202" y2="-224" />
+            <line x1="-218" y1="-208" x2="-186" y2="-208" />
+        </g>
+
+        <!-- 좌상단: 파란 점 -->
+        <circle cx="-138" cy="-250" r="8" fill="#2A82DA" />
+
+        <!-- 좌상단: 초록 점 -->
+        <circle cx="-255" cy="-148" r="8" fill="#A4E848" />
+
+        <!-- ── 우하단 (4~5시) — 좌상단 대칭 ── -->
+        <!-- 우하단: 노란 + (좌상단 대칭) -->
+        <g stroke="#FFD740" stroke-width="12">
+            <line x1="202" y1="192" x2="202" y2="224" />
+            <line x1="218" y1="208" x2="186" y2="208" />
+        </g>
+        <!-- 우하단: 파란 점 (좌상단 대칭) -->
+        <circle cx="138" cy="250" r="8" fill="#2A82DA" />
+        <!-- 우하단: 초록 점 (좌상단 대칭) -->
+        <circle cx="255" cy="148" r="8" fill="#A4E848" />
+
+        <!-- ── 좌하단 (7~8시) — 우상단 대칭 ── -->
+        <!-- 좌하단: 초록 스파크 (우상단 대칭) -->
+        <g stroke="#A4E848" stroke-width="12">
+            <line x1="-228" y1="218" x2="-262" y2="250" />
+            <line x1="-168" y1="228" x2="-168" y2="258" />
+        </g>
+        <!-- 좌하단: 파란 + (우상단 대칭) -->
+        <g stroke="#2A82DA" stroke-width="12">
+            <line x1="-252" y1="142" x2="-252" y2="174" />
+            <line x1="-236" y1="158" x2="-268" y2="158" />
+        </g>
+
+    </g>
+</svg>

@@ -15,7 +15,6 @@
     ],
     "asar": true,
     "win": {
-      "signAndEditExecutable": false,
       "target": [
         {
           "target": "nsis",
