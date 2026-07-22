@@ -37,7 +37,7 @@ export function AppShell({ children }: AppShellProps) {
             isMac ? "pl-20" : "pl-4",
           )}
         >
-          {isWin && <img src={icon} className="w-5 h-5" />}
+          {/* {isWin && <img src={icon} className="w-5 h-5" />} */}
           <span className="truncate text-md font-bold tracking-[-0.8px] text-fg">할일</span>
         </div>
         <nav className={cn("flex gap-1", isWin ? "pr-36" : "pr-2")}>
