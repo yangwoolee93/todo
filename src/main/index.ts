@@ -102,7 +102,7 @@ function createWindow(): void {
       nodeIntegration: false,
       sandbox: false,
     },
-    icon: join(__dirname, "../../build/icon.png"),
+    icon: join(__dirname, "../../build/icon_win.png"),
   });
 
   if (process.platform === "win32") {
