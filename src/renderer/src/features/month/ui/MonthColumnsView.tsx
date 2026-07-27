@@ -3,6 +3,7 @@ import { getTodoTextClass } from "@renderer/features/todo";
 import { cn } from "@renderer/utils/cn";
 import { Button } from "@renderer/shared/ui";
 import type { MonthDayViewProps } from "./monthViewTypes";
+import { onDayActivateKey } from "./onDayActivateKey";
 
 /** 월별 — 가로 day 열 (기존 보기) */
 export default function MonthColumnsView({
@@ -46,12 +47,7 @@ export default function MonthColumnsView({
             aria-pressed={isSelected}
             aria-label={`${column.day}일`}
             onClick={() => onDateClick(column.date)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                onDateClick(column.date);
-              }
-            }}
+            onKeyDown={(event) => onDayActivateKey(event, column.date, onDateClick)}
             className={cn(
               "relative flex w-44 min-w-44 shrink-0 cursor-pointer flex-col",
               "rounded-(--radius-card) border bg-surface transition-colors hover:bg-muted/20",

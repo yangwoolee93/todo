@@ -17,6 +17,7 @@
 | `MonthTimelineView.tsx` | 타임라인 보기 |
 | `MonthViewToggle.tsx` | columns / timeline 전환 |
 | `monthViewTypes.ts` | `MonthDayViewProps` 공유 타입 |
+| `onDayActivateKey.ts` | Enter/Space로 날짜 활성화 공유 헬퍼 |
 
 관련:
 
@@ -75,19 +76,18 @@
 ### 우선
 
 1. **`scrollToToday` / `useEffect`**
-   - `summaries` 변경 시 `scrollLeft = 0` 후 `scrollToToday()` → 달 전환마다 위치 리셋·오늘 점프(의도 확인 필요)
-   - `scrollToTodayTick === 0` early return, effect deps에 `scrollToToday` 미포함 → 타이밍·lint 이슈 가능
+   - 전반: 사용 후 추가 수정 예정 (현상태 유지)
+   - **적용됨**: 오늘 todo 없을 때 헤더 fallback `block: "center"` (이번 달만, `todayIndex >= 0`)
+   - `summaries` 변경 시 `scrollLeft = 0` 후 `scrollToToday()` → 달 전환 정책은 나중에
 
-2. **헤더 레이아웃**
-   - `absolute` 좌표 대신 flex + 고정 너비(`shrink-0`)로 단순화 검토
+2. **헤더 레이아웃** — **적용됨**: flex + `shrink-0` + `DAY_WIDTH` (absolute 제거)
 
-3. **`dayWidth` / `dayWidth - 8`**
-   - style 분산 → CSS 변수 또는 상수 한곳(패딩 포함 규칙 명시)
+3. **상수** — **적용됨**: 파일 상단 `DAY_WIDTH` / `DAY_ITEM_INSET` / `DAY_ITEM_MAX_WIDTH` / `HEADER_HEIGHT` (CSS 변수 없음)
 
 ### 선택
 
-4. 헤더·ColumnsView 키보드 핸들러 중복 → 작은 공유 헬퍼
-5. 중첩 `map` → flat list(가독성용, 필수 아님)
+4. 헤더·ColumnsView 키보드 핸들러 중복 → **적용됨**: `onDayActivateKey.ts`
+5. 중첩 `map` → flat list — **적용됨**: `todoRows` (`flatMap`)
 
 ---
 
