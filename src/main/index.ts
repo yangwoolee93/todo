@@ -122,7 +122,9 @@ function createWindowsTray(): void {
 
   const icon = nativeImage.createFromPath(getWindowsTrayIconPath());
   // .ico 로드 실패 시 PNG 폴백
-  tray = new Tray(icon.isEmpty() ? nativeImage.createFromPath(join(__dirname, "../../build/icon_win.png")) : icon);
+  tray = new Tray(
+    icon.isEmpty() ? nativeImage.createFromPath(join(__dirname, "../../build/icon_win.png")) : icon,
+  );
   tray.setToolTip("Orbit");
 
   const contextMenu = Menu.buildFromTemplate([
@@ -164,6 +166,13 @@ function createWindow(): void {
         ? join(__dirname, "../../build/icon_win.png")
         : join(__dirname, "../../build/icon.png"),
   });
+
+  const isDev = !app.isPackaged;
+  // loadURL / loadFile 다음
+  if (isDev) {
+    mainWindow.webContents.openDevTools({ mode: "bottom" });
+    // mode: "undocked" | "detach" | "right" 등
+  }
 
   // Windows: X 버튼은 종료가 아니라 트레이로 최소화(숨김)
   if (process.platform === "win32") {
