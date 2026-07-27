@@ -38,6 +38,14 @@ export default function MonthBoard() {
     void loadMonthSummary(yearMonth);
   }, [yearMonth, loadMonthSummary]);
 
+  useEffect(() => {
+    if (yearMonth !== currentYearMonth) {
+      setSelectedDate(null);
+      setYearMonth(currentYearMonth);
+    }
+    setScrollToTodayTick((n) => n + 1);
+  }, []);
+
   const changeYearMonth = (next: string) => {
     setSelectedDate(null);
     setYearMonth(next);

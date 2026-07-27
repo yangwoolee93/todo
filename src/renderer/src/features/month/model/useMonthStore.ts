@@ -23,7 +23,7 @@ type MonthStore = MonthState & MonthActions;
 
 const initialState: MonthState = {
   yearMonth: toYearMonth(getTodayString()),
-  viewMode: "columns",
+  viewMode: "timeline",
   summaries: [],
   loading: true,
   error: null,
