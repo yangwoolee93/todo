@@ -53,6 +53,29 @@ export function MoreVerticalIcon({ className = "h-4 w-4" }: { className?: string
   );
 }
 
+/** 가로 열 보기 — 월별 day column */
+export function MonthColumnsViewIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <rect x="3" y="4" width="3.5" height="12" rx="0.75" stroke="currentColor" strokeWidth="1.25" />
+      <rect x="8.25" y="4" width="3.5" height="12" rx="0.75" stroke="currentColor" strokeWidth="1.25" />
+      <rect x="13.5" y="4" width="3.5" height="12" rx="0.75" stroke="currentColor" strokeWidth="1.25" />
+    </svg>
+  );
+}
+
+/** 세로 타임라인 보기 */
+export function MonthTimelineViewIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path d="M4 5h12M4 10h12M4 15h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <circle cx="4" cy="5" r="1.25" fill="currentColor" />
+      <circle cx="4" cy="10" r="1.25" fill="currentColor" />
+      <circle cx="4" cy="15" r="1.25" fill="currentColor" />
+    </svg>
+  );
+}
+
 /** 세로 6점 — 드래그 핸들 */
 export function DragHandleIcon({ className }: { className?: string }) {
   return (

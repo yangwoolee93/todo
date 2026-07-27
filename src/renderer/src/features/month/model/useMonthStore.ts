@@ -2,8 +2,11 @@ import { DaySummary } from "@shared/types/todo";
 import { getTodayString, toYearMonth } from "@renderer/utils/dateUtils";
 import { create } from "zustand";
 
+export type MonthViewMode = "columns" | "timeline";
+
 type MonthState = {
   yearMonth: string;
+  viewMode: MonthViewMode;
   summaries: DaySummary[];
   loading: boolean;
   error: string | null;
@@ -11,6 +14,7 @@ type MonthState = {
 
 type MonthActions = {
   setYearMonth: (yearMonth: string) => void;
+  setViewMode: (mode: MonthViewMode) => void;
   loadMonthSummary: (yearMonth: string) => Promise<void>;
   clearError: () => void;
 };
@@ -19,6 +23,7 @@ type MonthStore = MonthState & MonthActions;
 
 const initialState: MonthState = {
   yearMonth: toYearMonth(getTodayString()),
+  viewMode: "columns",
   summaries: [],
   loading: true,
   error: null,
@@ -28,6 +33,8 @@ const createActions = (
   set: (fn: (prev: MonthStore) => Partial<MonthStore>) => void,
 ): MonthActions => ({
   setYearMonth: (yearMonth) => set(() => ({ yearMonth })),
+
+  setViewMode: (viewMode) => set(() => ({ viewMode })),
 
   loadMonthSummary: async (yearMonth) => {
     set(() => ({ loading: true, error: null }));

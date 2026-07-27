@@ -10,4 +10,6 @@ export {
   CloseIcon,
   MoreVerticalIcon,
   DragHandleIcon,
+  MonthColumnsViewIcon,
+  MonthTimelineViewIcon,
 } from "./icons";
