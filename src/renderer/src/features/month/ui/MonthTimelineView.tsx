@@ -21,7 +21,7 @@ function segmentBgClass(todo: DisplayTodo | null): string {
     return "bg-success/25";
   }
   if (todo.status === "failed") {
-    return "bg-failed-soft";
+    return "bg-failed/25";
   }
   return "bg-muted/80";
 }
@@ -152,13 +152,13 @@ export default function MonthTimelineView({
                     className="relative border-b border-border/80 py-1"
                   >
                     <div
-                      className="relative overflow-hidden rounded border border-border/90 bg-surface shadow-sm"
+                      className="relative"
                       style={{
                         marginLeft: row.startIndex * DAY_WIDTH,
                         width: row.cells.length * DAY_WIDTH,
                       }}
                     >
-                      <div className="flex">
+                      <div className="flex overflow-hidden rounded border border-border/90 bg-surface shadow-sm">
                         {row.cells.map((cell) => (
                           <div
                             key={`${row.key}-${cell.date}`}
@@ -181,8 +181,8 @@ export default function MonthTimelineView({
                           />
                         ))}
                       </div>
-                      <p className="pointer-events-none absolute inset-0 flex items-center px-2 text-sm leading-snug text-fg">
-                        <span className="block min-w-0 truncate">{row.content}</span>
+                      <p className="pointer-events-none absolute inset-y-0 left-0 z-10 flex items-center px-2 text-sm leading-snug text-fg">
+                        <span className="whitespace-nowrap">{row.content}</span>
                       </p>
                     </div>
                   </div>
