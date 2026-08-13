@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
-import { getTodoTextClass, TodoStatusIcon } from "@renderer/features/todo";
+import type { DisplayTodo } from "@shared/types/todo";
 import { toShortLabel } from "@renderer/utils/dateUtils";
 import { cn } from "@renderer/utils/cn";
 import { Button } from "@renderer/shared/ui";
@@ -9,12 +9,22 @@ import { buildTimelineRows } from "./buildTimelineRows";
 
 /** 날짜 칸 너비 (px) */
 const DAY_WIDTH = 88;
-/** 할 일 박스 좌우 여유 (패딩·테두리 감안) */
-const DAY_ITEM_INSET = 8;
-/** 할 일 박스 최대 너비 */
-const DAY_ITEM_MAX_WIDTH = DAY_WIDTH - DAY_ITEM_INSET;
 /** sticky 헤더 높이 */
 const HEADER_HEIGHT = 40;
+
+/** 기간 막대 안 날짜 칸 배경 */
+function segmentBgClass(todo: DisplayTodo | null): string {
+  if (!todo) {
+    return "bg-transparent";
+  }
+  if (todo.status === "completed") {
+    return "bg-success/25";
+  }
+  if (todo.status === "failed") {
+    return "bg-failed-soft";
+  }
+  return "bg-muted/80";
+}
 
 /** 월별 타임라인 — 가로 스크롤 */
 export default function MonthTimelineView({
@@ -135,69 +145,48 @@ export default function MonthTimelineView({
               </p>
             ) : (
               <div>
-                {todoRows.map((row) => {
-                  const firstFilledIndex = row.cells.findIndex((cell) => cell.todo);
-                  return (
+                {todoRows.map((row) => (
+                  <div
+                    key={row.key}
+                    ref={row.key === todayRowKey ? todayRowRef : undefined}
+                    className="relative border-b border-border/80 py-1"
+                  >
                     <div
-                      key={row.key}
-                      ref={row.key === todayRowKey ? todayRowRef : undefined}
-                      className="relative border-b border-border/80 py-1"
+                      className="relative overflow-hidden rounded border border-border/90 bg-surface shadow-sm"
+                      style={{
+                        marginLeft: row.startIndex * DAY_WIDTH,
+                        width: row.cells.length * DAY_WIDTH,
+                      }}
                     >
-                      <div
-                        className="flex"
-                        style={{ marginLeft: row.startIndex * DAY_WIDTH }}
-                      >
-                        {row.cells.map((cell, cellIndex) => {
-                          const isTitleCell = cellIndex === firstFilledIndex;
-                          return (
-                            <div
-                              key={`${row.key}-${cell.date}`}
-                              className="shrink-0 px-1"
-                              style={{ width: DAY_WIDTH }}
-                            >
-                              {cell.todo ? (
-                                <div
-                                  role="button"
-                                  tabIndex={0}
-                                  className={cn(
-                                    "cursor-pointer rounded border border-border/90 bg-surface px-2 py-1 text-sm leading-snug shadow-sm",
-                                    getTodoTextClass(cell.todo.status),
-                                    !isTitleCell && "flex justify-center",
-                                  )}
-                                  style={{ maxWidth: DAY_ITEM_MAX_WIDTH }}
-                                  onClick={() => onDateClick(cell.date)}
-                                  onKeyDown={(event) =>
-                                    onDayActivateKey(event, cell.date, onDateClick)
-                                  }
-                                >
-                                  {isTitleCell ? (
-                                    <span className="block whitespace-nowrap">{row.content}</span>
-                                  ) : (
-                                    <TodoStatusIcon
-                                      status={cell.todo.status}
-                                      className="h-5 w-5 shrink-0"
-                                    />
-                                  )}
-                                </div>
-                              ) : (
-                                <div
-                                  role="button"
-                                  tabIndex={0}
-                                  aria-label={`${toShortLabel(cell.date)} (없음)`}
-                                  className="h-8 cursor-pointer"
-                                  onClick={() => onDateClick(cell.date)}
-                                  onKeyDown={(event) =>
-                                    onDayActivateKey(event, cell.date, onDateClick)
-                                  }
-                                />
-                              )}
-                            </div>
-                          );
-                        })}
+                      <div className="flex">
+                        {row.cells.map((cell) => (
+                          <div
+                            key={`${row.key}-${cell.date}`}
+                            role="button"
+                            tabIndex={0}
+                            aria-label={
+                              cell.todo
+                                ? `${toShortLabel(cell.date)} ${row.content}`
+                                : `${toShortLabel(cell.date)} (없음)`
+                            }
+                            className={cn(
+                              "h-8 shrink-0 cursor-pointer transition-colors",
+                              segmentBgClass(cell.todo),
+                            )}
+                            style={{ width: DAY_WIDTH }}
+                            onClick={() => onDateClick(cell.date)}
+                            onKeyDown={(event) =>
+                              onDayActivateKey(event, cell.date, onDateClick)
+                            }
+                          />
+                        ))}
                       </div>
+                      <p className="pointer-events-none absolute inset-0 flex items-center px-2 text-sm leading-snug text-fg">
+                        <span className="block min-w-0 truncate">{row.content}</span>
+                      </p>
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
             )}
           </div>
