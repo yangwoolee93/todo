@@ -13,6 +13,16 @@
     "files": [
       "out/**/*"
     ],
+    "extraResources": [
+      {
+        "from": "build/icon_win.png",
+        "to": "icon_win.png"
+      },
+      {
+        "from": "build/icon.png",
+        "to": "icon.png"
+      }
+    ],
     "asar": true,
     "win": {
       "target": [

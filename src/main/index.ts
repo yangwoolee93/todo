@@ -87,9 +87,15 @@ function getPlatformWindowOptions(): Electron.BrowserWindowConstructorOptions {
   return {};
 }
 
-/** Windows 트레이 아이콘 경로 (.ico) */
-function getWindowsTrayIconPath(): string {
-  return join(__dirname, "../../build/icon_win.ico");
+/**
+ * 런타임 아이콘 경로.
+ * 개발: 프로젝트 build/ / 설치본: extraResources (asar 밖 resources/).
+ */
+function getRuntimeIconPath(fileName: string): string {
+  if (app.isPackaged) {
+    return join(process.resourcesPath, fileName);
+  }
+  return join(__dirname, "../../build", fileName);
 }
 
 /** 트레이·메뉴에서 메인 창을 다시 연다. 없으면 새로 생성한다. */
@@ -120,11 +126,7 @@ function createWindowsTray(): void {
     return;
   }
 
-  const icon = nativeImage.createFromPath(getWindowsTrayIconPath());
-  // .ico 로드 실패 시 PNG 폴백
-  tray = new Tray(
-    icon.isEmpty() ? nativeImage.createFromPath(join(__dirname, "../../build/icon_win.png")) : icon,
-  );
+  tray = new Tray(nativeImage.createFromPath(getRuntimeIconPath("icon_win.png")));
   tray.setToolTip("Orbit");
 
   const contextMenu = Menu.buildFromTemplate([
@@ -163,8 +165,8 @@ function createWindow(): void {
     },
     icon:
       process.platform === "win32"
-        ? join(__dirname, "../../build/icon_win.png")
-        : join(__dirname, "../../build/icon.png"),
+        ? getRuntimeIconPath("icon_win.png")
+        : getRuntimeIconPath("icon.png"),
   });
 
   const isDev = !app.isPackaged;
@@ -234,7 +236,7 @@ if (!gotTheLock) {
   /** Electron 앱 초기화 — IPC 등록 및 윈도우 생성 */
   app.whenReady().then(() => {
     if (process.platform === "darwin" && app.dock) {
-      const appIcon = nativeImage.createFromPath(join(__dirname, "../../build/icon.png"));
+      const appIcon = nativeImage.createFromPath(getRuntimeIconPath("icon.png"));
       app.dock.setIcon(appIcon);
     }
     ensureNormalizedStore();
