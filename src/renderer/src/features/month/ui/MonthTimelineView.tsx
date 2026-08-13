@@ -1,10 +1,11 @@
-import { useEffect, useRef } from "react";
-import { getTodoTextClass } from "@renderer/features/todo";
+import { useEffect, useMemo, useRef } from "react";
+import { getTodoTextClass, TodoStatusIcon } from "@renderer/features/todo";
 import { toShortLabel } from "@renderer/utils/dateUtils";
 import { cn } from "@renderer/utils/cn";
 import { Button } from "@renderer/shared/ui";
 import type { MonthDayViewProps } from "./monthViewTypes";
 import { onDayActivateKey } from "./onDayActivateKey";
+import { buildTimelineRows } from "./buildTimelineRows";
 
 /** 날짜 칸 너비 (px) */
 const DAY_WIDTH = 88;
@@ -34,14 +35,10 @@ export default function MonthTimelineView({
   const todayIndex = summaries.findIndex((d) => d.date === today);
   const selectedIndex = selectedDate ? summaries.findIndex((d) => d.date === selectedDate) : -1;
 
-  const todoRows = summaries.flatMap((day, dayIndex) =>
-    day.todos.map((todo, todoIndex) => ({
-      day,
-      dayIndex,
-      todo,
-      isFirstTodayTodo: day.date === today && todoIndex === 0,
-    })),
-  );
+  const todoRows = useMemo(() => buildTimelineRows(summaries), [summaries]);
+  const todayRowKey = todoRows.find((row) =>
+    row.cells.some((cell) => cell.date === today && cell.todo),
+  )?.key;
 
   // 오늘로 스크롤 (가로 + 세로). todayIndex < 0 이면 다른 달 → 스킵
   const scrollToToday = () => {
@@ -138,29 +135,69 @@ export default function MonthTimelineView({
               </p>
             ) : (
               <div>
-                {todoRows.map(({ day, dayIndex, todo, isFirstTodayTodo }) => (
-                  <div
-                    key={`${day.date}-${todo.id}`}
-                    ref={isFirstTodayTodo ? todayRowRef : undefined}
-                    className="border-b border-border/80 p-1"
-                  >
+                {todoRows.map((row) => {
+                  const firstFilledIndex = row.cells.findIndex((cell) => cell.todo);
+                  return (
                     <div
-                      className="relative cursor-pointer text-sm leading-snug"
-                      style={{ marginLeft: dayIndex * DAY_WIDTH }}
-                      onClick={() => onDateClick(day.date)}
+                      key={row.key}
+                      ref={row.key === todayRowKey ? todayRowRef : undefined}
+                      className="relative border-b border-border/80 py-1"
                     >
                       <div
-                        className={cn(
-                          "rounded border border-border/90 bg-surface px-2 py-1 shadow-sm",
-                          getTodoTextClass(todo.status),
-                        )}
-                        style={{ maxWidth: DAY_ITEM_MAX_WIDTH }}
+                        className="flex"
+                        style={{ marginLeft: row.startIndex * DAY_WIDTH }}
                       >
-                        <span className="block whitespace-nowrap">{todo.content}</span>
+                        {row.cells.map((cell, cellIndex) => {
+                          const isTitleCell = cellIndex === firstFilledIndex;
+                          return (
+                            <div
+                              key={`${row.key}-${cell.date}`}
+                              className="shrink-0 px-1"
+                              style={{ width: DAY_WIDTH }}
+                            >
+                              {cell.todo ? (
+                                <div
+                                  role="button"
+                                  tabIndex={0}
+                                  className={cn(
+                                    "cursor-pointer rounded border border-border/90 bg-surface px-2 py-1 text-sm leading-snug shadow-sm",
+                                    getTodoTextClass(cell.todo.status),
+                                    !isTitleCell && "flex justify-center",
+                                  )}
+                                  style={{ maxWidth: DAY_ITEM_MAX_WIDTH }}
+                                  onClick={() => onDateClick(cell.date)}
+                                  onKeyDown={(event) =>
+                                    onDayActivateKey(event, cell.date, onDateClick)
+                                  }
+                                >
+                                  {isTitleCell ? (
+                                    <span className="block whitespace-nowrap">{row.content}</span>
+                                  ) : (
+                                    <TodoStatusIcon
+                                      status={cell.todo.status}
+                                      className="h-5 w-5 shrink-0"
+                                    />
+                                  )}
+                                </div>
+                              ) : (
+                                <div
+                                  role="button"
+                                  tabIndex={0}
+                                  aria-label={`${toShortLabel(cell.date)} (없음)`}
+                                  className="h-8 cursor-pointer"
+                                  onClick={() => onDateClick(cell.date)}
+                                  onKeyDown={(event) =>
+                                    onDayActivateKey(event, cell.date, onDateClick)
+                                  }
+                                />
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
