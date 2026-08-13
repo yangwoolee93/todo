@@ -217,37 +217,52 @@ ipcMain.handle("window:setTitleBarOverlay", (_event, isDark: boolean) => {
   mainWindow.setTitleBarOverlay({ ...theme, height: TITLE_BAR_HEIGHT });
 });
 
-/** Electron 앱 초기화 — IPC 등록 및 윈도우 생성 */
-app.whenReady().then(() => {
-  if (process.platform === "darwin" && app.dock) {
-    const appIcon = nativeImage.createFromPath(join(__dirname, "../../build/icon.png"));
-    app.dock.setIcon(appIcon);
-  }
-  ensureNormalizedStore();
-  registerIpcHandlers();
-  createWindow();
-  createWindowsTray();
-
-  // macOS: Dock 아이콘 클릭 시 창이 없으면 다시 생성
-  app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
-    }
-  });
-});
-
 /**
- * 모든 창이 닫혔을 때.
- * Mac·Windows(win32)는 트레이/Dock 백그라운드 유지를 위해 quit 하지 않는다.
+ * 프로세스 단일화.
+ * X로 hide 한 뒤 작업표시줄/바로가기로 다시 실행하면 새 프로세스가 뜸,
+ * 락을 못 얻은 쪽은 즉시 종료하고 기존 프로세스만 창을 복원한다.
  */
-app.on("window-all-closed", () => {
-  if (process.platform === "darwin" || process.platform === "win32") {
-    return;
-  }
-  app.quit();
-});
+const gotTheLock = app.requestSingleInstanceLock();
 
-/** Alt+F4·트레이 종료 등 quit 직전 — close 이벤트에서 hide 하지 않도록 플래그 설정 */
-app.on("before-quit", () => {
-  isQuitting = true;
-});
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on("second-instance", () => {
+    showMainWindow();
+  });
+
+  /** Electron 앱 초기화 — IPC 등록 및 윈도우 생성 */
+  app.whenReady().then(() => {
+    if (process.platform === "darwin" && app.dock) {
+      const appIcon = nativeImage.createFromPath(join(__dirname, "../../build/icon.png"));
+      app.dock.setIcon(appIcon);
+    }
+    ensureNormalizedStore();
+    registerIpcHandlers();
+    createWindow();
+    createWindowsTray();
+
+    // macOS: Dock 아이콘 클릭 시 창이 없으면 다시 생성
+    app.on("activate", () => {
+      if (BrowserWindow.getAllWindows().length === 0) {
+        createWindow();
+      }
+    });
+  });
+
+  /**
+   * 모든 창이 닫혔을 때.
+   * Mac·Windows(win32)는 트레이/Dock 백그라운드 유지를 위해 quit 하지 않는다.
+   */
+  app.on("window-all-closed", () => {
+    if (process.platform === "darwin" || process.platform === "win32") {
+      return;
+    }
+    app.quit();
+  });
+
+  /** Alt+F4·트레이 종료 등 quit 직전 — close 이벤트에서 hide 하지 않도록 플래그 설정 */
+  app.on("before-quit", () => {
+    isQuitting = true;
+  });
+}
