@@ -51,7 +51,8 @@ export default function MonthColumnsView({
             className={cn(
               "relative flex w-44 min-w-44 shrink-0 cursor-pointer flex-col",
               "rounded-(--radius-card) overflow-hidden border bg-surface transition-colors hover:bg-muted/20",
-              isTodayColumn ? "border-fg-secondary" : "border-border",
+              isTodayColumn && !isSelected && "border-fg-secondary",
+              !isTodayColumn && !isSelected && "border-border",
               isSelected && "border-accent",
             )}
           >
@@ -59,8 +60,9 @@ export default function MonthColumnsView({
               className={cn(
                 "border-b px-2 py-2 text-center text-sm font-semibold",
                 "border-border text-fg",
-                isTodayColumn && "bg-accent-soft",
-                isSelected && !isTodayColumn && "bg-muted/40",
+                isTodayColumn && "font-semibold",
+                isTodayColumn && !isSelected && "bg-muted",
+                isSelected && "bg-accent/15 text-accent",
               )}
             >
               {column.day}일

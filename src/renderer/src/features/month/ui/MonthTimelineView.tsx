@@ -106,8 +106,9 @@ export default function MonthTimelineView({
                     style={{ width: DAY_WIDTH }}
                     className={cn(
                       "flex shrink-0 cursor-pointer items-center justify-center border-r border-border text-center text-sm tabular-nums transition-colors hover:bg-muted/40",
-                      isToday && "bg-accent-soft font-semibold text-fg",
-                      isSelected && !isToday && "bg-muted/60",
+                      isToday && "font-semibold",
+                      isToday && !isSelected && "bg-muted text-fg",
+                      isSelected && "bg-accent/15 text-accent",
                       !isToday && !isSelected && "text-fg-secondary",
                     )}
                   >
@@ -120,18 +121,18 @@ export default function MonthTimelineView({
 
           {/* 본문 */}
           <div className="relative shrink-0" style={{ width: trackWidth }}>
-            {todayIndex >= 0 && (
+            {todayIndex >= 0 && selectedIndex !== todayIndex && (
               <div
-                className="pointer-events-none absolute inset-y-0 bg-accent-soft/25"
+                className="pointer-events-none absolute inset-y-0 bg-muted/40"
                 style={{
                   left: todayIndex * DAY_WIDTH,
                   width: DAY_WIDTH,
                 }}
               />
             )}
-            {selectedIndex >= 0 && selectedIndex !== todayIndex && (
+            {selectedIndex >= 0 && (
               <div
-                className="pointer-events-none absolute inset-y-0 bg-muted/30"
+                className="pointer-events-none absolute inset-y-0 bg-accent/10"
                 style={{
                   left: selectedIndex * DAY_WIDTH,
                   width: DAY_WIDTH,
