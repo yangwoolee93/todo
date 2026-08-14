@@ -18,12 +18,12 @@ function segmentBgClass(todo: DisplayTodo | null): string {
     return "bg-transparent";
   }
   if (todo.status === "completed") {
-    return "bg-success/40";
+    return "border-t border-success bg-muted/80";
   }
   if (todo.status === "failed") {
-    return "bg-failed/40";
+    return "border-t border-failed bg-muted/80";
   }
-  return "bg-transparent";
+  return "bg-transparent border-t border-muted/80";
 }
 
 /** 월별 타임라인 — 가로 스크롤 */
@@ -183,8 +183,8 @@ export default function MonthTimelineView({
                       <p className="pointer-events-none absolute inset-y-0 left-0 z-10 flex items-center px-2 text-sm leading-snug text-fg">
                         <span
                           className={cn(
-                            "whitespace-nowrap rounded bg-muted/80 px-1",
-                            row.isSettled && "line-through",
+                            "whitespace-nowrap",
+                            row.isSettled && "line-through text-fg-secondary",
                           )}
                         >
                           {row.content}
