@@ -50,7 +50,7 @@ export default function MonthColumnsView({
             onKeyDown={(event) => onDayActivateKey(event, column.date, onDateClick)}
             className={cn(
               "relative flex w-44 min-w-44 shrink-0 cursor-pointer flex-col",
-              "rounded-(--radius-card) border bg-surface transition-colors hover:bg-muted/20",
+              "rounded-(--radius-card) overflow-hidden border bg-surface transition-colors hover:bg-muted/20",
               isTodayColumn ? "border-fg-secondary" : "border-border",
               isSelected && "border-accent",
             )}
