@@ -33,7 +33,7 @@ export default function MonthColumnsView({
   }, [scrollToTodayTick, summaries]);
 
   return (
-    <div className="scrollbar flex min-h-0 flex-1 gap-3 overflow-x-auto pb-2">
+    <div className="scrollbar flex min-h-0 flex-1 gap-3 overflow-x-auto p-4">
       {summaries.map((column) => {
         const isTodayColumn = column.date === today;
         const isSelected = selectedDate === column.date;

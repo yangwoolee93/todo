@@ -6,6 +6,7 @@ import { Card, Button, ChevronLeftIcon, ChevronRightIcon } from "@renderer/share
 import { MonthViewToggle } from "./MonthViewToggle";
 import MonthColumnsView from "./MonthColumnsView";
 import MonthTimelineView from "./MonthTimelineView";
+import { cn } from "@renderer/utils/cn";
 
 function toMonthLabel(yearMonth: string): string {
   const [yearStr, monthStr] = yearMonth.split("-");
@@ -79,23 +80,25 @@ export default function MonthBoard() {
   };
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
       <Card className="shrink-0">
-        <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="mb-1 flex flex-wrap items-start justify-between gap-3">
           <div>
-            <div className="mb-1 flex items-center gap-2">
+            <div className="flex items-center gap-2">
               <span className="cursor-default text-xs font-semibold uppercase tracking-wide text-accent">
                 월별
               </span>
-              {!isCurrentMonth && (
-                <Button
-                  variant="ghost"
-                  className="bg-[rgba(255,255,255,0.05)] px-2 py-0.5 text-xs hover:bg-[rgba(255,255,255,0.1)]"
-                  onClick={() => changeYearMonth(currentYearMonth)}
-                >
-                  이번 달로
-                </Button>
-              )}
+              <Button
+                disabled={isCurrentMonth}
+                variant="ghost"
+                className={cn(
+                  "bg-[rgba(255,255,255,0.05)] px-2 py-0.5 text-xs hover:bg-[rgba(255,255,255,0.1)]",
+                  isCurrentMonth && "opacity-0 cursor-default",
+                )}
+                onClick={() => changeYearMonth(currentYearMonth)}
+              >
+                이번 달로
+              </Button>
             </div>
             <h2 className="text-xl font-semibold text-fg">{toMonthLabel(yearMonth)}</h2>
           </div>
@@ -123,26 +126,30 @@ export default function MonthBoard() {
         </div>
       </Card>
 
-      <div className="flex shrink-0 items-center justify-between gap-2">
-        <Button
-          type="button"
-          variant="ghost"
-          className="text-xs"
-          disabled={loading && summaries.length === 0}
-          onClick={() => handleScrollToToday()}
-        >
-          오늘로
-        </Button>
-        <MonthViewToggle mode={viewMode} onChange={setViewMode} />
-      </div>
+      <div className="flex min-h-0 flex-1 flex-col gap-2">
+        <div className="flex shrink-0 items-center justify-between gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            className="text-xs"
+            disabled={loading && summaries.length === 0}
+            onClick={() => handleScrollToToday()}
+          >
+            오늘로
+          </Button>
+          <MonthViewToggle mode={viewMode} onChange={setViewMode} />
+        </div>
 
-      {loading && summaries.length === 0 ? (
-        <p className="text-sm text-fg-secondary">불러오는 중...</p>
-      ) : viewMode === "columns" ? (
-        <MonthColumnsView {...dayViewProps} />
-      ) : (
-        <MonthTimelineView {...dayViewProps} />
-      )}
+        <Card className="flex min-h-0 flex-1 flex-col overflow-hidden p-0">
+          {loading && summaries.length === 0 ? (
+            <p className="px-4 py-8 text-sm text-fg-secondary">불러오는 중...</p>
+          ) : viewMode === "columns" ? (
+            <MonthColumnsView {...dayViewProps} />
+          ) : (
+            <MonthTimelineView {...dayViewProps} />
+          )}
+        </Card>
+      </div>
     </div>
   );
 }

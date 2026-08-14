@@ -18,12 +18,12 @@ function segmentBgClass(todo: DisplayTodo | null): string {
     return "bg-transparent";
   }
   if (todo.status === "completed") {
-    return "bg-success/25";
+    return "bg-success/40";
   }
   if (todo.status === "failed") {
-    return "bg-failed/25";
+    return "bg-failed/40";
   }
-  return "bg-muted/80";
+  return "bg-transparent";
 }
 
 /** 월별 타임라인 — 가로 스크롤 */
@@ -85,7 +85,7 @@ export default function MonthTimelineView({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      <div ref={scrollRef} className="scrollbar min-h-0 flex-1 overflow-auto pb-2">
+      <div ref={scrollRef} className="scrollbar min-h-0 flex-1 overflow-auto">
         <div className="inline-block align-top" style={{ minWidth: trackWidth }}>
           {/* 헤더: flex 날짜 칸 */}
           <div className="sticky top-0 z-20 border-b border-border bg-surface">
@@ -119,7 +119,7 @@ export default function MonthTimelineView({
           </div>
 
           {/* 본문 */}
-          <div className="relative shrink-0 bg-muted/5" style={{ width: trackWidth }}>
+          <div className="relative shrink-0" style={{ width: trackWidth }}>
             {todayIndex >= 0 && (
               <div
                 className="pointer-events-none absolute inset-y-0 bg-accent-soft/25"
@@ -149,7 +149,7 @@ export default function MonthTimelineView({
                   <div
                     key={row.key}
                     ref={row.key === todayRowKey ? todayRowRef : undefined}
-                    className="relative border-b border-border/80 py-1"
+                    className={cn("relative border-b border-border/80 py-1")}
                   >
                     <div
                       className="relative"
@@ -171,18 +171,19 @@ export default function MonthTimelineView({
                             }
                             className={cn(
                               "h-8 shrink-0 cursor-pointer transition-colors",
+                              "",
                               segmentBgClass(cell.todo),
                             )}
                             style={{ width: DAY_WIDTH }}
                             onClick={() => onDateClick(cell.date)}
-                            onKeyDown={(event) =>
-                              onDayActivateKey(event, cell.date, onDateClick)
-                            }
+                            onKeyDown={(event) => onDayActivateKey(event, cell.date, onDateClick)}
                           />
                         ))}
                       </div>
                       <p className="pointer-events-none absolute inset-y-0 left-0 z-10 flex items-center px-2 text-sm leading-snug text-fg">
-                        <span className="whitespace-nowrap">{row.content}</span>
+                        <span className={cn("whitespace-nowrap", "bg-muted/80 rounded px-1")}>
+                          {row.content}
+                        </span>
                       </p>
                     </div>
                   </div>
@@ -194,7 +195,7 @@ export default function MonthTimelineView({
       </div>
 
       {selectedDate && (
-        <div className="flex shrink-0 justify-end border-t border-border pt-2">
+        <div className="flex shrink-0 justify-end border-t border-border px-4 py-3">
           <Button
             variant="primary"
             className="py-1 text-sm"

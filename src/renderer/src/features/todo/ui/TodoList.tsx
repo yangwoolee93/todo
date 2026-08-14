@@ -21,6 +21,7 @@ import { getTodoTextClass, TodoStatusIcon } from "./TodoStatusIcon";
 import { TodoItemMenu } from "./TodoItemMenu";
 import type { DisplayTodo } from "@shared/types/todo";
 import { Button, DragHandleIcon } from "@renderer/shared/ui";
+import { cn } from "@renderer/utils/cn";
 
 interface SortableTodoItemProps {
   todo: DisplayTodo;
@@ -83,9 +84,11 @@ function SortableTodoItem({
 
       <button
         type="button"
-        className={`min-w-0 flex-1 truncate text-left text-sm ${getTodoTextClass(todo.status)} ${
-          todo.status !== "failed" ? "hover:opacity-80" : "cursor-default"
-        }`}
+        className={cn(
+          "min-w-0 flex-1 truncate text-left text-sm",
+          getTodoTextClass(todo.status),
+          todo.status !== "failed" ? "hover:opacity-80" : "cursor-default",
+        )}
         disabled={todo.status === "failed"}
         onClick={() => onStatusClick(todo)}
       >
