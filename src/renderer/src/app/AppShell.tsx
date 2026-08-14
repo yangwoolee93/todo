@@ -4,7 +4,8 @@ import { useUIStore } from "@renderer/stores/useUIStore";
 import { cn } from "@renderer/utils/cn";
 import { APP_VERSION } from "@renderer/constants/appVersion";
 import { Tab } from "@renderer/shared/ui";
-import icon from "@renderer/assets/icon_win.png";
+import IconWin from "@renderer/assets/icon_win.png";
+import IconMac from "@renderer/assets/icon_mac.png";
 
 interface AppShellProps {
   children: ReactNode;
@@ -30,16 +31,28 @@ export function AppShell({ children }: AppShellProps) {
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-base">
       <header className={cn("relative flex shrink-0 items-center justify-between h-11")}>
-        <div
-          className={cn(
-            "flex flex-1 h-full items-center gap-2",
-            "[-webkit-app-region:drag]",
-            isMac ? "pl-20" : "pl-4",
-          )}
-        >
-          {isWin && <img src={icon} className="w-5 h-5 mr-1" />}
-          <span className="truncate text-md font-bold tracking-[-0.8px] text-fg">할 일</span>
-        </div>
+        {isWin ? (
+          <div
+            className={cn(
+              "flex flex-1 h-full items-center gap-2 pl-4",
+              "[-webkit-app-region:drag]",
+            )}
+          >
+            <img src={IconWin} className="w-5 h-5 mr-1" />
+            <span className="truncate text-md font-bold tracking-[-0.8px] text-fg">할 일</span>
+          </div>
+        ) : (
+          <div
+            className={cn(
+              "flex flex-1 h-full items-center gap-1.5 pl-20",
+              "[-webkit-app-region:drag]",
+            )}
+          >
+            <img src={IconMac} className="w-6 h-6" />
+            <span className="truncate text-md font-bold tracking-[-0.8px] text-fg">할 일</span>
+          </div>
+        )}
+
         <nav className={cn("flex gap-1", isWin ? "pr-36" : "pr-2")}>
           {tabs.map((tab) => (
             <Tab key={tab.id} active={view === tab.id} onClick={tab.onClick}>

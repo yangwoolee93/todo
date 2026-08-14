@@ -2,54 +2,44 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
     <defs>
         <!-- 기존 링용 -->
-        <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#16a34a"/>
-            <stop offset="50%" stop-color="#2563eb"/>
-            <stop offset="100%" stop-color="#ea580c"/>
+        <linearGradient id="grad" x1="0%" y1="0%" y2="100%" x2="100%">
+            <stop offset="0%" stop-color="#16a34a" />
+            <stop offset="50%" stop-color="#2563eb" />
+            <stop offset="100%" stop-color="#ea580c" />
         </linearGradient>
 
         <!-- 십자별 어두운 부분 (궤도와 거의 같음) -->
         <linearGradient id="gradDark" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#149442"/>
-            <stop offset="50%" stop-color="#2360e0"/>
-            <stop offset="100%" stop-color="#df550b"/>
+            <stop offset="0%" stop-color="#149442" />
+            <stop offset="50%" stop-color="#2360e0" />
+            <stop offset="100%" stop-color="#df550b" />
         </linearGradient>
         <!-- 십자별 밝은 부분 (더 밝게) -->
         <linearGradient id="gradLight" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#1ac55a"/>
-            <stop offset="50%" stop-color="#4e7ef0"/>
-            <stop offset="100%" stop-color="#ff8533"/>
+            <stop offset="0%" stop-color="#1ac55a" />
+            <stop offset="50%" stop-color="#4e7ef0" />
+            <stop offset="100%" stop-color="#ff8533" />
         </linearGradient>
     </defs>
-    
-    <!-- 흰색 배경 원 -->
-    <circle cx="512" cy="512" r="480" fill="#ffffff"/>
 
-    <!-- 중앙 연결된 나침반 십자별 (입체감, 부드러운 톤) -->
-    <g transform="translate(512 512)">
+    <!-- macOS 1024 그리드: 824 스퀘어클, 사방 100, rx 185.4 -->
+    <rect x="100" y="100" width="824" height="824" rx="185.4" ry="185.4" fill="#ffffff" />
+
+    <!-- 중앙 연결된 나침반 십자별 — 기존 좌표 × 824/960 -->
+    <g transform="translate(512 512) scale(0.858333)">
         <!-- 전체 십자별 (어두운 ) -->
         <path d="M 0 -200 L -70 -70 
                 L -200 0 L -70 70 
                 L 0 200 L 70 70 
-                L 200 0 L 70 -70 Z" 
-              fill="url(#gradDark)" opacity="1"/>
-        
+                L 200 0 L 70 -70 Z" fill="url(#gradDark)" opacity="1" />
+
         <!-- 밝은 반만 위에 그림 (중간 ) -->
         <path d="M 0 -200 L 70 -70 L 0 0 Z 
                  M 200 0 L 70 70 L 0 0 Z 
                  M 0 200 L -70 70 L 0 0 Z 
-                 M -200 0 L -70 -70 L 0 0 Z" 
-              fill="url(#gradLight)" opacity="1"/>
+                 M -200 0 L -70 -70 L 0 0 Z" fill="url(#gradLight)" opacity="1" />
     </g>
-    
-    <!-- 굵은 그라데이션 링 -->
-    <circle cx="512" cy="512" r="320" 
-            fill="none" 
-            stroke="url(#grad)" 
-            stroke-width="200"
-            stroke-linecap="round"/>
-    
-    
 
-    
+    <!-- 굵은 그라데이션 링 — 바깥 지름이 스퀘어클 내접원(824)의 기존 비율(420/480) -->
+    <circle cx="512" cy="512" r="274.667" fill="none" stroke="url(#grad)" stroke-width="171.667" stroke-linecap="round" />
 </svg>
