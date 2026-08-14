@@ -12,6 +12,7 @@ export type TimelineRow = {
   sortOrder: number;
   startIndex: number;
   cells: TimelineRowCell[];
+  isSettled: boolean;
 };
 
 type GroupItem = {
@@ -40,6 +41,11 @@ function toRow(summaries: DaySummary[], group: GroupAcc): TimelineRow {
     });
   }
 
+  const filled = group.items.map((item) => item.todo);
+  const isSettled =
+    filled.length > 0 &&
+    filled.every((todo) => todo.status === "completed" || todo.status === "failed");
+
   return {
     key: group.key,
     content: group.content,
@@ -47,6 +53,7 @@ function toRow(summaries: DaySummary[], group: GroupAcc): TimelineRow {
     sortOrder: lastItem?.todo.sort_order ?? 0,
     startIndex,
     cells,
+    isSettled,
   };
 }
 

@@ -181,7 +181,12 @@ export default function MonthTimelineView({
                         ))}
                       </div>
                       <p className="pointer-events-none absolute inset-y-0 left-0 z-10 flex items-center px-2 text-sm leading-snug text-fg">
-                        <span className={cn("whitespace-nowrap", "bg-muted/80 rounded px-1")}>
+                        <span
+                          className={cn(
+                            "whitespace-nowrap rounded bg-muted/80 px-1",
+                            row.isSettled && "line-through",
+                          )}
+                        >
                           {row.content}
                         </span>
                       </p>
