@@ -152,10 +152,12 @@ export default function MonthTimelineView({
                     className={cn("relative border-b border-border/80 py-1")}
                   >
                     <div
-                      className="relative"
+                      className="relative overflow-visible"
                       style={{
                         marginLeft: row.startIndex * DAY_WIDTH,
                         width: row.cells.length * DAY_WIDTH,
+                        minWidth: row.cells.length * DAY_WIDTH,
+                        maxWidth: row.cells.length * DAY_WIDTH,
                       }}
                     >
                       <div className="flex overflow-hidden rounded border border-border/90 bg-surface shadow-sm">
@@ -180,16 +182,18 @@ export default function MonthTimelineView({
                           />
                         ))}
                       </div>
-                      <p className="pointer-events-none absolute inset-y-0 left-0 z-10 flex items-center px-2 text-sm leading-snug text-fg">
-                        <span
-                          className={cn(
-                            "whitespace-nowrap",
-                            row.isSettled && "line-through text-fg-secondary",
-                          )}
-                        >
-                          {row.content}
-                        </span>
-                      </p>
+                      <div className="pointer-events-none absolute inset-0 overflow-visible">
+                        <p className="sticky left-0 z-10 flex h-8 w-max items-center px-2 text-sm leading-snug text-fg">
+                          <span
+                            className={cn(
+                              "whitespace-nowrap",
+                              row.isSettled && "line-through text-fg-secondary",
+                            )}
+                          >
+                            {row.content}
+                          </span>
+                        </p>
+                      </div>
                     </div>
                   </div>
                 ))}
