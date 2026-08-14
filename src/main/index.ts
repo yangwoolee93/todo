@@ -4,10 +4,15 @@ import { registerIpcHandlers } from "./ipcHandlers";
 import { ensureNormalizedStore } from "./database/todoRepository";
 
 const TITLE_BAR_HEIGHT = 44;
-/** Windows 커스텀 타이틀바 오버레이 색 (라이트/다크) */
+/** Windows 타이틀바 오버레이 (페이지 base와 동일) */
 const TITLE_BAR_COLORS = {
   light: { color: "#f4f6f9", symbolColor: "#1e293b" },
   dark: { color: "#121212", symbolColor: "#ececec" },
+} as const;
+/** Windows 창 가장자리 — UI border 토큰에 맞춤 */
+const WINDOW_BACKGROUND_COLORS = {
+  light: "#e2e8f0",
+  dark: "#333333",
 } as const;
 
 /** 메인 BrowserWindow 참조 (macOS activate 이벤트용) */
@@ -77,6 +82,7 @@ function getPlatformWindowOptions(): Electron.BrowserWindowConstructorOptions {
     return {
       title: "Orbit",
       titleBarStyle: "hidden",
+      roundedCorners: true,
       titleBarOverlay: {
         ...TITLE_BAR_COLORS.light,
         height: TITLE_BAR_HEIGHT,
@@ -155,7 +161,7 @@ function createWindow(): void {
     maxHeight,
     show: false,
     autoHideMenuBar: true,
-    backgroundColor: "#f4f6f9",
+    backgroundColor: WINDOW_BACKGROUND_COLORS.light,
     ...getPlatformWindowOptions(),
     webPreferences: {
       preload: join(__dirname, "../preload/index.js"),
@@ -212,11 +218,14 @@ function createWindow(): void {
   }
 }
 
-/** 렌더러 테마에 맞춰 Windows 타이틀바 오버레이 색을 바꾼다. */
+/** 렌더러 테마에 맞춰 Windows 타이틀바·창 배경색을 바꾼다. */
 ipcMain.handle("window:setTitleBarOverlay", (_event, isDark: boolean) => {
   if (!mainWindow) return;
   const theme = isDark ? TITLE_BAR_COLORS.dark : TITLE_BAR_COLORS.light;
   mainWindow.setTitleBarOverlay({ ...theme, height: TITLE_BAR_HEIGHT });
+  mainWindow.setBackgroundColor(
+    isDark ? WINDOW_BACKGROUND_COLORS.dark : WINDOW_BACKGROUND_COLORS.light,
+  );
 });
 
 /**
