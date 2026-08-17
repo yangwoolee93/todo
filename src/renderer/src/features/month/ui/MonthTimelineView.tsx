@@ -36,7 +36,6 @@ export default function MonthTimelineView({
   scrollToTodayTick,
 }: MonthDayViewProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const todayHeaderRef = useRef<HTMLDivElement>(null);
   const todayRowRef = useRef<HTMLDivElement>(null);
 
   const trackWidth = summaries.length * DAY_WIDTH;
@@ -50,33 +49,30 @@ export default function MonthTimelineView({
     row.cells.some((cell) => cell.date === today && cell.todo),
   )?.key;
 
-  // 오늘로 스크롤 (가로 + 세로). todayIndex < 0 이면 다른 달 → 스킵
+  /** 오늘 칸이 가로 중앙에 오도록 스크롤. todayIndex < 0 이면 다른 달 → 스킵 */
   const scrollToToday = () => {
-    if (scrollToTodayTick === 0 || todayIndex < 0 || !scrollRef.current) return;
     const container = scrollRef.current;
+    if (todayIndex < 0 || !container) return;
+
     const left = todayIndex * DAY_WIDTH;
     const target = left - container.clientWidth / 2 + DAY_WIDTH / 2;
     container.scrollLeft = Math.max(0, target);
 
     if (todayRowRef.current) {
       todayRowRef.current.scrollIntoView({ block: "center", inline: "nearest" });
-    } else {
-      // 오늘 할 일 없음 → 헤더 칸으로 (이번 달만 여기까지 옴)
-      todayHeaderRef.current?.scrollIntoView({
-        block: "center",
-        inline: "center",
-      });
     }
   };
 
   useEffect(() => {
-    if (summaries.length === 0 || !scrollRef.current) return;
-    scrollRef.current.scrollLeft = 0;
-    scrollToToday();
-  }, [summaries]);
+    if (summaries.length === 0) return;
+    const frame = requestAnimationFrame(() => scrollToToday());
+    return () => cancelAnimationFrame(frame);
+  }, [summaries, todayIndex]);
 
   useEffect(() => {
-    scrollToToday();
+    if (scrollToTodayTick === 0) return;
+    const frame = requestAnimationFrame(() => scrollToToday());
+    return () => cancelAnimationFrame(frame);
   }, [scrollToTodayTick, todayIndex]);
 
   if (summaries.length === 0) {
@@ -96,7 +92,6 @@ export default function MonthTimelineView({
                 return (
                   <div
                     key={day.date}
-                    ref={isToday ? todayHeaderRef : undefined}
                     role="button"
                     tabIndex={0}
                     aria-pressed={isSelected}
@@ -211,7 +206,7 @@ export default function MonthTimelineView({
             className="py-1 text-sm"
             onClick={() => onGoToDate(selectedDate)}
           >
-            {toShortLabel(selectedDate)} — 오늘 탭으로 이동
+            {toShortLabel(selectedDate)} — 이 날짜로
           </Button>
         </div>
       )}

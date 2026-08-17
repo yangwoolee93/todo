@@ -45,6 +45,15 @@ export function shiftDate(dateString: string, delta: number): string {
   return formatDate(date);
 }
 
+/** 날짜의 일(day)을 유지한 채 대상 월로 맞춘다. 말일을 넘으면 그달 마지막 날. */
+export function alignDateToYearMonth(dateString: string, yearMonth: string): string {
+  if (toYearMonth(dateString) === yearMonth) return dateString;
+  const day = Number(dateString.slice(8, 10));
+  const [yearStr, monthStr] = yearMonth.split("-");
+  const lastDay = new Date(Number(yearStr), Number(monthStr), 0).getDate();
+  return `${yearMonth}-${String(Math.min(day, lastDay)).padStart(2, "0")}`;
+}
+
 /** 오늘 날짜인지 확인한다. */
 export function isToday(dateString: string): boolean {
   return dateString === getTodayString();

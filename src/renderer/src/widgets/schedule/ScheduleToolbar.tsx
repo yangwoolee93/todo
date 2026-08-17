@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
 import { useUIStore } from "@renderer/stores/useUIStore";
 import { useTodoStore } from "@renderer/features/todo/model/useTodoStore";
 import { useMonthStore } from "@renderer/features/month/model/useMonthStore";
 import {
+  alignDateToYearMonth,
   getTodayString,
   isToday,
   shiftMonth,
@@ -11,29 +11,36 @@ import {
 } from "@renderer/utils/dateUtils";
 import { Button, Card, ChevronLeftIcon, ChevronRightIcon, Tab } from "@renderer/shared/ui";
 
-type ScheduleView = "day" | "month";
+export type ScheduleView = "day" | "month";
+
+type ScheduleToolbarProps = {
+  view: ScheduleView;
+  onViewChange: (view: ScheduleView) => void;
+  onAlignToday: () => void;
+};
 
 function toMonthLabel(yearMonth: string): string {
   const [yearStr, monthStr] = yearMonth.split("-");
   return `${yearStr}년 ${Number(monthStr)}월`;
 }
 
-/** 일정 화면 상단 — 일/월 보기, 날짜 이동, 개수, 추가 */
-export default function ScheduleToolbar() {
-  const [view, setView] = useState<ScheduleView>("day");
-
+/** 일정 화면 상단 — 일/월 보기 전환, 날짜 이동, 개수, 추가 */
+export default function ScheduleToolbar({
+  view,
+  onViewChange,
+  onAlignToday,
+}: ScheduleToolbarProps) {
   const activeDate = useUIStore((s) => s.activeDate);
+  const setActiveDate = useUIStore((s) => s.setActiveDate);
   const goTodayDate = useUIStore((s) => s.goTodayDate);
   const goPrevDate = useUIStore((s) => s.goPrevDate);
   const goNextDate = useUIStore((s) => s.goNextDate);
   const openAddModal = useUIStore((s) => s.openAddModal);
 
   const dayCount = useTodoStore((s) => s.todos.length);
-  const loadTodosByDate = useTodoStore((s) => s.loadTodosByDate);
 
   const yearMonth = useMonthStore((s) => s.yearMonth);
   const setYearMonth = useMonthStore((s) => s.setYearMonth);
-  const loadMonthSummary = useMonthStore((s) => s.loadMonthSummary);
   const monthCount = useMonthStore((s) =>
     s.summaries.reduce((sum, day) => sum + day.todos.length, 0),
   );
@@ -43,29 +50,14 @@ export default function ScheduleToolbar() {
   const showingToday = isToday(activeDate);
   const showingCurrentMonth = yearMonth === currentYearMonth;
 
-  useEffect(() => {
-    if (view === "day") {
-      void loadTodosByDate(activeDate);
-      return;
-    }
-    void loadMonthSummary(yearMonth);
-  }, [view, activeDate, yearMonth, loadTodosByDate, loadMonthSummary]);
-
-  const handleViewDay = () => {
-    setView("day");
-  };
-
-  const handleViewMonth = () => {
-    setYearMonth(toYearMonth(activeDate));
-    setView("month");
-  };
-
   const handlePrev = () => {
     if (view === "day") {
       goPrevDate();
       return;
     }
-    setYearMonth(shiftMonth(yearMonth, -1));
+    const nextMonth = shiftMonth(yearMonth, -1);
+    setYearMonth(nextMonth);
+    setActiveDate(alignDateToYearMonth(activeDate, nextMonth));
   };
 
   const handleNext = () => {
@@ -73,7 +65,9 @@ export default function ScheduleToolbar() {
       goNextDate();
       return;
     }
-    setYearMonth(shiftMonth(yearMonth, 1));
+    const nextMonth = shiftMonth(yearMonth, 1);
+    setYearMonth(nextMonth);
+    setActiveDate(alignDateToYearMonth(activeDate, nextMonth));
   };
 
   const handleNow = () => {
@@ -82,6 +76,8 @@ export default function ScheduleToolbar() {
       return;
     }
     setYearMonth(currentYearMonth);
+    setActiveDate(today);
+    onAlignToday();
   };
 
   const title = view === "day" ? toFullLabel(activeDate) : toMonthLabel(yearMonth);
@@ -100,14 +96,14 @@ export default function ScheduleToolbar() {
               <Tab
                 active={view === "day"}
                 className="px-2.5 py-0.5 text-xs"
-                onClick={handleViewDay}
+                onClick={() => onViewChange("day")}
               >
                 일
               </Tab>
               <Tab
                 active={view === "month"}
                 className="px-2.5 py-0.5 text-xs"
-                onClick={handleViewMonth}
+                onClick={() => onViewChange("month")}
               >
                 월
               </Tab>

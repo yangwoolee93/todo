@@ -1,1 +1,1 @@
-export { default as ScheduleToolbar } from "./ScheduleToolbar";
+export { default as Schedule } from "./Schedule";
