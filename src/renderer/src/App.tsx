@@ -7,7 +7,10 @@ import { useTodoStore } from "@renderer/features/todo/model/useTodoStore";
 import { useMonthStore } from "@renderer/features/month/model/useMonthStore";
 import { TodayPage } from "./pages/today";
 import { MonthPage } from "./pages/month";
-import { SettingsPage } from "./pages/settings";
+
+import SchedulePage from "./pages/SchedulePage";
+import MemoPage from "./pages/MemoPage";
+import SettingPage from "./pages/SettingPage";
 
 /** 앱 루트 — 뷰 분기 + 공통 모달 */
 export function App() {
@@ -49,7 +52,11 @@ export function App() {
 
       {view === "month" && <MonthPage />}
 
-      {view === "settings" && <SettingsPage />}
+      {view === "settings" && <SettingPage />}
+
+      {view === "schedule" && <SchedulePage />}
+
+      {view === "memo" && <MemoPage />}
 
       <AddTodoModal />
     </AppShell>

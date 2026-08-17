@@ -1,7 +1,12 @@
 import { BackupPanel, ThemeSelector } from "@renderer/features/settings";
 import { Card } from "@renderer/shared/ui";
 
-export default function SettingsPage() {
+/** 설정 페이지
+ *
+ * - 테마 선택
+ * - 데이터 백업: JSON/SQL 내보내기 및 JSON 불러오기
+ */
+export default function SettingPage() {
   return (
     <div className="flex flex-col gap-4">
       <Card as="section">
