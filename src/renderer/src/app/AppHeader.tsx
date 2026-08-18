@@ -14,8 +14,8 @@ const AppHeader = () => {
   const goSettingsView = useUIStore((s) => s.goSettingsView);
 
   const tabs: { id: AppView; label: string; onClick: () => void }[] = [
-    { id: "today", label: "오늘", onClick: () => goTodayView() },
-    { id: "month", label: "월별", onClick: () => goMonthView() },
+    // { id: "today", label: "오늘", onClick: () => goTodayView() },
+    // { id: "month", label: "월별", onClick: () => goMonthView() },
     { id: "schedule", label: "일정", onClick: () => goScheduleView() },
     { id: "memo", label: "메모", onClick: () => goMemoView() },
     { id: "settings", label: "설정", onClick: () => goSettingsView() },
