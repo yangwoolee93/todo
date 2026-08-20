@@ -1,3 +1,5 @@
+import MemoDesign from "@renderer/widgets/memo/MemoDesign";
+
 export default function MemoPage() {
-  return <div>MemoPage</div>;
+  return <MemoDesign />;
 }
