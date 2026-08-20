@@ -5,12 +5,31 @@ import { cn } from "@renderer/utils/cn";
 import { Button } from "@renderer/shared/ui";
 import type { MonthDayViewProps } from "./monthViewTypes";
 import { onDayActivateKey } from "./onDayActivateKey";
-import { buildTimelineRows } from "./buildTimelineRows";
+import { buildTimelineRows, type TimelineRowCell } from "./buildTimelineRows";
 
 /** 날짜 칸 너비 (px) */
 const DAY_WIDTH = 88;
 /** sticky 헤더 높이 */
 const HEADER_HEIGHT = 40;
+
+type CellRun = {
+  filled: boolean;
+  cells: TimelineRowCell[];
+};
+
+function toCellRuns(cells: TimelineRowCell[]): CellRun[] {
+  const runs: CellRun[] = [];
+  cells.forEach((cell) => {
+    const filled = cell.todo !== null;
+    const last = runs[runs.length - 1];
+    if (last && last.filled === filled) {
+      last.cells.push(cell);
+      return;
+    }
+    runs.push({ filled, cells: [cell] });
+  });
+  return runs;
+}
 
 /** 기간 막대 안 날짜 칸 배경 */
 function segmentBgClass(todo: DisplayTodo | null): string {
@@ -156,26 +175,38 @@ export default function MonthTimelineView({
                         maxWidth: row.cells.length * DAY_WIDTH,
                       }}
                     >
-                      <div className="flex overflow-hidden rounded border border-border/90 bg-surface shadow-sm">
-                        {row.cells.map((cell) => (
+                      <div className="flex">
+                        {toCellRuns(row.cells).map((run, runIndex) => (
                           <div
-                            key={`${row.key}-${cell.date}`}
-                            role="button"
-                            tabIndex={0}
-                            aria-label={
-                              cell.todo
-                                ? `${toShortLabel(cell.date)} ${row.content}`
-                                : `${toShortLabel(cell.date)} (없음)`
-                            }
+                            key={`${row.key}-run-${runIndex}`}
                             className={cn(
-                              "h-8 shrink-0 cursor-pointer transition-colors",
-                              "",
-                              segmentBgClass(cell.todo),
+                              "flex shrink-0",
+                              run.filled && "rounded border border-border/90 bg-surface shadow-sm",
                             )}
-                            style={{ width: DAY_WIDTH }}
-                            onClick={() => onDateClick(cell.date)}
-                            onKeyDown={(event) => onDayActivateKey(event, cell.date, onDateClick)}
-                          />
+                            style={{ width: run.cells.length * DAY_WIDTH }}
+                          >
+                            {run.cells.map((cell) => (
+                              <div
+                                key={`${row.key}-${cell.date}`}
+                                role="button"
+                                tabIndex={0}
+                                aria-label={
+                                  cell.todo
+                                    ? `${toShortLabel(cell.date)} ${row.content}`
+                                    : `${toShortLabel(cell.date)} (없음)`
+                                }
+                                className={cn(
+                                  "h-8 shrink-0 cursor-pointer transition-colors",
+                                  run.filled && segmentBgClass(cell.todo),
+                                )}
+                                style={{ width: DAY_WIDTH }}
+                                onClick={() => onDateClick(cell.date)}
+                                onKeyDown={(event) =>
+                                  onDayActivateKey(event, cell.date, onDateClick)
+                                }
+                              />
+                            ))}
+                          </div>
                         ))}
                       </div>
                       <div className="pointer-events-none absolute inset-0 overflow-visible">
