@@ -15,6 +15,10 @@ export const IPC_CHANNELS = {
   EXPORT_JSON: "data:exportJson",
   EXPORT_SQL: "data:exportSql",
   IMPORT_JSON: "data:importJson",
+  GET_MEMOS: "memo:list",
+  CREATE_MEMO: "memo:create",
+  UPDATE_MEMO: "memo:update",
+  DELETE_MEMO: "memo:delete",
   SET_TITLE_BAR_OVERLAY: "window:setTitleBarOverlay",
 } as const;
 

@@ -7,7 +7,7 @@ import type { TodoDatabase } from "@shared/types/todo";
 const STORE_FILE_NAME = "todos.json";
 
 /** 빈 저장소 기본값 */
-const EMPTY_STORE: TodoDatabase = { todos: [] };
+const EMPTY_STORE: TodoDatabase = { todos: [], memos: [] };
 
 /**
  * userData 경로에 저장된 JSON 파일의 전체 경로를 반환한다.
@@ -35,7 +35,10 @@ export function readStore(): TodoDatabase {
       return structuredClone(EMPTY_STORE);
     }
 
-    return parsed;
+    return {
+      todos: parsed.todos,
+      memos: Array.isArray(parsed.memos) ? parsed.memos : [],
+    };
   } catch {
     return structuredClone(EMPTY_STORE);
   }

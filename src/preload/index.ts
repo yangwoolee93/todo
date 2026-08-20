@@ -14,6 +14,7 @@ import type {
   TodoItem,
   UpdateTodoContentPayload,
 } from "@shared/types/todo";
+import type { CreateMemoPayload, MemoItem, UpdateMemoPayload } from "@shared/types/memo";
 
 const api = {
   getTodosByDate(targetDate: string): Promise<IpcResult<DisplayTodo[]>> {
@@ -66,6 +67,22 @@ const api = {
 
   importJson(): Promise<IpcResult<{ filePath?: string }>> {
     return ipcRenderer.invoke(IPC_CHANNELS.IMPORT_JSON);
+  },
+
+  listMemos(): Promise<IpcResult<MemoItem[]>> {
+    return ipcRenderer.invoke(IPC_CHANNELS.GET_MEMOS);
+  },
+
+  createMemo(payload: CreateMemoPayload): Promise<IpcResult<MemoItem>> {
+    return ipcRenderer.invoke(IPC_CHANNELS.CREATE_MEMO, payload);
+  },
+
+  updateMemo(payload: UpdateMemoPayload): Promise<IpcResult> {
+    return ipcRenderer.invoke(IPC_CHANNELS.UPDATE_MEMO, payload);
+  },
+
+  deleteMemo(id: number): Promise<IpcResult> {
+    return ipcRenderer.invoke(IPC_CHANNELS.DELETE_MEMO, id);
   },
 };
 

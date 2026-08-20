@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain, Menu, screen, shell, Tray, nativeImage } f
 import { join } from "path";
 import { registerIpcHandlers } from "./ipcHandlers";
 import { ensureNormalizedStore } from "./database/todoRepository";
+import { ensureNormalizedMemos } from "./database/memoRepository";
 
 const TITLE_BAR_HEIGHT = 44;
 /** Windows 타이틀바 오버레이 (페이지 base와 동일) */
@@ -249,6 +250,7 @@ if (!gotTheLock) {
       app.dock.setIcon(appIcon);
     }
     ensureNormalizedStore();
+    ensureNormalizedMemos();
     registerIpcHandlers();
     createWindow();
     createWindowsTray();

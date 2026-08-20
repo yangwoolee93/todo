@@ -1,74 +1,61 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { useUIStore } from "@renderer/stores/useUIStore";
+import { useMemoStore } from "@renderer/features/memo";
+import type { MemoItem, MemoKind } from "@shared/types/memo";
 import { Button, Card, CloseIcon, Input, Modal, ModalTitle, Tab } from "@renderer/shared/ui";
 import { cn } from "@renderer/utils/cn";
-
-type MemoKind = "routine" | "planned";
-
-type MemoItem = {
-  id: number;
-  title: string;
-  note: string;
-};
-
-const INITIAL_ROUTINE: MemoItem[] = [
-  { id: 1, title: "약 먹기", note: "" },
-  { id: 2, title: "효석) 가계부 사이드 프로젝트 진행하기", note: "" },
-  { id: 3, title: "물 2L", note: "" },
-  { id: 4, title: "할일 사이드 프로젝트 진행하기", note: "" },
-];
-
-const INITIAL_PLANNED: MemoItem[] = [
-  { id: 5, title: "병원 예약", note: "치과 — 검진 주기 확인" },
-  { id: 6, title: "보험 갱신", note: "만기 전에 비교 견적" },
-  { id: 7, title: "선물", note: "" },
-  {
-    id: 8,
-    title: "이사 체크",
-    note: "전입신고, 가스·전기 명의, 인터넷 설치 일정, 택배 보관함 신청",
-  },
-];
 
 const fieldClass = cn(
   "w-full rounded-(--radius-btn) border border-border bg-surface px-3 py-2 text-sm text-fg",
   "placeholder:text-fg-muted outline-none focus:border-accent focus:ring-2 focus:ring-accent/20",
 );
 
-/** 메모 화면 시안 — 그리드 훑기, 추가·상세는 모달 */
+/** 메모 화면 — 루틴/예정 저장·조회 */
 export default function MemoDesign() {
   const openAddModalWithDuplicate = useUIStore((s) => s.openAddModalWithDuplicate);
+  const memos = useMemoStore((s) => s.memos);
+  const loading = useMemoStore((s) => s.loading);
+  const loadMemos = useMemoStore((s) => s.loadMemos);
+  const createMemo = useMemoStore((s) => s.createMemo);
+  const updateMemo = useMemoStore((s) => s.updateMemo);
+  const deleteMemo = useMemoStore((s) => s.deleteMemo);
 
   const [kind, setKind] = useState<MemoKind>("routine");
-  const [routineItems, setRoutineItems] = useState(INITIAL_ROUTINE);
-  const [plannedItems, setPlannedItems] = useState(INITIAL_PLANNED);
   const [addOpen, setAddOpen] = useState(false);
   const [opened, setOpened] = useState<MemoItem | null>(null);
 
-  const items = kind === "routine" ? routineItems : plannedItems;
-  const setItems = kind === "routine" ? setRoutineItems : setPlannedItems;
+  useEffect(() => {
+    void loadMemos();
+  }, [loadMemos]);
+
+  const items = memos.filter((item) => item.kind === kind);
   const heading = kind === "routine" ? "루틴" : "예정";
   const hint =
     kind === "routine" ? "반복해서 쓰는 할 일 제목입니다." : "아직 날짜가 없는 할 일·메모입니다.";
 
-  const handleAdd = (title: string, note: string) => {
-    setItems((prev) => [...prev, { id: Date.now(), title, note: kind === "planned" ? note : "" }]);
-    setAddOpen(false);
+  const handleAdd = async (title: string, note: string) => {
+    const success = await createMemo({
+      kind,
+      title,
+      note: kind === "planned" ? note : "",
+    });
+    if (success) setAddOpen(false);
   };
 
-  const handleSaveOpened = (title: string, note: string) => {
+  const handleSaveOpened = async (title: string, note: string) => {
     if (!opened) return;
-    setItems((prev) =>
-      prev.map((item) =>
-        item.id === opened.id ? { ...item, title, note: kind === "planned" ? note : "" } : item,
-      ),
-    );
-    setOpened(null);
+    const success = await updateMemo({
+      id: opened.id,
+      title,
+      note: kind === "planned" ? note : "",
+    });
+    if (success) setOpened(null);
   };
 
-  const handleRemoveOpened = () => {
+  const handleRemoveOpened = async () => {
     if (!opened) return;
-    setItems((prev) => prev.filter((item) => item.id !== opened.id));
-    setOpened(null);
+    const success = await deleteMemo(opened.id);
+    if (success) setOpened(null);
   };
 
   return (
@@ -109,7 +96,9 @@ export default function MemoDesign() {
 
       <Card className="flex min-h-0 flex-1 flex-col overflow-hidden p-0">
         <div className="scrollbar min-h-0 flex-1 overflow-auto p-4">
-          {items.length === 0 ? (
+          {loading && items.length === 0 ? (
+            <p className="px-4 py-8 text-center text-sm text-fg-secondary">불러오는 중...</p>
+          ) : items.length === 0 ? (
             <p className="rounded-(--radius-btn) border border-dashed border-border px-4 py-8 text-center text-sm text-fg-muted">
               등록된 항목이 없습니다.
               <br />

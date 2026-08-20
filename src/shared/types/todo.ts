@@ -1,3 +1,5 @@
+import type { MemoItem } from "./memo";
+
 /**
  * 투두 상태
  * - pending: 미완료
@@ -22,6 +24,7 @@ export interface TodoItem {
 /** 디스크에 저장되는 JSON 파일 전체 스키마 */
 export interface TodoDatabase {
   todos: TodoItem[];
+  memos: MemoItem[];
 }
 
 export interface DisplayTodo {

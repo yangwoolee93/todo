@@ -14,6 +14,7 @@ import type {
   TodoItem,
   UpdateTodoContentPayload,
 } from "@shared/types/todo";
+import type { CreateMemoPayload, MemoItem, UpdateMemoPayload } from "@shared/types/memo";
 import { exportToJson, exportToSql, importFromJson } from "./database/exportService";
 import {
   createTodo,
@@ -27,6 +28,7 @@ import {
   toggleCompletion,
   updateTodoContent,
 } from "./database/todoRepository";
+import { createMemo, deleteMemo, listMemos, updateMemo } from "./database/memoRepository";
 
 function ok<T>(data?: T): IpcResult<T> {
   return { success: true, data };
@@ -190,5 +192,52 @@ export function registerIpcHandlers(): void {
     if (result.cancelled) return ok({ filePath: undefined });
     if (!result.success) return fail(result.error ?? "JSON 임포트 실패");
     return ok({ filePath: result.filePath });
+  });
+
+  ipcMain.handle(IPC_CHANNELS.GET_MEMOS, (): IpcResult<MemoItem[]> => {
+    try {
+      return ok(listMemos());
+    } catch (error) {
+      return fail(error instanceof Error ? error.message : "메모 조회 실패");
+    }
+  });
+
+  ipcMain.handle(
+    IPC_CHANNELS.CREATE_MEMO,
+    (_event, payload: CreateMemoPayload): IpcResult<MemoItem> => {
+      try {
+        const created = createMemo(payload);
+        if (!created) {
+          return fail("제목이 비어 있습니다.");
+        }
+        return ok(created);
+      } catch (error) {
+        return fail(error instanceof Error ? error.message : "메모 생성 실패");
+      }
+    },
+  );
+
+  ipcMain.handle(IPC_CHANNELS.UPDATE_MEMO, (_event, payload: UpdateMemoPayload): IpcResult => {
+    try {
+      const changed = updateMemo(payload);
+      if (!changed) {
+        return fail("제목이 비어 있거나 항목을 찾을 수 없습니다.");
+      }
+      return ok();
+    } catch (error) {
+      return fail(error instanceof Error ? error.message : "메모 수정 실패");
+    }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.DELETE_MEMO, (_event, id: number): IpcResult => {
+    try {
+      const changed = deleteMemo(id);
+      if (!changed) {
+        return fail("항목을 찾을 수 없습니다.");
+      }
+      return ok();
+    } catch (error) {
+      return fail(error instanceof Error ? error.message : "메모 삭제 실패");
+    }
   });
 }

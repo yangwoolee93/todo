@@ -1,7 +1,9 @@
 import { dialog } from "electron";
 import { readFileSync, writeFileSync } from "fs";
 import type { TodoItem } from "@shared/types/todo";
+import type { MemoItem } from "@shared/types/memo";
 import { getAllTodos, replaceStore } from "./todoRepository";
+import { replaceMemos } from "./memoRepository";
 import { readStore, writeStore } from "./storage";
 
 /** IPC 익스포트/임포트 결과 */
@@ -124,13 +126,16 @@ export async function importFromJson(): Promise<ExportImportResult> {
 
     const filePath = result.filePaths[0];
     const raw = readFileSync(filePath, "utf-8");
-    const parsed = JSON.parse(raw) as { todos?: TodoItem[] };
+    const parsed = JSON.parse(raw) as { todos?: TodoItem[]; memos?: MemoItem[] };
 
     if (!parsed.todos || !Array.isArray(parsed.todos)) {
       return { success: false, error: "유효하지 않은 JSON 형식입니다." };
     }
 
     replaceStore(parsed.todos);
+    if (Array.isArray(parsed.memos)) {
+      replaceMemos(parsed.memos);
+    }
 
     return { success: true, filePath };
   } catch (error) {
@@ -145,5 +150,5 @@ export async function importFromJson(): Promise<ExportImportResult> {
  * 디스크 저장소를 초기화한다 (개발·디버그용 — UI에서는 미사용).
  */
 export function resetStore(): void {
-  writeStore({ todos: [] });
+  writeStore({ todos: [], memos: [] });
 }
