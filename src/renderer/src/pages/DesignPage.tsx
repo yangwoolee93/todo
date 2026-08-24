@@ -8,8 +8,6 @@ const YEAR_START = 2000;
 const YEAR_END = 2040;
 const YEARS = Array.from({ length: YEAR_END - YEAR_START + 1 }, (_, index) => YEAR_START + index);
 
-type MonthDraft = number | "all";
-
 const triggerClass = cn(
   "w-fit cursor-pointer rounded-(--radius-btn) bg-muted px-3 py-1 text-2xl font-medium text-fg",
   "hover:bg-border",
@@ -39,17 +37,22 @@ export default function DesignPage() {
   const thisMonth = now.getMonth() + 1;
   const [year, setYear] = useState(thisYear);
   const [month, setMonth] = useState(thisMonth);
-  const [viewAllMonths, setViewAllMonths] = useState(false);
-  const [day, setDay] = useState(24);
+  const [monthOverview, setMonthOverview] = useState(false);
+  const thisDay = now.getDate();
+  const [day, setDay] = useState(thisDay);
   const [yearOpen, setYearOpen] = useState(false);
   const [monthOpen, setMonthOpen] = useState(false);
   const [draftYear, setDraftYear] = useState(thisYear);
-  const [draftMonth, setDraftMonth] = useState<MonthDraft>(thisMonth);
+  const [draftMonth, setDraftMonth] = useState(thisMonth);
   const yearListRef = useRef<HTMLDivElement>(null);
   const yearCellRefs = useRef(new Map<number, HTMLButtonElement>());
+  const dayListRef = useRef<HTMLDivElement>(null);
+  const dayCellRefs = useRef(new Map<number, HTMLButtonElement>());
 
   const dayCount = daysInMonth(year, month);
-  const monthApplyDisabled = viewAllMonths ? draftMonth === "all" : draftMonth === month;
+  const sameMonth = draftMonth === month;
+  const dayViewDisabled = sameMonth && !monthOverview;
+  const monthViewDisabled = sameMonth && monthOverview;
 
   const scrollYearIntoView = (targetYear: number) => {
     const root = yearListRef.current;
@@ -61,6 +64,17 @@ export default function DesignPage() {
     root.scrollTop += targetRect.top - rootRect.top - root.clientHeight / 2 + targetRect.height / 2;
   };
 
+  const scrollDayIntoView = (targetDay: number) => {
+    const root = dayListRef.current;
+    const target = dayCellRefs.current.get(targetDay);
+    if (!root || !target) return;
+
+    const rootRect = root.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+    root.scrollLeft +=
+      targetRect.left - rootRect.left - root.clientWidth / 2 + targetRect.width / 2;
+  };
+
   useEffect(() => {
     if (!yearOpen) return;
 
@@ -70,6 +84,18 @@ export default function DesignPage() {
 
     return () => cancelAnimationFrame(frame);
   }, [yearOpen, year]);
+
+  useEffect(() => {
+    if (monthOverview) return;
+
+    const frame = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        scrollDayIntoView(day);
+      });
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [day, year, month, monthOverview, dayCount]);
 
   const openYearModal = () => {
     setDraftYear(year);
@@ -87,12 +113,12 @@ export default function DesignPage() {
 
   const applyYear = () => {
     setYear(draftYear);
-    if (!viewAllMonths) setDay((prev) => clampDay(draftYear, month, prev));
+    if (!monthOverview) setDay((prev) => clampDay(draftYear, month, prev));
     setYearOpen(false);
   };
 
   const openMonthModal = () => {
-    setDraftMonth(viewAllMonths ? "all" : month);
+    setDraftMonth(month);
     setMonthOpen(true);
   };
 
@@ -104,14 +130,16 @@ export default function DesignPage() {
     setDraftMonth(thisMonth);
   };
 
-  const applyMonth = () => {
-    if (draftMonth === "all") {
-      setViewAllMonths(true);
-    } else {
-      setViewAllMonths(false);
-      setMonth(draftMonth);
-      setDay((prev) => clampDay(year, draftMonth, prev));
-    }
+  const applyDayView = () => {
+    setMonth(draftMonth);
+    setMonthOverview(false);
+    setDay((prev) => clampDay(year, draftMonth, prev));
+    setMonthOpen(false);
+  };
+
+  const applyMonthView = () => {
+    setMonth(draftMonth);
+    setMonthOverview(true);
     setMonthOpen(false);
   };
 
@@ -123,7 +151,7 @@ export default function DesignPage() {
           {year}년
         </div>
         <div className={triggerClass} onClick={openMonthModal}>
-          {viewAllMonths ? "전체" : `${month}월`}
+          {month}월
         </div>
       </div>
 
@@ -165,7 +193,11 @@ export default function DesignPage() {
                     else yearCellRefs.current.delete(item);
                   }}
                   type="button"
-                  className={cn(cellClass, isThisYear && "text-accent", selected && "border-accent")}
+                  className={cn(
+                    cellClass,
+                    isThisYear && "text-accent",
+                    selected && "border-accent",
+                  )}
                   onClick={() => setDraftYear(item)}
                 >
                   {item}
@@ -206,13 +238,6 @@ export default function DesignPage() {
             <CloseIcon />
           </Button>
         </div>
-        <button
-          type="button"
-          className={cn(cellClass, "mb-2 w-full py-2.5 text-base", draftMonth === "all" && "border-accent")}
-          onClick={() => setDraftMonth("all")}
-        >
-          전체보기
-        </button>
         <div className="grid grid-cols-3 gap-2">
           {MONTHS.map((item) => {
             const selected = draftMonth === item;
@@ -229,29 +254,48 @@ export default function DesignPage() {
             );
           })}
         </div>
-        <div className="mt-3 flex justify-end">
-          <Button variant="primary" disabled={monthApplyDisabled} onClick={applyMonth}>
-            적용
+        <div className="mt-3 flex justify-end gap-2">
+          <Button disabled={monthViewDisabled} onClick={applyMonthView}>
+            월로 보기
+          </Button>
+          <Button variant="primary" disabled={dayViewDisabled} onClick={applyDayView}>
+            일로 보기
           </Button>
         </div>
       </Modal>
 
       {/* 일 */}
-      {!viewAllMonths ? (
-        <div className={cn("scrollbar flex h-34 gap-2 overflow-x-scroll overflow-hidden")}>
+      {!monthOverview ? (
+        <div
+          ref={dayListRef}
+          className={cn("scrollbar flex gap-2 overflow-x-scroll overflow-y-hidden pb-1.5")}
+        >
           {Array.from({ length: dayCount }).map((_, index) => {
             const date = index + 1;
+            const selected = date === day;
+            const isToday = year === thisYear && month === thisMonth && date === thisDay;
             return (
-              <Card
+              <button
                 key={date}
+                ref={(node) => {
+                  if (node) dayCellRefs.current.set(date, node);
+                  else dayCellRefs.current.delete(date);
+                }}
+                type="button"
                 className={cn(
-                  "flex h-30 w-20 shrink-0 flex-col items-center justify-center",
-                  date === day && "border-accent",
+                  "flex h-30 w-24 shrink-0 flex-col items-center justify-center rounded-(--radius-card) gap-4",
+                  "border-2 border-transparent bg-surface",
+                  "hover:bg-muted",
+                  isToday && "text-accent",
+                  selected && "border-accent",
                 )}
+                onClick={() => setDay(date)}
               >
-                <div>{date}</div>
-                <div>{weekdayLabel(year, month, date)}</div>
-              </Card>
+                <span className="text-3xl font-bold leading-none">{date}</span>
+                <span className="mt-1 text-[0.75rem] font-normal text-fg-secondary">
+                  {weekdayLabel(year, month, date)}
+                </span>
+              </button>
             );
           })}
         </div>
