@@ -20,11 +20,11 @@ export function AppShell({ children }: AppShellProps) {
       </div>
       <footer
         className={cn(
-          "flex items-center justify-between px-4 pb-2 shrink-0 border-t border-border",
+          "flex items-center justify-between px-4 py-2 shrink-0 border-t border-border",
           "text-xs text-fg-secondary",
         )}
       >
-        <div>pre-release</div>
+        <div>PRE_RELEASE</div>
         <div>v{APP_VERSION}</div>
       </footer>
     </div>
