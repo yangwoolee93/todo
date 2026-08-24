@@ -14,6 +14,7 @@ type UIState = {
 
 type UIActions = {
   // view Actions
+  goDesignView: () => void;
   goMemoView: () => void;
   goScheduleView: () => void;
   goSettingsView: () => void;
@@ -43,6 +44,7 @@ const initialState: UIState = {
 };
 
 const createActions = (set: (fn: (prev: UIStore) => Partial<UIStore>) => void): UIActions => ({
+  goDesignView: () => set(() => ({ view: "design" })),
   goMemoView: () => set(() => ({ view: "memo" })),
   goScheduleView: () => set(() => ({ view: "schedule" })),
   goSettingsView: () => set(() => ({ view: "settings" })),
