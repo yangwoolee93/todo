@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { Button, Card, CloseIcon, Modal, ModalTitle } from "@renderer/shared/ui";
+import { Button, CloseIcon, DragHandleIcon, Modal, ModalTitle } from "@renderer/shared/ui";
+import { TodoItemMenu, TodoStatusIcon } from "@renderer/features/todo";
+import type { DisplayTodo } from "@shared/types/todo";
 import { cn } from "@renderer/utils/cn";
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
@@ -18,6 +20,13 @@ const cellClass = cn(
   "flex items-center justify-center rounded-(--radius-btn) border-2 border-transparent",
   "bg-surface py-2 text-xl font-medium text-fg hover:bg-muted",
 );
+
+const SAMPLE_TODOS: DisplayTodo[] = [
+  { id: 1, content: "회의 자료 정리", status: "pending", sort_order: 0, created_at: 0, batch_id: null },
+  { id: 2, content: "장보기", status: "completed", sort_order: 1, created_at: 0, batch_id: null },
+  { id: 3, content: "운동", status: "pending", sort_order: 2, created_at: 0, batch_id: null },
+  { id: 4, content: "메일 회신", status: "failed", sort_order: 3, created_at: 0, batch_id: null },
+];
 
 function daysInMonth(year: number, month: number) {
   return new Date(year, month, 0).getDate();
@@ -306,7 +315,44 @@ export default function DesignPage() {
         </div>
       ) : null}
       {/* 일 - 할일 목록 */}
-      <div></div>
+      {!monthOverview ? (
+        <div className="mx-6 mb-6 flex min-h-0 flex-1 flex-col">
+          <div className="scrollbar min-h-0 flex-1 overflow-y-auto">
+            <ul className="flex flex-col gap-2">
+              {SAMPLE_TODOS.map((item) => (
+                <li
+                  key={item.id}
+                  className="flex items-center gap-2 rounded-(--radius-card) bg-surface px-2 py-2"
+                >
+                  <Button
+                    variant="ghost"
+                    className="shrink-0 cursor-grab px-1 py-1 text-fg-muted hover:text-fg"
+                    aria-label="순서 변경"
+                  >
+                    <DragHandleIcon />
+                  </Button>
+                  <span className="shrink-0 p-0.5">
+                    <TodoStatusIcon status={item.status} />
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-left text-sm text-fg">
+                    {item.content}
+                  </span>
+                  <TodoItemMenu
+                    todo={item}
+                    onEdit={() => undefined}
+                    onDuplicate={() => undefined}
+                    onDelete={() => undefined}
+                    onSetStatus={() => undefined}
+                  />
+                </li>
+              ))}
+            </ul>
+          </div>
+          <Button variant="primary" className="mt-3 self-end">
+            할 일 추가
+          </Button>
+        </div>
+      ) : null}
       {/* 월 - 타임라인 or 보더 - 고민중 */}
     </div>
   );
