@@ -154,7 +154,7 @@ export default function DesignPage() {
           {month}월
         </div>
       </div>
-
+      {/* 년 모달 */}
       <Modal
         open={yearOpen}
         onClose={closeYearModal}
@@ -212,7 +212,7 @@ export default function DesignPage() {
           </Button>
         </div>
       </Modal>
-
+      {/* 월 모달 */}
       <Modal
         open={monthOpen}
         onClose={closeMonthModal}
@@ -305,7 +305,9 @@ export default function DesignPage() {
           })}
         </div>
       ) : null}
-      <Card className={cn("m-6 flex-1")} />
+      {/* 일 - 할일 목록 */}
+      <div></div>
+      {/* 월 - 타임라인 or 보더 - 고민중 */}
     </div>
   );
 }
