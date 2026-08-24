@@ -9,14 +9,14 @@ const YEAR_END = 2040;
 const YEARS = Array.from({ length: YEAR_END - YEAR_START + 1 }, (_, index) => YEAR_START + index);
 
 const triggerClass = cn(
-  "w-fit cursor-pointer rounded-(--radius-btn) bg-muted px-3 py-1 text-2xl font-medium text-fg",
-  "hover:bg-border",
+  "w-fit cursor-pointer rounded-(--radius-btn) bg-surface px-3 py-1 text-2xl font-medium text-fg",
+  "hover:bg-muted",
   "focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:outline-none",
 );
 
 const cellClass = cn(
   "flex items-center justify-center rounded-(--radius-btn) border-2 border-transparent",
-  "bg-muted py-2 text-xl font-medium text-fg hover:bg-border",
+  "bg-surface py-2 text-xl font-medium text-fg hover:bg-muted",
 );
 
 function daysInMonth(year: number, month: number) {
@@ -286,13 +286,18 @@ export default function DesignPage() {
                   "flex h-30 w-24 shrink-0 flex-col items-center justify-center rounded-(--radius-card) gap-4",
                   "border-2 border-transparent bg-surface",
                   "hover:bg-muted",
-                  isToday && "text-accent",
-                  selected && "border-accent",
+                  isToday && !selected && "text-accent",
+                  selected && "border-accent bg-accent text-white hover:bg-accent-hover",
                 )}
                 onClick={() => setDay(date)}
               >
                 <span className="text-3xl font-bold leading-none">{date}</span>
-                <span className="mt-1 text-[0.75rem] font-normal text-fg-secondary">
+                <span
+                  className={cn(
+                    "mt-1 text-[0.75rem] font-normal",
+                    selected ? "text-white/80" : "text-fg-secondary",
+                  )}
+                >
                   {weekdayLabel(year, month, date)}
                 </span>
               </button>
