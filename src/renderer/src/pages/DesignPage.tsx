@@ -22,10 +22,33 @@ const cellClass = cn(
 );
 
 const SAMPLE_TODOS: DisplayTodo[] = [
-  { id: 1, content: "회의 자료 정리", status: "pending", sort_order: 0, created_at: 0, batch_id: null },
+  {
+    id: 1,
+    content: "회의 자료 정리",
+    status: "pending",
+    sort_order: 0,
+    created_at: 0,
+    batch_id: null,
+  },
   { id: 2, content: "장보기", status: "completed", sort_order: 1, created_at: 0, batch_id: null },
   { id: 3, content: "운동", status: "pending", sort_order: 2, created_at: 0, batch_id: null },
-  { id: 4, content: "메일 회신", status: "failed", sort_order: 3, created_at: 0, batch_id: null },
+  {
+    id: 4,
+    content: "거래처 견적 메일 회신하고 내일 회의 자료까지 같이 정리하기",
+    status: "failed",
+    sort_order: 3,
+    created_at: 0,
+    batch_id: null,
+  },
+
+  {
+    id: 5,
+    content: "거래처 견적 메일 회신하고 내일 회의 자료까지 같이 정리하기",
+    status: "failed",
+    sort_order: 3,
+    created_at: 0,
+    batch_id: null,
+  },
 ];
 
 function daysInMonth(year: number, month: number) {
@@ -316,41 +339,46 @@ export default function DesignPage() {
       ) : null}
       {/* 일 - 할일 목록 */}
       {!monthOverview ? (
-        <div className="mx-6 mb-6 flex min-h-0 flex-1 flex-col">
+        <div className="mx-6 mb-6 mt-4 flex min-h-0 flex-1 flex-col">
+          <button
+            type="button"
+            className="mb-3 w-full shrink-0 rounded-(--radius-card) bg-surface px-3 py-3 text-left text-sm text-fg-secondary hover:bg-muted hover:text-fg"
+          >
+            + 할 일 추가
+          </button>
           <div className="scrollbar min-h-0 flex-1 overflow-y-auto">
             <ul className="flex flex-col gap-2">
               {SAMPLE_TODOS.map((item) => (
                 <li
                   key={item.id}
-                  className="flex items-center gap-2 rounded-(--radius-card) bg-surface px-2 py-2"
+                  className="group flex items-start gap-2 rounded-(--radius-card) bg-surface px-3 py-4"
                 >
                   <Button
                     variant="ghost"
-                    className="shrink-0 cursor-grab px-1 py-1 text-fg-muted hover:text-fg"
+                    className="mt-0.5 shrink-0 cursor-grab px-1 py-1 text-fg-muted opacity-30 hover:text-fg group-hover:opacity-100 group-focus-within:opacity-100"
                     aria-label="순서 변경"
                   >
                     <DragHandleIcon />
                   </Button>
-                  <span className="shrink-0 p-0.5">
+                  <span className="mt-0.5 shrink-0 p-0.5">
                     <TodoStatusIcon status={item.status} />
                   </span>
-                  <span className="min-w-0 flex-1 truncate text-left text-sm text-fg">
+                  <span className="min-w-0 flex-1 text-left text-[17px] font-medium leading-snug text-fg line-clamp-2">
                     {item.content}
                   </span>
-                  <TodoItemMenu
-                    todo={item}
-                    onEdit={() => undefined}
-                    onDuplicate={() => undefined}
-                    onDelete={() => undefined}
-                    onSetStatus={() => undefined}
-                  />
+                  <div className="mt-0.5 opacity-30 group-hover:opacity-100 group-focus-within:opacity-100">
+                    <TodoItemMenu
+                      todo={item}
+                      onEdit={() => undefined}
+                      onDuplicate={() => undefined}
+                      onDelete={() => undefined}
+                      onSetStatus={() => undefined}
+                    />
+                  </div>
                 </li>
               ))}
             </ul>
           </div>
-          <Button variant="primary" className="mt-3 self-end">
-            할 일 추가
-          </Button>
         </div>
       ) : null}
       {/* 월 - 타임라인 or 보더 - 고민중 */}
