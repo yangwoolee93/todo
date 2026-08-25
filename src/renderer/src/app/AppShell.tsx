@@ -15,7 +15,7 @@ export function AppShell({ children }: AppShellProps) {
     <div className="flex h-screen flex-col overflow-hidden bg-base">
       <AppHeader />
 
-      <div className="mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col overflow-hidden">
+      <div className="mx-auto flex min-h-0 w-full flex-1 flex-col overflow-hidden">
         <main className="flex min-h-0 flex-1 flex-col overflow-hidden">{children}</main>
       </div>
       <footer
