@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import { Button, CloseIcon, DragHandleIcon, Modal, ModalTitle } from "@renderer/shared/ui";
 import { TodoItemMenu, TodoStatusIcon } from "@renderer/features/todo";
 import type { DisplayTodo } from "@shared/types/todo";
@@ -40,7 +40,6 @@ const SAMPLE_TODOS: DisplayTodo[] = [
     created_at: 0,
     batch_id: null,
   },
-
   {
     id: 5,
     content: "거래처 견적 메일 회신하고 내일 회의 자료까지 같이 정리하기",
@@ -61,6 +60,312 @@ function weekdayLabel(year: number, month: number, day: number) {
 
 function clampDay(year: number, month: number, day: number) {
   return Math.min(day, daysInMonth(year, month));
+}
+
+function isTodayView(
+  year: number,
+  month: number,
+  day: number,
+  monthOverview: boolean,
+  thisYear: number,
+  thisMonth: number,
+  thisDay: number,
+) {
+  return !monthOverview && year === thisYear && month === thisMonth && day === thisDay;
+}
+
+function YearMonthHeader({
+  year,
+  month,
+  showGoToday,
+  onOpenYear,
+  onOpenMonth,
+  onGoToday,
+}: {
+  year: number;
+  month: number;
+  showGoToday: boolean;
+  onOpenYear: () => void;
+  onOpenMonth: () => void;
+  onGoToday: () => void;
+}) {
+  return (
+    <div className="m-6 flex items-center gap-2">
+      <div className={triggerClass} onClick={onOpenYear}>
+        {year}년
+      </div>
+      <div className={triggerClass} onClick={onOpenMonth}>
+        {month}월
+      </div>
+      {showGoToday ? (
+        <button
+          type="button"
+          className="text-sm text-accent hover:text-accent-hover"
+          onClick={onGoToday}
+        >
+          오늘로
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+function YearPickerModal({
+  open,
+  year,
+  thisYear,
+  draftYear,
+  listRef,
+  cellRefs,
+  onClose,
+  onGoThisYear,
+  onPick,
+  onApply,
+}: {
+  open: boolean;
+  year: number;
+  thisYear: number;
+  draftYear: number;
+  listRef: RefObject<HTMLDivElement | null>;
+  cellRefs: RefObject<Map<number, HTMLButtonElement>>;
+  onClose: () => void;
+  onGoThisYear: () => void;
+  onPick: (year: number) => void;
+  onApply: () => void;
+}) {
+  return (
+    <Modal open={open} onClose={onClose} label="년도 선택" size="sm" className="overflow-hidden">
+      <div className="mb-3 flex items-center gap-2">
+        <ModalTitle className="text-md font-medium text-fg">년도</ModalTitle>
+        <button
+          type="button"
+          className="text-sm text-accent hover:text-accent-hover"
+          onClick={onGoThisYear}
+        >
+          올해로
+        </button>
+        <Button variant="ghost" className="ml-auto p-1.5" aria-label="닫기" onClick={onClose}>
+          <CloseIcon />
+        </Button>
+      </div>
+      <div ref={listRef} className="scrollbar max-h-[min(22rem,60vh)] overflow-y-auto">
+        <div className="grid grid-cols-3 gap-2">
+          {YEARS.map((item) => {
+            const selected = item === draftYear;
+            const isThisYear = item === thisYear;
+            return (
+              <button
+                key={item}
+                ref={(node) => {
+                  if (node) cellRefs.current.set(item, node);
+                  else cellRefs.current.delete(item);
+                }}
+                type="button"
+                className={cn(cellClass, isThisYear && "text-accent", selected && "border-accent")}
+                onClick={() => onPick(item)}
+              >
+                {item}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      <div className="mt-3 flex justify-end">
+        <Button variant="primary" disabled={draftYear === year} onClick={onApply}>
+          적용
+        </Button>
+      </div>
+    </Modal>
+  );
+}
+
+function MonthPickerModal({
+  open,
+  year,
+  thisYear,
+  thisMonth,
+  draftMonth,
+  dayViewDisabled,
+  monthViewDisabled,
+  onClose,
+  onGoThisMonth,
+  onPick,
+  onDayView,
+  onMonthView,
+}: {
+  open: boolean;
+  year: number;
+  thisYear: number;
+  thisMonth: number;
+  draftMonth: number;
+  dayViewDisabled: boolean;
+  monthViewDisabled: boolean;
+  onClose: () => void;
+  onGoThisMonth: () => void;
+  onPick: (month: number) => void;
+  onDayView: () => void;
+  onMonthView: () => void;
+}) {
+  return (
+    <Modal open={open} onClose={onClose} label="월 선택" size="sm" className="overflow-hidden">
+      <div className="mb-3 flex items-center gap-2">
+        <ModalTitle className="text-md font-medium text-fg">월</ModalTitle>
+        <button
+          type="button"
+          className="text-sm text-accent hover:text-accent-hover"
+          onClick={onGoThisMonth}
+        >
+          이번 달로
+        </button>
+        <Button variant="ghost" className="ml-auto p-1.5" aria-label="닫기" onClick={onClose}>
+          <CloseIcon />
+        </Button>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        {MONTHS.map((item) => {
+          const selected = draftMonth === item;
+          const isThisMonth = year === thisYear && item === thisMonth;
+          return (
+            <button
+              key={item}
+              type="button"
+              className={cn(cellClass, isThisMonth && "text-accent", selected && "border-accent")}
+              onClick={() => onPick(item)}
+            >
+              {item}월
+            </button>
+          );
+        })}
+      </div>
+      <div className="mt-3 flex justify-end gap-2">
+        <Button disabled={monthViewDisabled} onClick={onMonthView}>
+          월로 보기
+        </Button>
+        <Button variant="primary" disabled={dayViewDisabled} onClick={onDayView}>
+          일로 보기
+        </Button>
+      </div>
+    </Modal>
+  );
+}
+
+function DayStrip({
+  listRef,
+  cellRefs,
+  dayCount,
+  day,
+  year,
+  month,
+  thisYear,
+  thisMonth,
+  thisDay,
+  onSelectDay,
+}: {
+  listRef: RefObject<HTMLDivElement | null>;
+  cellRefs: RefObject<Map<number, HTMLButtonElement>>;
+  dayCount: number;
+  day: number;
+  year: number;
+  month: number;
+  thisYear: number;
+  thisMonth: number;
+  thisDay: number;
+  onSelectDay: (day: number) => void;
+}) {
+  return (
+    <div
+      ref={listRef}
+      className={cn("scrollbar flex gap-2 overflow-x-scroll overflow-y-hidden pb-1.5")}
+    >
+      {Array.from({ length: dayCount }).map((_, index) => {
+        const date = index + 1;
+        const selected = date === day;
+        const isToday = year === thisYear && month === thisMonth && date === thisDay;
+        return (
+          <button
+            key={date}
+            ref={(node) => {
+              if (node) cellRefs.current.set(date, node);
+              else cellRefs.current.delete(date);
+            }}
+            type="button"
+            className={cn(
+              "flex h-30 w-24 shrink-0 flex-col items-center justify-center rounded-(--radius-card) gap-4",
+              "border-2 border-transparent bg-surface",
+              "hover:bg-muted",
+              isToday && !selected && "text-accent",
+              selected && "border-accent bg-accent text-white hover:bg-accent-hover",
+            )}
+            onClick={() => onSelectDay(date)}
+          >
+            <span className="text-3xl font-bold leading-none">{date}</span>
+            <span
+              className={cn(
+                "mt-1 text-[0.75rem] font-normal",
+                selected ? "text-white/80" : "text-fg-secondary",
+              )}
+            >
+              {weekdayLabel(year, month, date)}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function DayTodoList() {
+  return (
+    <div className="mx-6 mb-6 mt-4 flex min-h-0 flex-1 flex-col">
+      <button
+        type="button"
+        className="mb-3 w-full shrink-0 rounded-(--radius-card) bg-surface px-3 py-3 text-left text-sm text-fg-secondary hover:bg-muted hover:text-fg"
+      >
+        + 할 일 추가
+      </button>
+      <div className="scrollbar min-h-0 flex-1 overflow-y-auto">
+        <ul className="flex flex-col gap-2">
+          {SAMPLE_TODOS.map((item) => (
+            <li
+              key={item.id}
+              className="group flex items-center gap-2 rounded-(--radius-card) bg-surface px-3 py-3"
+            >
+              <Button
+                variant="ghost"
+                className="shrink-0 cursor-grab px-1 py-1 text-fg-muted opacity-30 hover:text-fg group-hover:opacity-100 group-focus-within:opacity-100"
+                aria-label="순서 변경"
+              >
+                <DragHandleIcon />
+              </Button>
+              <span className="shrink-0 p-0.5">
+                <TodoStatusIcon status={item.status} />
+              </span>
+              <span className="min-w-0 flex-1 text-left font-medium leading-snug text-fg line-clamp-2">
+                {item.content}
+              </span>
+              <div className="opacity-30 group-hover:opacity-100 group-focus-within:opacity-100">
+                <TodoItemMenu
+                  todo={item}
+                  onEdit={() => undefined}
+                  onDuplicate={() => undefined}
+                  onDelete={() => undefined}
+                  onSetStatus={() => undefined}
+                />
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+function MonthTimelinePlaceholder() {
+  return (
+    <div className="mx-6 mb-6 flex min-h-0 flex-1 items-center justify-center text-sm text-fg-muted">
+      타임라인 등록 예정
+    </div>
+  );
 }
 
 export default function DesignPage() {
@@ -175,213 +480,76 @@ export default function DesignPage() {
     setMonthOpen(false);
   };
 
+  const goToToday = () => {
+    setYear(thisYear);
+    setMonth(thisMonth);
+    setDay(thisDay);
+    setMonthOverview(false);
+  };
+
   return (
     <div className={cn("flex flex-1 flex-col")}>
       {/* 년월 */}
-      <div className="m-6 flex items-center gap-2">
-        <div className={triggerClass} onClick={openYearModal}>
-          {year}년
-        </div>
-        <div className={triggerClass} onClick={openMonthModal}>
-          {month}월
-        </div>
-      </div>
+      <YearMonthHeader
+        year={year}
+        month={month}
+        showGoToday={!isTodayView(year, month, day, monthOverview, thisYear, thisMonth, thisDay)}
+        onOpenYear={openYearModal}
+        onOpenMonth={openMonthModal}
+        onGoToday={goToToday}
+      />
       {/* 년 모달 */}
-      <Modal
+      <YearPickerModal
         open={yearOpen}
+        year={year}
+        thisYear={thisYear}
+        draftYear={draftYear}
+        listRef={yearListRef}
+        cellRefs={yearCellRefs}
         onClose={closeYearModal}
-        label="년도 선택"
-        size="sm"
-        className="overflow-hidden"
-      >
-        <div className="mb-3 flex items-center gap-2">
-          <ModalTitle className="text-md font-medium text-fg">년도</ModalTitle>
-          <button
-            type="button"
-            className="text-sm text-accent hover:text-accent-hover"
-            onClick={goThisYear}
-          >
-            올해로
-          </button>
-          <Button
-            variant="ghost"
-            className="ml-auto p-1.5"
-            aria-label="닫기"
-            onClick={closeYearModal}
-          >
-            <CloseIcon />
-          </Button>
-        </div>
-        <div ref={yearListRef} className="scrollbar max-h-[min(22rem,60vh)] overflow-y-auto">
-          <div className="grid grid-cols-3 gap-2">
-            {YEARS.map((item) => {
-              const selected = item === draftYear;
-              const isThisYear = item === thisYear;
-              return (
-                <button
-                  key={item}
-                  ref={(node) => {
-                    if (node) yearCellRefs.current.set(item, node);
-                    else yearCellRefs.current.delete(item);
-                  }}
-                  type="button"
-                  className={cn(
-                    cellClass,
-                    isThisYear && "text-accent",
-                    selected && "border-accent",
-                  )}
-                  onClick={() => setDraftYear(item)}
-                >
-                  {item}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-        <div className="mt-3 flex justify-end">
-          <Button variant="primary" disabled={draftYear === year} onClick={applyYear}>
-            적용
-          </Button>
-        </div>
-      </Modal>
+        onGoThisYear={goThisYear}
+        onPick={setDraftYear}
+        onApply={applyYear}
+      />
       {/* 월 모달 */}
-      <Modal
+      <MonthPickerModal
         open={monthOpen}
+        year={year}
+        thisYear={thisYear}
+        thisMonth={thisMonth}
+        draftMonth={draftMonth}
+        dayViewDisabled={dayViewDisabled}
+        monthViewDisabled={monthViewDisabled}
         onClose={closeMonthModal}
-        label="월 선택"
-        size="sm"
-        className="overflow-hidden"
-      >
-        <div className="mb-3 flex items-center gap-2">
-          <ModalTitle className="text-md font-medium text-fg">월</ModalTitle>
-          <button
-            type="button"
-            className="text-sm text-accent hover:text-accent-hover"
-            onClick={goThisMonth}
-          >
-            이번 달로
-          </button>
-          <Button
-            variant="ghost"
-            className="ml-auto p-1.5"
-            aria-label="닫기"
-            onClick={closeMonthModal}
-          >
-            <CloseIcon />
-          </Button>
-        </div>
-        <div className="grid grid-cols-3 gap-2">
-          {MONTHS.map((item) => {
-            const selected = draftMonth === item;
-            const isThisMonth = year === thisYear && item === thisMonth;
-            return (
-              <button
-                key={item}
-                type="button"
-                className={cn(cellClass, isThisMonth && "text-accent", selected && "border-accent")}
-                onClick={() => setDraftMonth(item)}
-              >
-                {item}월
-              </button>
-            );
-          })}
-        </div>
-        <div className="mt-3 flex justify-end gap-2">
-          <Button disabled={monthViewDisabled} onClick={applyMonthView}>
-            월로 보기
-          </Button>
-          <Button variant="primary" disabled={dayViewDisabled} onClick={applyDayView}>
-            일로 보기
-          </Button>
-        </div>
-      </Modal>
-
-      {/* 일 */}
-      {!monthOverview ? (
-        <div
-          ref={dayListRef}
-          className={cn("scrollbar flex gap-2 overflow-x-scroll overflow-y-hidden pb-1.5")}
-        >
-          {Array.from({ length: dayCount }).map((_, index) => {
-            const date = index + 1;
-            const selected = date === day;
-            const isToday = year === thisYear && month === thisMonth && date === thisDay;
-            return (
-              <button
-                key={date}
-                ref={(node) => {
-                  if (node) dayCellRefs.current.set(date, node);
-                  else dayCellRefs.current.delete(date);
-                }}
-                type="button"
-                className={cn(
-                  "flex h-30 w-24 shrink-0 flex-col items-center justify-center rounded-(--radius-card) gap-4",
-                  "border-2 border-transparent bg-surface",
-                  "hover:bg-muted",
-                  isToday && !selected && "text-accent",
-                  selected && "border-accent bg-accent text-white hover:bg-accent-hover",
-                )}
-                onClick={() => setDay(date)}
-              >
-                <span className="text-3xl font-bold leading-none">{date}</span>
-                <span
-                  className={cn(
-                    "mt-1 text-[0.75rem] font-normal",
-                    selected ? "text-white/80" : "text-fg-secondary",
-                  )}
-                >
-                  {weekdayLabel(year, month, date)}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      ) : null}
-      {/* 일 - 할일 목록 */}
-      {!monthOverview ? (
-        <div className="mx-6 mb-6 mt-4 flex min-h-0 flex-1 flex-col">
-          <button
-            type="button"
-            className="mb-3 w-full shrink-0 rounded-(--radius-card) bg-surface px-3 py-3 text-left text-sm text-fg-secondary hover:bg-muted hover:text-fg"
-          >
-            + 할 일 추가
-          </button>
-          <div className="scrollbar min-h-0 flex-1 overflow-y-auto">
-            <ul className="flex flex-col gap-2">
-              {SAMPLE_TODOS.map((item) => (
-                <li
-                  key={item.id}
-                  className="group flex items-center gap-2 rounded-(--radius-card) bg-surface px-3 py-3"
-                >
-                  <Button
-                    variant="ghost"
-                    className="shrink-0 cursor-grab px-1 py-1 text-fg-muted opacity-30 hover:text-fg group-hover:opacity-100 group-focus-within:opacity-100"
-                    aria-label="순서 변경"
-                  >
-                    <DragHandleIcon />
-                  </Button>
-                  <span className="shrink-0 p-0.5">
-                    <TodoStatusIcon status={item.status} />
-                  </span>
-                  <span className="min-w-0 flex-1 text-left font-medium leading-snug text-fg line-clamp-2">
-                    {item.content}
-                  </span>
-                  <div className="opacity-30 group-hover:opacity-100 group-focus-within:opacity-100">
-                    <TodoItemMenu
-                      todo={item}
-                      onEdit={() => undefined}
-                      onDuplicate={() => undefined}
-                      onDelete={() => undefined}
-                      onSetStatus={() => undefined}
-                    />
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      ) : null}
-      {/* 월 - 타임라인 or 보더 - 고민중 */}
+        onGoThisMonth={goThisMonth}
+        onPick={setDraftMonth}
+        onDayView={applyDayView}
+        onMonthView={applyMonthView}
+      />
+      {monthOverview ? (
+        <>
+          {/* 월 - 타임라인 or 보더 - 고민중 */}
+          <MonthTimelinePlaceholder />
+        </>
+      ) : (
+        <>
+          {/* 일 */}
+          <DayStrip
+            listRef={dayListRef}
+            cellRefs={dayCellRefs}
+            dayCount={dayCount}
+            day={day}
+            year={year}
+            month={month}
+            thisYear={thisYear}
+            thisMonth={thisMonth}
+            thisDay={thisDay}
+            onSelectDay={setDay}
+          />
+          {/* 일 - 할일 목록 */}
+          <DayTodoList />
+        </>
+      )}
     </div>
   );
 }
