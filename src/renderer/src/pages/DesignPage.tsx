@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
-import { Button, CloseIcon, DragHandleIcon, Modal, ModalTitle } from "@renderer/shared/ui";
+import { Button, CloseIcon, DragHandleIcon, Modal, ModalTitle, Tab } from "@renderer/shared/ui";
 import { TodoItemMenu, TodoStatusIcon } from "@renderer/features/todo";
 import type { DisplayTodo } from "@shared/types/todo";
 import { cn } from "@renderer/utils/cn";
@@ -60,6 +60,26 @@ function weekdayLabel(year: number, month: number, day: number) {
 
 function clampDay(year: number, month: number, day: number) {
   return Math.min(day, daysInMonth(year, month));
+}
+
+function scrollChildIntoView(
+  root: HTMLElement | null,
+  target: HTMLElement | null,
+  axis: "x" | "y",
+) {
+  if (!root || !target) return;
+
+  const rootRect = root.getBoundingClientRect();
+  const targetRect = target.getBoundingClientRect();
+
+  if (axis === "x") {
+    root.scrollLeft +=
+      targetRect.left - rootRect.left - root.clientWidth / 2 + targetRect.width / 2;
+    return;
+  }
+
+  root.scrollTop +=
+    targetRect.top - rootRect.top - root.clientHeight / 2 + targetRect.height / 2;
 }
 
 function isTodayView(
@@ -360,10 +380,251 @@ function DayTodoList() {
   );
 }
 
-function MonthTimelinePlaceholder() {
+const SAMPLE_TIMELINE_BARS = [
+  { id: "a", label: "회의 자료 정리", start: 2, end: 5 },
+  { id: "b", label: "장보기", start: 8, end: 8 },
+  { id: "c", label: "운동", start: 10, end: 14 },
+  { id: "d", label: "청소", start: 5, end: 5 },
+  { id: "e", label: "병원", start: 16, end: 16 },
+  { id: "f", label: "거래처 견적 메일 회신하고 내일 회의 자료까지 같이 정리하기", start: 18, end: 20 },
+  { id: "g", label: "주간 회고", start: 22, end: 22 },
+  { id: "h", label: "장보기", start: 24, end: 24 },
+  { id: "i", label: "저녁 약속", start: 26, end: 26 },
+  { id: "j", label: "주말 일정 정리", start: 28, end: 29 },
+  { id: "k", label: "월말 정산", start: 30, end: 31 },
+];
+
+function sampleAgendaGroups(includeDay?: number) {
+  const byDay = new Map<number, string[]>();
+  SAMPLE_TIMELINE_BARS.forEach((bar) => {
+    for (let day = bar.start; day <= bar.end; day += 1) {
+      const list = byDay.get(day) ?? [];
+      list.push(bar.label);
+      byDay.set(day, list);
+    }
+  });
+  if (includeDay !== undefined && !byDay.has(includeDay)) {
+    byDay.set(includeDay, []);
+  }
+  return [...byDay.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([day, items]) => ({ day, items }));
+}
+
+const DAY_COL_WIDTH = "3rem";
+
+function MonthTimelineDraft({
+  year,
+  month,
+  thisYear,
+  thisMonth,
+  thisDay,
+  scrollToTodayTick,
+  onOpenDay,
+}: {
+  year: number;
+  month: number;
+  thisYear: number;
+  thisMonth: number;
+  thisDay: number;
+  scrollToTodayTick: number;
+  onOpenDay: (day: number) => void;
+}) {
+  const dayCount = daysInMonth(year, month);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const todayRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        scrollChildIntoView(scrollRef.current, todayRef.current, "x");
+      });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [year, month, thisDay, scrollToTodayTick]);
+
   return (
-    <div className="mx-6 mb-6 flex min-h-0 flex-1 items-center justify-center text-sm text-fg-muted">
-      타임라인 등록 예정
+    <div ref={scrollRef} className="scrollbar min-h-0 flex-1 overflow-auto">
+      <div className="min-w-max">
+        <div className="flex">
+          {Array.from({ length: dayCount }).map((_, index) => {
+            const date = index + 1;
+            const isToday = year === thisYear && month === thisMonth && date === thisDay;
+            return (
+              <button
+                key={date}
+                ref={isToday ? todayRef : undefined}
+                type="button"
+                style={{ width: DAY_COL_WIDTH }}
+                className={cn(
+                  "flex shrink-0 flex-col items-center gap-0.5 py-2",
+                  isToday && "text-accent",
+                )}
+                onClick={() => onOpenDay(date)}
+              >
+                <span className="text-[11px] text-fg-secondary">
+                  {WEEKDAYS[new Date(year, month - 1, date).getDay()]}
+                </span>
+                <span
+                  className={cn(
+                    "flex h-8 w-8 items-center justify-center rounded-(--radius-btn) text-sm font-medium",
+                    isToday && "bg-accent text-white",
+                  )}
+                >
+                  {date}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <div className="mt-2 flex flex-col gap-1.5 pb-2">
+          {SAMPLE_TIMELINE_BARS.map((bar) => (
+            <div
+              key={bar.id}
+              className="relative h-8"
+              style={{ width: `calc(${dayCount} * ${DAY_COL_WIDTH})` }}
+            >
+              <div
+                className="absolute top-0 flex h-8 items-center truncate rounded-(--radius-btn) bg-muted px-2 text-xs text-fg"
+                style={{
+                  left: `calc(${bar.start - 1} * ${DAY_COL_WIDTH})`,
+                  width: `calc(${bar.end - bar.start + 1} * ${DAY_COL_WIDTH} - 0.25rem)`,
+                }}
+              >
+                {bar.label}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MonthAgendaDraft({
+  year,
+  month,
+  thisYear,
+  thisMonth,
+  thisDay,
+  scrollToTodayTick,
+  onOpenDay,
+}: {
+  year: number;
+  month: number;
+  thisYear: number;
+  thisMonth: number;
+  thisDay: number;
+  scrollToTodayTick: number;
+  onOpenDay: (day: number) => void;
+}) {
+  const isCurrentMonth = year === thisYear && month === thisMonth;
+  const groups = sampleAgendaGroups(isCurrentMonth ? thisDay : undefined);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const todayRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        scrollChildIntoView(scrollRef.current, todayRef.current, "y");
+      });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [year, month, thisDay, scrollToTodayTick]);
+
+  return (
+    <div ref={scrollRef} className="scrollbar min-h-0 flex-1 overflow-y-auto">
+      <div className="flex flex-col gap-4">
+        {groups.map((group) => {
+          const isToday = isCurrentMonth && group.day === thisDay;
+          return (
+            <section
+              key={group.day}
+              ref={isToday ? todayRef : undefined}
+              className="flex flex-col gap-2"
+            >
+              <button
+                type="button"
+                className="flex items-baseline gap-2 text-left"
+                onClick={() => onOpenDay(group.day)}
+              >
+                <span className={cn("text-lg font-medium", isToday && "text-accent")}>
+                  {group.day}일
+                </span>
+                <span className="text-xs text-fg-secondary">
+                  {weekdayLabel(year, month, group.day)}
+                </span>
+              </button>
+              {group.items.length > 0 ? (
+                <ul className="flex flex-col gap-2">
+                  {group.items.map((title, index) => (
+                    <li
+                      key={`${group.day}-${index}`}
+                      className="rounded-(--radius-card) bg-surface px-3 py-3 font-medium leading-snug text-fg line-clamp-2"
+                    >
+                      {title}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </section>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function MonthOverview({
+  year,
+  month,
+  thisYear,
+  thisMonth,
+  thisDay,
+  scrollToTodayTick,
+  onOpenDay,
+}: {
+  year: number;
+  month: number;
+  thisYear: number;
+  thisMonth: number;
+  thisDay: number;
+  scrollToTodayTick: number;
+  onOpenDay: (day: number) => void;
+}) {
+  const [mode, setMode] = useState<"timeline" | "agenda">("timeline");
+
+  return (
+    <div className="mx-6 mb-6 flex min-h-0 flex-1 flex-col">
+      <div className="mb-3 flex shrink-0 justify-end gap-1">
+        <Tab active={mode === "timeline"} onClick={() => setMode("timeline")}>
+          타임라인
+        </Tab>
+        <Tab active={mode === "agenda"} onClick={() => setMode("agenda")}>
+          목록
+        </Tab>
+      </div>
+      {mode === "timeline" ? (
+        <MonthTimelineDraft
+          year={year}
+          month={month}
+          thisYear={thisYear}
+          thisMonth={thisMonth}
+          thisDay={thisDay}
+          scrollToTodayTick={scrollToTodayTick}
+          onOpenDay={onOpenDay}
+        />
+      ) : (
+        <MonthAgendaDraft
+          year={year}
+          month={month}
+          thisYear={thisYear}
+          thisMonth={thisMonth}
+          thisDay={thisDay}
+          scrollToTodayTick={scrollToTodayTick}
+          onOpenDay={onOpenDay}
+        />
+      )}
     </div>
   );
 }
@@ -381,6 +642,7 @@ export default function DesignPage() {
   const [monthOpen, setMonthOpen] = useState(false);
   const [draftYear, setDraftYear] = useState(thisYear);
   const [draftMonth, setDraftMonth] = useState(thisMonth);
+  const [scrollToTodayTick, setScrollToTodayTick] = useState(0);
   const yearListRef = useRef<HTMLDivElement>(null);
   const yearCellRefs = useRef(new Map<number, HTMLButtonElement>());
   const dayListRef = useRef<HTMLDivElement>(null);
@@ -484,11 +746,15 @@ export default function DesignPage() {
     setYear(thisYear);
     setMonth(thisMonth);
     setDay(thisDay);
+    if (monthOverview) {
+      setScrollToTodayTick((n) => n + 1);
+      return;
+    }
     setMonthOverview(false);
   };
 
   return (
-    <div className={cn("flex flex-1 flex-col")}>
+    <div className="flex min-h-0 flex-1 flex-col">
       {/* 년월 */}
       <YearMonthHeader
         year={year}
@@ -528,8 +794,19 @@ export default function DesignPage() {
       />
       {monthOverview ? (
         <>
-          {/* 월 - 타임라인 or 보더 - 고민중 */}
-          <MonthTimelinePlaceholder />
+          {/* 월 */}
+          <MonthOverview
+            year={year}
+            month={month}
+            thisYear={thisYear}
+            thisMonth={thisMonth}
+            thisDay={thisDay}
+            scrollToTodayTick={scrollToTodayTick}
+            onOpenDay={(nextDay) => {
+              setDay(nextDay);
+              setMonthOverview(false);
+            }}
+          />
         </>
       ) : (
         <>
