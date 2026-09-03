@@ -82,6 +82,16 @@ function scrollChildIntoView(
     targetRect.top - rootRect.top - root.clientHeight / 2 + targetRect.height / 2;
 }
 
+type TimelineBar = { id: string; label: string; start: number; end: number };
+
+function EmptyHint({ children }: { children: string }) {
+  return (
+    <p className="flex flex-1 items-center justify-center px-4 py-8 text-center text-sm text-fg-muted">
+      {children}
+    </p>
+  );
+}
+
 function isTodayView(
   year: number,
   month: number,
@@ -98,16 +108,20 @@ function YearMonthHeader({
   year,
   month,
   showGoToday,
+  showSample,
   onOpenYear,
   onOpenMonth,
   onGoToday,
+  onToggleSample,
 }: {
   year: number;
   month: number;
   showGoToday: boolean;
+  showSample: boolean;
   onOpenYear: () => void;
   onOpenMonth: () => void;
   onGoToday: () => void;
+  onToggleSample: () => void;
 }) {
   return (
     <div className="m-6 flex items-center gap-2">
@@ -126,6 +140,13 @@ function YearMonthHeader({
           오늘로
         </button>
       ) : null}
+      <button
+        type="button"
+        className="ml-auto text-xs text-fg-muted hover:text-fg"
+        onClick={onToggleSample}
+      >
+        {showSample ? "빈 화면 보기" : "시안 데이터 보기"}
+      </button>
     </div>
   );
 }
@@ -334,7 +355,7 @@ function DayStrip({
   );
 }
 
-function DayTodoList() {
+function DayTodoList({ todos }: { todos: DisplayTodo[] }) {
   return (
     <div className="mx-6 mb-6 mt-4 flex min-h-0 flex-1 flex-col">
       <button
@@ -343,38 +364,42 @@ function DayTodoList() {
       >
         + 할 일 추가
       </button>
-      <div className="scrollbar min-h-0 flex-1 overflow-y-auto">
-        <ul className="flex flex-col gap-2">
-          {SAMPLE_TODOS.map((item) => (
-            <li
-              key={item.id}
-              className="group flex items-center gap-2 rounded-(--radius-card) bg-surface px-3 py-3"
-            >
-              <Button
-                variant="ghost"
-                className="shrink-0 cursor-grab px-1 py-1 text-fg-muted opacity-30 hover:text-fg group-hover:opacity-100 group-focus-within:opacity-100"
-                aria-label="순서 변경"
+      <div className="scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto">
+        {todos.length === 0 ? (
+          <EmptyHint>등록된 할 일이 없습니다.</EmptyHint>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {todos.map((item) => (
+              <li
+                key={item.id}
+                className="group flex items-center gap-2 rounded-(--radius-card) bg-surface px-3 py-3"
               >
-                <DragHandleIcon />
-              </Button>
-              <span className="shrink-0 p-0.5">
-                <TodoStatusIcon status={item.status} />
-              </span>
-              <span className="min-w-0 flex-1 text-left font-medium leading-snug text-fg line-clamp-2">
-                {item.content}
-              </span>
-              <div className="opacity-30 group-hover:opacity-100 group-focus-within:opacity-100">
-                <TodoItemMenu
-                  todo={item}
-                  onEdit={() => undefined}
-                  onDuplicate={() => undefined}
-                  onDelete={() => undefined}
-                  onSetStatus={() => undefined}
-                />
-              </div>
-            </li>
-          ))}
-        </ul>
+                <Button
+                  variant="ghost"
+                  className="shrink-0 cursor-grab px-1 py-1 text-fg-muted opacity-30 hover:text-fg group-hover:opacity-100 group-focus-within:opacity-100"
+                  aria-label="순서 변경"
+                >
+                  <DragHandleIcon />
+                </Button>
+                <span className="shrink-0 p-0.5">
+                  <TodoStatusIcon status={item.status} />
+                </span>
+                <span className="min-w-0 flex-1 text-left font-medium leading-snug text-fg line-clamp-2">
+                  {item.content}
+                </span>
+                <div className="opacity-30 group-hover:opacity-100 group-focus-within:opacity-100">
+                  <TodoItemMenu
+                    todo={item}
+                    onEdit={() => undefined}
+                    onDuplicate={() => undefined}
+                    onDelete={() => undefined}
+                    onSetStatus={() => undefined}
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );
@@ -394,9 +419,9 @@ const SAMPLE_TIMELINE_BARS = [
   { id: "k", label: "월말 정산", start: 30, end: 31 },
 ];
 
-function sampleAgendaGroups(includeDay?: number) {
+function sampleAgendaGroups(bars: TimelineBar[], includeDay?: number) {
   const byDay = new Map<number, string[]>();
-  SAMPLE_TIMELINE_BARS.forEach((bar) => {
+  bars.forEach((bar) => {
     for (let day = bar.start; day <= bar.end; day += 1) {
       const list = byDay.get(day) ?? [];
       list.push(bar.label);
@@ -419,6 +444,7 @@ function MonthTimelineDraft({
   thisYear,
   thisMonth,
   thisDay,
+  bars,
   scrollToTodayTick,
   onOpenDay,
 }: {
@@ -427,6 +453,7 @@ function MonthTimelineDraft({
   thisYear: number;
   thisMonth: number;
   thisDay: number;
+  bars: TimelineBar[];
   scrollToTodayTick: number;
   onOpenDay: (day: number) => void;
 }) {
@@ -444,7 +471,7 @@ function MonthTimelineDraft({
   }, [year, month, thisDay, scrollToTodayTick]);
 
   return (
-    <div ref={scrollRef} className="scrollbar min-h-0 flex-1 overflow-auto">
+    <div ref={scrollRef} className="scrollbar flex min-h-0 flex-1 flex-col overflow-auto">
       <div className="min-w-max">
         <div className="flex">
           {Array.from({ length: dayCount }).map((_, index) => {
@@ -477,26 +504,29 @@ function MonthTimelineDraft({
             );
           })}
         </div>
-        <div className="mt-2 flex flex-col gap-1.5 pb-2">
-          {SAMPLE_TIMELINE_BARS.map((bar) => (
-            <div
-              key={bar.id}
-              className="relative h-8"
-              style={{ width: `calc(${dayCount} * ${DAY_COL_WIDTH})` }}
-            >
+        {bars.length > 0 ? (
+          <div className="mt-2 flex flex-col gap-1.5 pb-2">
+            {bars.map((bar) => (
               <div
-                className="absolute top-0 flex h-8 items-center truncate rounded-(--radius-btn) bg-muted px-2 text-xs text-fg"
-                style={{
-                  left: `calc(${bar.start - 1} * ${DAY_COL_WIDTH})`,
-                  width: `calc(${bar.end - bar.start + 1} * ${DAY_COL_WIDTH} - 0.25rem)`,
-                }}
+                key={bar.id}
+                className="relative h-8"
+                style={{ width: `calc(${dayCount} * ${DAY_COL_WIDTH})` }}
               >
-                {bar.label}
+                <div
+                  className="absolute top-0 flex h-8 items-center truncate rounded-(--radius-btn) bg-muted px-2 text-xs text-fg"
+                  style={{
+                    left: `calc(${bar.start - 1} * ${DAY_COL_WIDTH})`,
+                    width: `calc(${bar.end - bar.start + 1} * ${DAY_COL_WIDTH} - 0.25rem)`,
+                  }}
+                >
+                  {bar.label}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : null}
       </div>
+      {bars.length === 0 ? <EmptyHint>이 달에 등록된 할 일이 없습니다.</EmptyHint> : null}
     </div>
   );
 }
@@ -507,6 +537,7 @@ function MonthAgendaDraft({
   thisYear,
   thisMonth,
   thisDay,
+  bars,
   scrollToTodayTick,
   onOpenDay,
 }: {
@@ -515,11 +546,12 @@ function MonthAgendaDraft({
   thisYear: number;
   thisMonth: number;
   thisDay: number;
+  bars: TimelineBar[];
   scrollToTodayTick: number;
   onOpenDay: (day: number) => void;
 }) {
   const isCurrentMonth = year === thisYear && month === thisMonth;
-  const groups = sampleAgendaGroups(isCurrentMonth ? thisDay : undefined);
+  const groups = sampleAgendaGroups(bars, isCurrentMonth ? thisDay : undefined);
   const scrollRef = useRef<HTMLDivElement>(null);
   const todayRef = useRef<HTMLElement>(null);
 
@@ -533,44 +565,50 @@ function MonthAgendaDraft({
   }, [year, month, thisDay, scrollToTodayTick]);
 
   return (
-    <div ref={scrollRef} className="scrollbar min-h-0 flex-1 overflow-y-auto">
-      <div className="flex flex-col gap-4">
-        {groups.map((group) => {
-          const isToday = isCurrentMonth && group.day === thisDay;
-          return (
-            <section
-              key={group.day}
-              ref={isToday ? todayRef : undefined}
-              className="flex flex-col gap-2"
-            >
-              <button
-                type="button"
-                className="flex items-baseline gap-2 text-left"
-                onClick={() => onOpenDay(group.day)}
+    <div ref={scrollRef} className="scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto">
+      {groups.length === 0 ? (
+        <EmptyHint>이 달에 등록된 할 일이 없습니다.</EmptyHint>
+      ) : (
+        <div className="flex flex-col gap-4">
+          {groups.map((group) => {
+            const isToday = isCurrentMonth && group.day === thisDay;
+            return (
+              <section
+                key={group.day}
+                ref={isToday ? todayRef : undefined}
+                className="flex flex-col gap-2"
               >
-                <span className={cn("text-lg font-medium", isToday && "text-accent")}>
-                  {group.day}일
-                </span>
-                <span className="text-xs text-fg-secondary">
-                  {weekdayLabel(year, month, group.day)}
-                </span>
-              </button>
-              {group.items.length > 0 ? (
-                <ul className="flex flex-col gap-2">
-                  {group.items.map((title, index) => (
-                    <li
-                      key={`${group.day}-${index}`}
-                      className="rounded-(--radius-card) bg-surface px-3 py-3 font-medium leading-snug text-fg line-clamp-2"
-                    >
-                      {title}
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-            </section>
-          );
-        })}
-      </div>
+                <button
+                  type="button"
+                  className="flex items-baseline gap-2 text-left"
+                  onClick={() => onOpenDay(group.day)}
+                >
+                  <span className={cn("text-lg font-medium", isToday && "text-accent")}>
+                    {group.day}일
+                  </span>
+                  <span className="text-xs text-fg-secondary">
+                    {weekdayLabel(year, month, group.day)}
+                  </span>
+                </button>
+                {group.items.length > 0 ? (
+                  <ul className="flex flex-col gap-2">
+                    {group.items.map((title, index) => (
+                      <li
+                        key={`${group.day}-${index}`}
+                        className="rounded-(--radius-card) bg-surface px-3 py-3 font-medium leading-snug text-fg line-clamp-2"
+                      >
+                        {title}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="px-1 py-2 text-sm text-fg-muted">등록된 할 일이 없습니다.</p>
+                )}
+              </section>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -581,6 +619,7 @@ function MonthOverview({
   thisYear,
   thisMonth,
   thisDay,
+  bars,
   scrollToTodayTick,
   onOpenDay,
 }: {
@@ -589,6 +628,7 @@ function MonthOverview({
   thisYear: number;
   thisMonth: number;
   thisDay: number;
+  bars: TimelineBar[];
   scrollToTodayTick: number;
   onOpenDay: (day: number) => void;
 }) {
@@ -611,6 +651,7 @@ function MonthOverview({
           thisYear={thisYear}
           thisMonth={thisMonth}
           thisDay={thisDay}
+          bars={bars}
           scrollToTodayTick={scrollToTodayTick}
           onOpenDay={onOpenDay}
         />
@@ -621,6 +662,7 @@ function MonthOverview({
           thisYear={thisYear}
           thisMonth={thisMonth}
           thisDay={thisDay}
+          bars={bars}
           scrollToTodayTick={scrollToTodayTick}
           onOpenDay={onOpenDay}
         />
@@ -642,6 +684,7 @@ export default function DesignPage() {
   const [monthOpen, setMonthOpen] = useState(false);
   const [draftYear, setDraftYear] = useState(thisYear);
   const [draftMonth, setDraftMonth] = useState(thisMonth);
+  const [showSample, setShowSample] = useState(true);
   const [scrollToTodayTick, setScrollToTodayTick] = useState(0);
   const yearListRef = useRef<HTMLDivElement>(null);
   const yearCellRefs = useRef(new Map<number, HTMLButtonElement>());
@@ -760,9 +803,11 @@ export default function DesignPage() {
         year={year}
         month={month}
         showGoToday={!isTodayView(year, month, day, monthOverview, thisYear, thisMonth, thisDay)}
+        showSample={showSample}
         onOpenYear={openYearModal}
         onOpenMonth={openMonthModal}
         onGoToday={goToToday}
+        onToggleSample={() => setShowSample((prev) => !prev)}
       />
       {/* 년 모달 */}
       <YearPickerModal
@@ -801,6 +846,7 @@ export default function DesignPage() {
             thisYear={thisYear}
             thisMonth={thisMonth}
             thisDay={thisDay}
+            bars={showSample ? SAMPLE_TIMELINE_BARS : []}
             scrollToTodayTick={scrollToTodayTick}
             onOpenDay={(nextDay) => {
               setDay(nextDay);
@@ -824,7 +870,7 @@ export default function DesignPage() {
             onSelectDay={setDay}
           />
           {/* 일 - 할일 목록 */}
-          <DayTodoList />
+          <DayTodoList todos={showSample ? SAMPLE_TODOS : []} />
         </>
       )}
     </div>
