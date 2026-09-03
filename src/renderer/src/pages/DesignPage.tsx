@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { Button, CloseIcon, DragHandleIcon, Modal, ModalTitle, Tab } from "@renderer/shared/ui";
 import { TodoItemMenu, TodoStatusIcon } from "@renderer/features/todo";
-import type { DisplayTodo } from "@shared/types/todo";
+import { buildTimelineRows } from "@renderer/features/month/ui/buildTimelineRows";
+import type { DaySummary, DisplayTodo } from "@shared/types/todo";
+import { formatDate } from "@renderer/utils/dateUtils";
 import { cn } from "@renderer/utils/cn";
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
@@ -9,6 +11,30 @@ const MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 const YEAR_START = 2000;
 const YEAR_END = 2040;
 const YEARS = Array.from({ length: YEAR_END - YEAR_START + 1 }, (_, index) => YEAR_START + index);
+
+type TimelineBar = { id: string; label: string; start: number; end: number };
+
+function toYearMonthKey(year: number, month: number) {
+  return `${year}-${String(month).padStart(2, "0")}`;
+}
+
+function barsFromSummaries(summaries: DaySummary[]): TimelineBar[] {
+  return buildTimelineRows(summaries).map((row) => ({
+    id: row.key,
+    label: row.content,
+    start: row.startIndex + 1,
+    end: row.startIndex + row.cells.length,
+  }));
+}
+
+function agendaGroupsFromSummaries(summaries: DaySummary[], includeDay?: number) {
+  return summaries
+    .filter((item) => item.todos.length > 0 || item.day === includeDay)
+    .map((item) => ({
+      day: item.day,
+      items: item.todos.map((todo) => todo.content),
+    }));
+}
 
 const triggerClass = cn(
   "w-fit cursor-pointer rounded-(--radius-btn) bg-surface px-3 py-1 text-2xl font-medium text-fg",
@@ -20,35 +46,6 @@ const cellClass = cn(
   "flex items-center justify-center rounded-(--radius-btn) border-2 border-transparent",
   "bg-surface py-2 text-xl font-medium text-fg hover:bg-muted",
 );
-
-const SAMPLE_TODOS: DisplayTodo[] = [
-  {
-    id: 1,
-    content: "회의 자료 정리",
-    status: "pending",
-    sort_order: 0,
-    created_at: 0,
-    batch_id: null,
-  },
-  { id: 2, content: "장보기", status: "completed", sort_order: 1, created_at: 0, batch_id: null },
-  { id: 3, content: "운동", status: "pending", sort_order: 2, created_at: 0, batch_id: null },
-  {
-    id: 4,
-    content: "거래처 견적 메일 회신하고 내일 회의 자료까지 같이 정리하기",
-    status: "failed",
-    sort_order: 3,
-    created_at: 0,
-    batch_id: null,
-  },
-  {
-    id: 5,
-    content: "거래처 견적 메일 회신하고 내일 회의 자료까지 같이 정리하기",
-    status: "failed",
-    sort_order: 3,
-    created_at: 0,
-    batch_id: null,
-  },
-];
 
 function daysInMonth(year: number, month: number) {
   return new Date(year, month, 0).getDate();
@@ -82,8 +79,6 @@ function scrollChildIntoView(
     targetRect.top - rootRect.top - root.clientHeight / 2 + targetRect.height / 2;
 }
 
-type TimelineBar = { id: string; label: string; start: number; end: number };
-
 function EmptyHint({ children }: { children: string }) {
   return (
     <p className="flex flex-1 items-center justify-center px-4 py-8 text-center text-sm text-fg-muted">
@@ -108,20 +103,16 @@ function YearMonthHeader({
   year,
   month,
   showGoToday,
-  showSample,
   onOpenYear,
   onOpenMonth,
   onGoToday,
-  onToggleSample,
 }: {
   year: number;
   month: number;
   showGoToday: boolean;
-  showSample: boolean;
   onOpenYear: () => void;
   onOpenMonth: () => void;
   onGoToday: () => void;
-  onToggleSample: () => void;
 }) {
   return (
     <div className="m-6 flex items-center gap-2">
@@ -140,13 +131,6 @@ function YearMonthHeader({
           오늘로
         </button>
       ) : null}
-      <button
-        type="button"
-        className="ml-auto text-xs text-fg-muted hover:text-fg"
-        onClick={onToggleSample}
-      >
-        {showSample ? "빈 화면 보기" : "시안 데이터 보기"}
-      </button>
     </div>
   );
 }
@@ -355,7 +339,7 @@ function DayStrip({
   );
 }
 
-function DayTodoList({ todos }: { todos: DisplayTodo[] }) {
+function DayTodoList({ todos, ready }: { todos: DisplayTodo[]; ready: boolean }) {
   return (
     <div className="mx-6 mb-6 mt-4 flex min-h-0 flex-1 flex-col">
       <button
@@ -365,7 +349,7 @@ function DayTodoList({ todos }: { todos: DisplayTodo[] }) {
         + 할 일 추가
       </button>
       <div className="scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto">
-        {todos.length === 0 ? (
+        {!ready ? null : todos.length === 0 ? (
           <EmptyHint>등록된 할 일이 없습니다.</EmptyHint>
         ) : (
           <ul className="flex flex-col gap-2">
@@ -405,37 +389,6 @@ function DayTodoList({ todos }: { todos: DisplayTodo[] }) {
   );
 }
 
-const SAMPLE_TIMELINE_BARS = [
-  { id: "a", label: "회의 자료 정리", start: 2, end: 5 },
-  { id: "b", label: "장보기", start: 8, end: 8 },
-  { id: "c", label: "운동", start: 10, end: 14 },
-  { id: "d", label: "청소", start: 5, end: 5 },
-  { id: "e", label: "병원", start: 16, end: 16 },
-  { id: "f", label: "거래처 견적 메일 회신하고 내일 회의 자료까지 같이 정리하기", start: 18, end: 20 },
-  { id: "g", label: "주간 회고", start: 22, end: 22 },
-  { id: "h", label: "장보기", start: 24, end: 24 },
-  { id: "i", label: "저녁 약속", start: 26, end: 26 },
-  { id: "j", label: "주말 일정 정리", start: 28, end: 29 },
-  { id: "k", label: "월말 정산", start: 30, end: 31 },
-];
-
-function sampleAgendaGroups(bars: TimelineBar[], includeDay?: number) {
-  const byDay = new Map<number, string[]>();
-  bars.forEach((bar) => {
-    for (let day = bar.start; day <= bar.end; day += 1) {
-      const list = byDay.get(day) ?? [];
-      list.push(bar.label);
-      byDay.set(day, list);
-    }
-  });
-  if (includeDay !== undefined && !byDay.has(includeDay)) {
-    byDay.set(includeDay, []);
-  }
-  return [...byDay.entries()]
-    .sort((a, b) => a[0] - b[0])
-    .map(([day, items]) => ({ day, items }));
-}
-
 const DAY_COL_WIDTH = "3rem";
 
 function MonthTimelineDraft({
@@ -445,6 +398,7 @@ function MonthTimelineDraft({
   thisMonth,
   thisDay,
   bars,
+  ready,
   scrollToTodayTick,
   onOpenDay,
 }: {
@@ -454,6 +408,7 @@ function MonthTimelineDraft({
   thisMonth: number;
   thisDay: number;
   bars: TimelineBar[];
+  ready: boolean;
   scrollToTodayTick: number;
   onOpenDay: (day: number) => void;
 }) {
@@ -504,7 +459,7 @@ function MonthTimelineDraft({
             );
           })}
         </div>
-        {bars.length > 0 ? (
+        {ready && bars.length > 0 ? (
           <div className="mt-2 flex flex-col gap-1.5 pb-2">
             {bars.map((bar) => (
               <div
@@ -526,7 +481,7 @@ function MonthTimelineDraft({
           </div>
         ) : null}
       </div>
-      {bars.length === 0 ? <EmptyHint>이 달에 등록된 할 일이 없습니다.</EmptyHint> : null}
+      {ready && bars.length === 0 ? <EmptyHint>이 달에 등록된 할 일이 없습니다.</EmptyHint> : null}
     </div>
   );
 }
@@ -537,7 +492,8 @@ function MonthAgendaDraft({
   thisYear,
   thisMonth,
   thisDay,
-  bars,
+  summaries,
+  ready,
   scrollToTodayTick,
   onOpenDay,
 }: {
@@ -546,12 +502,13 @@ function MonthAgendaDraft({
   thisYear: number;
   thisMonth: number;
   thisDay: number;
-  bars: TimelineBar[];
+  summaries: DaySummary[];
+  ready: boolean;
   scrollToTodayTick: number;
   onOpenDay: (day: number) => void;
 }) {
   const isCurrentMonth = year === thisYear && month === thisMonth;
-  const groups = sampleAgendaGroups(bars, isCurrentMonth ? thisDay : undefined);
+  const groups = agendaGroupsFromSummaries(summaries, isCurrentMonth ? thisDay : undefined);
   const scrollRef = useRef<HTMLDivElement>(null);
   const todayRef = useRef<HTMLElement>(null);
 
@@ -566,7 +523,7 @@ function MonthAgendaDraft({
 
   return (
     <div ref={scrollRef} className="scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto">
-      {groups.length === 0 ? (
+      {!ready ? null : groups.length === 0 ? (
         <EmptyHint>이 달에 등록된 할 일이 없습니다.</EmptyHint>
       ) : (
         <div className="flex flex-col gap-4">
@@ -619,7 +576,8 @@ function MonthOverview({
   thisYear,
   thisMonth,
   thisDay,
-  bars,
+  summaries,
+  ready,
   scrollToTodayTick,
   onOpenDay,
 }: {
@@ -628,11 +586,13 @@ function MonthOverview({
   thisYear: number;
   thisMonth: number;
   thisDay: number;
-  bars: TimelineBar[];
+  summaries: DaySummary[];
+  ready: boolean;
   scrollToTodayTick: number;
   onOpenDay: (day: number) => void;
 }) {
   const [mode, setMode] = useState<"timeline" | "agenda">("timeline");
+  const bars = barsFromSummaries(summaries);
 
   return (
     <div className="mx-6 mb-6 flex min-h-0 flex-1 flex-col">
@@ -652,6 +612,7 @@ function MonthOverview({
           thisMonth={thisMonth}
           thisDay={thisDay}
           bars={bars}
+          ready={ready}
           scrollToTodayTick={scrollToTodayTick}
           onOpenDay={onOpenDay}
         />
@@ -662,7 +623,8 @@ function MonthOverview({
           thisYear={thisYear}
           thisMonth={thisMonth}
           thisDay={thisDay}
-          bars={bars}
+          summaries={summaries}
+          ready={ready}
           scrollToTodayTick={scrollToTodayTick}
           onOpenDay={onOpenDay}
         />
@@ -684,8 +646,11 @@ export default function DesignPage() {
   const [monthOpen, setMonthOpen] = useState(false);
   const [draftYear, setDraftYear] = useState(thisYear);
   const [draftMonth, setDraftMonth] = useState(thisMonth);
-  const [showSample, setShowSample] = useState(true);
   const [scrollToTodayTick, setScrollToTodayTick] = useState(0);
+  const [dayTodos, setDayTodos] = useState<DisplayTodo[]>([]);
+  const [dayReady, setDayReady] = useState(false);
+  const [summaries, setSummaries] = useState<DaySummary[]>([]);
+  const [monthReady, setMonthReady] = useState(false);
   const yearListRef = useRef<HTMLDivElement>(null);
   const yearCellRefs = useRef(new Map<number, HTMLButtonElement>());
   const dayListRef = useRef<HTMLDivElement>(null);
@@ -738,6 +703,38 @@ export default function DesignPage() {
 
     return () => cancelAnimationFrame(frame);
   }, [day, year, month, monthOverview, dayCount]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const date = formatDate(new Date(year, month - 1, day));
+    setDayReady(false);
+
+    void window.api.getTodosByDate(date).then((result) => {
+      if (cancelled) return;
+      setDayTodos(result.success ? (result.data ?? []) : []);
+      setDayReady(true);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [year, month, day]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const yearMonth = toYearMonthKey(year, month);
+    setMonthReady(false);
+
+    void window.api.getMonthSummary(yearMonth).then((result) => {
+      if (cancelled) return;
+      setSummaries(result.success ? (result.data ?? []) : []);
+      setMonthReady(true);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [year, month]);
 
   const openYearModal = () => {
     setDraftYear(year);
@@ -803,11 +800,9 @@ export default function DesignPage() {
         year={year}
         month={month}
         showGoToday={!isTodayView(year, month, day, monthOverview, thisYear, thisMonth, thisDay)}
-        showSample={showSample}
         onOpenYear={openYearModal}
         onOpenMonth={openMonthModal}
         onGoToday={goToToday}
-        onToggleSample={() => setShowSample((prev) => !prev)}
       />
       {/* 년 모달 */}
       <YearPickerModal
@@ -846,7 +841,8 @@ export default function DesignPage() {
             thisYear={thisYear}
             thisMonth={thisMonth}
             thisDay={thisDay}
-            bars={showSample ? SAMPLE_TIMELINE_BARS : []}
+            summaries={summaries}
+            ready={monthReady}
             scrollToTodayTick={scrollToTodayTick}
             onOpenDay={(nextDay) => {
               setDay(nextDay);
@@ -870,7 +866,7 @@ export default function DesignPage() {
             onSelectDay={setDay}
           />
           {/* 일 - 할일 목록 */}
-          <DayTodoList todos={showSample ? SAMPLE_TODOS : []} />
+          <DayTodoList todos={dayTodos} ready={dayReady} />
         </>
       )}
     </div>
