@@ -11,7 +11,7 @@ import {
 } from "@renderer/shared/ui";
 import { TodoItemMenu, TodoStatusIcon } from "@renderer/features/todo";
 import { buildTimelineRows } from "@renderer/features/month/ui/buildTimelineRows";
-import type { DaySummary, DisplayTodo } from "@shared/types/todo";
+import type { DaySummary, DisplayTodo, TodoStatus } from "@shared/types/todo";
 import { formatDate } from "@renderer/utils/dateUtils";
 import { isKoreanPublicHoliday } from "@renderer/utils/koreanHolidays";
 import { cn } from "@renderer/utils/cn";
@@ -22,7 +22,13 @@ const YEAR_START = 2000;
 const YEAR_END = 2040;
 const YEARS = Array.from({ length: YEAR_END - YEAR_START + 1 }, (_, index) => YEAR_START + index);
 
-type TimelineBar = { id: string; label: string; start: number; end: number };
+type TimelineBar = {
+  id: string;
+  label: string;
+  start: number;
+  end: number;
+  days: TodoStatus[];
+};
 
 function toYearMonthKey(year: number, month: number) {
   return `${year}-${String(month).padStart(2, "0")}`;
@@ -34,6 +40,7 @@ function barsFromSummaries(summaries: DaySummary[]): TimelineBar[] {
     label: row.content,
     start: row.startIndex + 1,
     end: row.startIndex + row.cells.length,
+    days: row.cells.map((cell) => cell.todo?.status ?? "pending"),
   }));
 }
 
@@ -480,6 +487,13 @@ const BAR_EDGE = "0.25rem";
 /** BAR_EDGE / DAY_COL_WIDTH — 실측한 칸 너비에서 여백 px을 얻는다 */
 const BAR_EDGE_RATIO = 0.25 / 4;
 
+/** 띠 칸 너비 — 막대 좌우 여백을 첫날·마지막 날에 반영한다 */
+function dayRailWidth(index: number, count: number) {
+  if (count === 1) return `calc(${DAY_COL_WIDTH} - ${BAR_EDGE} - ${BAR_EDGE})`;
+  if (index === 0 || index === count - 1) return `calc(${DAY_COL_WIDTH} - ${BAR_EDGE})`;
+  return DAY_COL_WIDTH;
+}
+
 /**
  * 막대 제목의 가로 위치를 정한다. 트랙 왼쪽 기준 px.
  * - 자연 위치는 막대 왼쪽. 단 우측 스크롤 끝을 넘기지 않는다
@@ -637,23 +651,43 @@ function MonthTimelineDraft({
               {bars.map((bar) => (
                 <div key={bar.id} className="flex" style={{ width: trackWidth }}>
                   <div
-                    className="relative shrink-0 overflow-visible rounded-(--radius-card) bg-surface px-3 py-3"
+                    className="relative flex shrink-0 flex-col justify-center gap-1 overflow-visible rounded-(--radius-card) bg-surface py-2"
                     style={{
                       marginLeft: `calc(${bar.start - 1} * ${DAY_COL_WIDTH} + ${BAR_EDGE})`,
                       width: `calc(${bar.end - bar.start + 1} * ${DAY_COL_WIDTH} - ${BAR_EDGE} - ${BAR_EDGE})`,
                     }}
                   >
-                    <span className="invisible font-medium leading-snug">&nbsp;</span>
-                    <div className="pointer-events-none absolute inset-0 overflow-visible">
-                      <p
-                        ref={(node) => {
-                          if (node) titleRefs.current.set(bar.id, node);
-                          else titleRefs.current.delete(bar.id);
-                        }}
-                        className="flex h-full w-max items-center px-3 font-medium leading-snug text-fg"
-                      >
-                        <span className="whitespace-nowrap">{bar.label}</span>
-                      </p>
+                    <div className="relative overflow-visible">
+                      <p className="invisible px-3 font-medium leading-snug">&nbsp;</p>
+                      <div className="pointer-events-none absolute inset-0 overflow-visible">
+                        <p
+                          ref={(node) => {
+                            if (node) titleRefs.current.set(bar.id, node);
+                            else titleRefs.current.delete(bar.id);
+                          }}
+                          className="w-max px-3 font-medium leading-snug text-fg"
+                        >
+                          <span className="whitespace-nowrap">{bar.label}</span>
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex h-1 w-full" aria-hidden>
+                      {bar.days.map((status, index) => (
+                        <div
+                          key={index}
+                          className="flex h-full items-center px-px"
+                          style={{ width: dayRailWidth(index, bar.days.length) }}
+                        >
+                          {status === "completed" || status === "failed" ? (
+                            <span
+                              className={cn(
+                                "h-0.75 w-full rounded-full",
+                                status === "completed" ? "bg-success" : "bg-failed",
+                              )}
+                            />
+                          ) : null}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
