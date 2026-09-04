@@ -182,17 +182,9 @@ function YearMonthHeader({
   onOpenMonthView: () => void;
   onGoToday: () => void;
 }) {
-  return (
-    <div className="m-6 flex items-center gap-2">
-      <div className={triggerClass} onClick={onOpenYear}>
-        {year}년
-      </div>
-      {showMonth ? (
-        <div className={triggerClass} onClick={onOpenMonthView}>
-          {month}월
-        </div>
-      ) : null}
-      {showGoToday ? (
+  const GoToday = () => {
+    return (
+      showGoToday && (
         <button
           type="button"
           className="text-sm text-accent hover:text-accent-hover"
@@ -200,7 +192,27 @@ function YearMonthHeader({
         >
           오늘로
         </button>
-      ) : null}
+      )
+    );
+  };
+  return (
+    <div className="m-6 mb-2 flex gap-4 items-center">
+      <div className="flex flex-col gap-2">
+        <div className="flex gap-4">
+          <div className={triggerClass} onClick={onOpenYear}>
+            {year}년
+          </div>
+          {!showMonth && <GoToday />}
+        </div>
+        {showMonth ? (
+          <div className="flex gap-4">
+            <div className={triggerClass} onClick={onOpenMonthView}>
+              {month}월
+            </div>
+            <GoToday />
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -339,14 +351,14 @@ function DayStrip({
 }) {
   return (
     <div className="flex items-start gap-2 px-2">
-      <div className="flex h-32 shrink-0 items-center">
+      <div className="flex h-28 shrink-0 items-center">
         <StripArrow direction="prev" disabled={!canPrev} label="전달" onClick={onPrev} />
       </div>
       <div
         ref={listRef}
         className="scrollbar min-w-0 flex-1 overflow-x-auto overflow-y-hidden scrollbar-gutter-stable pb-1"
       >
-        <div className="flex h-32 gap-2 items-center">
+        <div className="flex h-28 gap-2 items-center">
           {Array.from({ length: dayCount }).map((_, index) => {
             const date = index + 1;
             const selected = date === day;
@@ -362,10 +374,10 @@ function DayStrip({
                 type="button"
                 aria-current={isToday ? "date" : undefined}
                 className={cn(
-                  "relative flex h-30 w-24 shrink-0 flex-col items-center justify-center rounded-(--radius-card) gap-2",
+                  "relative flex h-26 w-24 shrink-0 flex-col items-center justify-center rounded-(--radius-card) gap-2",
                   "border-2 border-transparent bg-surface",
                   "hover:bg-muted",
-                  selected && "border-accent w-26 h-32",
+                  selected && "border-accent w-26 h-28",
                 )}
                 onClick={() => onSelectDay(date)}
               >
@@ -392,7 +404,7 @@ function DayStrip({
           })}
         </div>
       </div>
-      <div className="flex h-32 shrink-0 items-center">
+      <div className="flex h-28 shrink-0 items-center">
         <StripArrow direction="next" disabled={!canNext} label="다음 달" onClick={onNext} />
       </div>
     </div>
@@ -426,14 +438,14 @@ function MonthStrip({
 }) {
   return (
     <div className="flex items-start gap-2 px-2">
-      <div className="flex h-30 shrink-0 items-center">
+      <div className="flex h-22 shrink-0 items-center">
         <StripArrow direction="prev" disabled={!canPrev} label="전년" onClick={onPrev} />
       </div>
       <div
         ref={listRef}
         className="scrollbar min-w-0 flex-1 overflow-x-auto overflow-y-hidden scrollbar-gutter-stable pb-1"
       >
-        <div className="flex h-30 gap-2">
+        <div className="flex h-22 gap-2 items-center">
           {MONTHS.map((item) => {
             const selected = item === month;
             const isThisMonth = year === thisYear && item === thisMonth;
@@ -446,29 +458,31 @@ function MonthStrip({
                 }}
                 type="button"
                 className={cn(
-                  "flex h-30 w-24 shrink-0 flex-col items-center justify-center rounded-(--radius-card) gap-4",
+                  "flex h-20 w-24 shrink-0 flex-col items-center justify-center rounded-(--radius-card) gap-2",
                   "border-2 border-transparent bg-surface",
                   "hover:bg-muted",
-                  isThisMonth && !selected && "text-accent",
-                  selected && "border-accent bg-accent text-white hover:bg-accent-hover",
+                  selected && "border-accent w-26 h-22",
                 )}
                 onClick={() => onSelectMonth(item)}
               >
-                <span className="text-3xl font-bold leading-none">{item}</span>
                 <span
+                  aria-hidden
                   className={cn(
-                    "mt-1 text-[0.75rem] font-normal",
-                    selected ? "text-white/80" : "text-fg-secondary",
+                    "h-1.5 w-1.5 rounded-full",
+                    "bg-fg-secondary/10 hidden",
+                    isThisMonth && "bg-fg-secondary flex",
                   )}
-                >
-                  월
+                />
+                <span className="text-3xl font-bold leading-none">
+                  {item}
+                  <span className={cn("text-[0.75rem] font-normal text-fg-secondary")}>월</span>
                 </span>
               </button>
             );
           })}
         </div>
       </div>
-      <div className="flex h-30 shrink-0 items-center">
+      <div className="flex h-22 shrink-0 items-center">
         <StripArrow direction="next" disabled={!canNext} label="다음 해" onClick={onNext} />
       </div>
     </div>
@@ -504,7 +518,13 @@ function DayTodoList({ todos, ready }: { todos: DisplayTodo[]; ready: boolean })
                 <span className="shrink-0 p-0.5">
                   <TodoStatusIcon status={item.status} />
                 </span>
-                <span className="min-w-0 flex-1 text-left font-medium leading-snug text-fg line-clamp-2">
+                <span
+                  className={cn(
+                    "min-w-0 flex-1 text-left font-medium leading-snug line-clamp-2",
+                    item.status === "pending" ? "text-fg" : "text-fg-muted",
+                    item.status === "failed" && "line-through",
+                  )}
+                >
                   {item.content}
                 </span>
                 <div className="opacity-30 group-hover:opacity-100 group-focus-within:opacity-100">
@@ -682,16 +702,24 @@ function MonthTimelineDraft({
                   ref={isToday ? todayRef : undefined}
                   type="button"
                   style={{ width: DAY_COL_WIDTH }}
-                  className="flex shrink-0 flex-col items-center gap-0.5 border-r border-border/50 py-2"
+                  className="flex shrink-0 flex-col items-center gap-1 border-r border-border/50 py-2"
                   onClick={() => onOpenDay(date)}
                 >
+                  <span
+                    aria-hidden
+                    className={cn(
+                      "h-1.5 w-1.5 rounded-full",
+                      "bg-fg-secondary/10 opacity-0",
+                      isToday && "bg-fg-secondary opacity-100",
+                    )}
+                  />
                   <span className={cn("text-[0.75rem]", headColor ?? "text-fg-secondary")}>
                     {WEEKDAYS[new Date(year, month - 1, date).getDay()]}
                   </span>
                   <span
                     className={cn(
-                      "flex h-10 w-10 items-center justify-center rounded-(--radius-btn) text-lg font-medium",
-                      isToday ? "bg-accent text-white" : headColor,
+                      "flex w-10 items-center justify-center rounded-(--radius-btn) text-lg font-medium",
+                      headColor,
                     )}
                   >
                     {date}
@@ -741,9 +769,9 @@ function MonthTimelineDraft({
                               <span
                                 className={cn(
                                   "h-0.75 w-full rounded-full",
+                                  "bg-fg-muted/50",
                                   status === "completed" && "bg-success",
                                   status === "failed" && "bg-failed",
-                                  status === "pending" && "bg-fg-secondary/10",
                                 )}
                               />
                             </div>
@@ -760,7 +788,7 @@ function MonthTimelineDraft({
                       }}
                       className={cn(
                         "w-max self-start px-3 font-medium leading-snug",
-                        bar.settled ? "text-fg-secondary/90" : "text-fg",
+                        bar.settled ? "text-fg-muted" : "text-fg",
                       )}
                     >
                       <span className="whitespace-nowrap">{bar.label}</span>
@@ -836,14 +864,14 @@ function MonthAgendaDraft({
                 >
                   <span
                     className={cn(
-                      "text-lg font-medium",
-                      isToday
-                        ? "rounded-(--radius-btn) bg-accent px-1.5 py-0.5 text-white"
-                        : headColor,
+                      "text-xs hidden bg-accent text-white px-1.5 py-0.5 rounded-(--radius-btn)",
+                      isToday && "flex",
                     )}
                   >
-                    {group.day}일
+                    오늘
                   </span>
+                  <span className={cn("text-lg font-medium", headColor)}>{group.day}일</span>
+
                   <span className={cn("text-xs", headColor ?? "text-fg-secondary")}>
                     {weekdayLabel(year, month, group.day)}
                   </span>
@@ -858,19 +886,19 @@ function MonthAgendaDraft({
                         key={item.id}
                         className="relative rounded-(--radius-card) bg-surface py-3 pr-3 pl-6"
                       >
-                        {item.status === "completed" || item.status === "failed" ? (
-                          <span
-                            aria-hidden
-                            className={cn(
-                              "absolute top-2.5 bottom-2.5 left-2.5 w-0.75 rounded-full",
-                              item.status === "completed" ? "bg-success" : "bg-failed",
-                            )}
-                          />
-                        ) : null}
+                        <span
+                          aria-hidden
+                          className={cn(
+                            "absolute top-2.5 bottom-2.5 left-2.5 w-0.75 rounded-full",
+                            "bg-fg-muted/50",
+                            item.status === "completed" && "bg-success",
+                            item.status === "failed" && "bg-failed",
+                          )}
+                        />
                         <span
                           className={cn(
                             "font-medium leading-snug text-fg line-clamp-2",
-                            item.status !== "pending" && "text-fg-secondary/90",
+                            item.status !== "pending" && "text-fg-muted",
                             item.status === "failed" && "line-through",
                           )}
                         >
