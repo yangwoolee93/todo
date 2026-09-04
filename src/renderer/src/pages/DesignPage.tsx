@@ -738,14 +738,14 @@ function MonthTimelineDraft({
                               className="flex h-full items-center px-px"
                               style={{ width: dayRailWidth(index, segment.days.length) }}
                             >
-                              {status === "completed" || status === "failed" ? (
-                                <span
-                                  className={cn(
-                                    "h-0.75 w-full rounded-full",
-                                    status === "completed" ? "bg-success" : "bg-failed",
-                                  )}
-                                />
-                              ) : null}
+                              <span
+                                className={cn(
+                                  "h-0.75 w-full rounded-full",
+                                  status === "completed" && "bg-success",
+                                  status === "failed" && "bg-failed",
+                                  status === "pending" && "bg-fg-secondary/10",
+                                )}
+                              />
                             </div>
                           ))}
                         </div>
@@ -760,7 +760,7 @@ function MonthTimelineDraft({
                       }}
                       className={cn(
                         "w-max self-start px-3 font-medium leading-snug",
-                        bar.settled ? "text-fg-muted" : "text-fg",
+                        bar.settled ? "text-fg-secondary/90" : "text-fg",
                       )}
                     >
                       <span className="whitespace-nowrap">{bar.label}</span>
@@ -870,7 +870,7 @@ function MonthAgendaDraft({
                         <span
                           className={cn(
                             "font-medium leading-snug text-fg line-clamp-2",
-                            item.status !== "pending" && "text-fg-muted",
+                            item.status !== "pending" && "text-fg-secondary/90",
                             item.status === "failed" && "line-through",
                           )}
                         >

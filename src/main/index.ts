@@ -7,12 +7,12 @@ import { ensureNormalizedMemos } from "./database/memoRepository";
 const TITLE_BAR_HEIGHT = 44;
 /** Windows 타이틀바 오버레이 (페이지 base와 동일) */
 const TITLE_BAR_COLORS = {
-  light: { color: "#f3f3f3", symbolColor: "#1e293b" },
+  light: { color: "#ebe8e1", symbolColor: "#1c1917" },
   dark: { color: "#121212", symbolColor: "#ececec" },
 } as const;
 /** Windows 창 가장자리 — UI border 토큰에 맞춤 */
 const WINDOW_BACKGROUND_COLORS = {
-  light: "#e2e8f0",
+  light: "#d6d0c6",
   dark: "#333333",
 } as const;
 
