@@ -94,8 +94,7 @@ function scrollChildIntoView(
     return;
   }
 
-  root.scrollTop +=
-    targetRect.top - rootRect.top - root.clientHeight / 2 + targetRect.height / 2;
+  root.scrollTop += targetRect.top - rootRect.top - root.clientHeight / 2 + targetRect.height / 2;
 }
 
 function EmptyHint({ children }: { children: string }) {
@@ -244,7 +243,7 @@ function StripArrow({
       disabled={disabled}
       aria-label={label}
       className={cn(
-        "flex h-8 w-8 shrink-0 items-center justify-center rounded-(--radius-btn) text-fg-secondary",
+        "flex h-full w-4 shrink-0 items-center justify-center rounded-sm text-fg-secondary",
         "hover:bg-muted hover:text-fg",
         "disabled:pointer-events-none disabled:opacity-30",
       )}
@@ -291,13 +290,13 @@ function DayStrip({
   onNext: () => void;
 }) {
   return (
-    <div className="flex items-start gap-1 px-6">
+    <div className="flex items-start gap-2 px-2">
       <div className="flex h-30 shrink-0 items-center">
         <StripArrow direction="prev" disabled={!canPrev} label="전달" onClick={onPrev} />
       </div>
       <div
         ref={listRef}
-        className="scrollbar min-w-0 flex-1 overflow-x-auto overflow-y-hidden scrollbar-gutter-stable"
+        className="scrollbar min-w-0 flex-1 overflow-x-auto overflow-y-hidden scrollbar-gutter-stable pb-1"
       >
         <div className="flex h-30 gap-2">
           {Array.from({ length: dayCount }).map((_, index) => {
@@ -368,13 +367,13 @@ function MonthStrip({
   onNext: () => void;
 }) {
   return (
-    <div className="flex items-start gap-1 px-6">
+    <div className="flex items-start gap-2 px-2">
       <div className="flex h-30 shrink-0 items-center">
         <StripArrow direction="prev" disabled={!canPrev} label="전년" onClick={onPrev} />
       </div>
       <div
         ref={listRef}
-        className="scrollbar min-w-0 flex-1 overflow-x-auto overflow-y-hidden scrollbar-gutter-stable"
+        className="scrollbar min-w-0 flex-1 overflow-x-auto overflow-y-hidden scrollbar-gutter-stable pb-1"
       >
         <div className="flex h-30 gap-2">
           {MONTHS.map((item) => {
