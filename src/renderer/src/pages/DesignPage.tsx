@@ -22,26 +22,53 @@ const YEAR_START = 2000;
 const YEAR_END = 2040;
 const YEARS = Array.from({ length: YEAR_END - YEAR_START + 1 }, (_, index) => YEAR_START + index);
 
+type TimelineSegment = {
+  start: number;
+  days: TodoStatus[];
+};
+
 type TimelineBar = {
   id: string;
   label: string;
-  start: number;
-  end: number;
-  days: TodoStatus[];
+  segments: TimelineSegment[];
 };
 
 function toYearMonthKey(year: number, month: number) {
   return `${year}-${String(month).padStart(2, "0")}`;
 }
 
+/** 가운데가 비면 이어진 날만 한 조각으로 나눈다 */
+function segmentsFromCells(
+  startIndex: number,
+  cells: { todo: DisplayTodo | null }[],
+): TimelineSegment[] {
+  const segments: TimelineSegment[] = [];
+  let current: TimelineSegment | null = null;
+
+  cells.forEach((cell, offset) => {
+    if (!cell.todo) {
+      current = null;
+      return;
+    }
+    if (!current) {
+      current = { start: startIndex + offset + 1, days: [cell.todo.status] };
+      segments.push(current);
+      return;
+    }
+    current.days.push(cell.todo.status);
+  });
+
+  return segments;
+}
+
 function barsFromSummaries(summaries: DaySummary[]): TimelineBar[] {
-  return buildTimelineRows(summaries).map((row) => ({
-    id: row.key,
-    label: row.content,
-    start: row.startIndex + 1,
-    end: row.startIndex + row.cells.length,
-    days: row.cells.map((cell) => cell.todo?.status ?? "pending"),
-  }));
+  return buildTimelineRows(summaries)
+    .map((row) => ({
+      id: row.key,
+      label: row.content,
+      segments: segmentsFromCells(row.startIndex, row.cells),
+    }))
+    .filter((bar) => bar.segments.length > 0);
 }
 
 function agendaGroupsFromSummaries(summaries: DaySummary[], includeDay?: number) {
@@ -494,6 +521,17 @@ function dayRailWidth(index: number, count: number) {
   return DAY_COL_WIDTH;
 }
 
+function segmentEdgePx(start: number, dayCount: number, colWidth: number, edge: number) {
+  return {
+    left: (start - 1) * colWidth + edge,
+    right: (start + dayCount - 1) * colWidth - edge,
+  };
+}
+
+function viewOverlap(left: number, right: number, viewLeft: number, viewRight: number) {
+  return Math.max(0, Math.min(right, viewRight) - Math.max(left, viewLeft));
+}
+
 /**
  * 막대 제목의 가로 위치를 정한다. 트랙 왼쪽 기준 px.
  * - 자연 위치는 막대 왼쪽. 단 우측 스크롤 끝을 넘기지 않는다
@@ -570,20 +608,31 @@ function MonthTimelineDraft({
 
       bars.forEach((bar) => {
         const title = titleRefs.current.get(bar.id);
-        if (!title) return;
+        if (!title || bar.segments.length === 0) return;
 
-        const barLeft = (bar.start - 1) * colWidth + edge;
-        const barRight = bar.end * colWidth - edge;
+        const ranges = bar.segments.map((segment) =>
+          segmentEdgePx(segment.start, segment.days.length, colWidth, edge),
+        );
+        let best = -1;
+        let bestOverlap = 0;
+        ranges.forEach((range, index) => {
+          const overlap = viewOverlap(range.left, range.right, viewLeft, viewRight);
+          if (overlap > bestOverlap) {
+            bestOverlap = overlap;
+            best = index;
+          }
+        });
+
         const titleWidth = title.offsetWidth;
-        const visible = barRight > viewLeft && barLeft < viewRight;
-
+        const visible = best >= 0;
+        const home = ranges[visible ? best : 0];
         // 감출 때도 트랙 안에 세워 둔다. 안 그러면 가로 스크롤이 트랙보다 길어진다
         const left = visible
-          ? titleLeftInTrack(barLeft, barRight, titleWidth, track, viewLeft, viewRight)
-          : Math.max(0, Math.min(barLeft, track - titleWidth));
+          ? titleLeftInTrack(home.left, home.right, titleWidth, track, viewLeft, viewRight)
+          : Math.max(0, Math.min(home.left, track - titleWidth));
 
         title.style.opacity = visible ? "1" : "0";
-        title.style.transform = `translateX(${left - barLeft}px)`;
+        title.style.transform = `translateX(${left}px)`;
       });
     };
 
@@ -649,46 +698,55 @@ function MonthTimelineDraft({
             </div>
             <div className="relative flex flex-col gap-2 pb-2">
               {bars.map((bar) => (
-                <div key={bar.id} className="flex" style={{ width: trackWidth }}>
-                  <div
-                    className="relative flex shrink-0 flex-col justify-center gap-1 overflow-visible rounded-(--radius-card) bg-surface py-2"
-                    style={{
-                      marginLeft: `calc(${bar.start - 1} * ${DAY_COL_WIDTH} + ${BAR_EDGE})`,
-                      width: `calc(${bar.end - bar.start + 1} * ${DAY_COL_WIDTH} - ${BAR_EDGE} - ${BAR_EDGE})`,
-                    }}
-                  >
-                    <div className="relative overflow-visible">
-                      <p className="invisible px-3 font-medium leading-snug">&nbsp;</p>
-                      <div className="pointer-events-none absolute inset-0 overflow-visible">
-                        <p
-                          ref={(node) => {
-                            if (node) titleRefs.current.set(bar.id, node);
-                            else titleRefs.current.delete(bar.id);
-                          }}
-                          className="w-max px-3 font-medium leading-snug text-fg"
-                        >
-                          <span className="whitespace-nowrap">{bar.label}</span>
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex h-1 w-full" aria-hidden>
-                      {bar.days.map((status, index) => (
-                        <div
-                          key={index}
-                          className="flex h-full items-center px-px"
-                          style={{ width: dayRailWidth(index, bar.days.length) }}
-                        >
-                          {status === "completed" || status === "failed" ? (
-                            <span
-                              className={cn(
-                                "h-0.75 w-full rounded-full",
-                                status === "completed" ? "bg-success" : "bg-failed",
-                              )}
-                            />
-                          ) : null}
+                <div key={bar.id} className="relative flex" style={{ width: trackWidth }}>
+                  {bar.segments.map((segment, segmentIndex) => {
+                    const prev = bar.segments[segmentIndex - 1];
+                    const gapDays = prev ? segment.start - prev.start - prev.days.length : 0;
+                    return (
+                      <div
+                        key={`${bar.id}-${segment.start}`}
+                        className="relative flex shrink-0 flex-col justify-center gap-1 overflow-visible rounded-(--radius-card) bg-surface py-2"
+                        style={{
+                          marginLeft:
+                            segmentIndex === 0
+                              ? `calc(${segment.start - 1} * ${DAY_COL_WIDTH} + ${BAR_EDGE})`
+                              : `calc(${gapDays} * ${DAY_COL_WIDTH} + ${BAR_EDGE} + ${BAR_EDGE})`,
+                          width: `calc(${segment.days.length} * ${DAY_COL_WIDTH} - ${BAR_EDGE} - ${BAR_EDGE})`,
+                        }}
+                      >
+                        <p className="invisible px-3 font-medium leading-snug">&nbsp;</p>
+                        <div className="flex h-1 w-full" aria-hidden>
+                          {segment.days.map((status, index) => (
+                            <div
+                              key={index}
+                              className="flex h-full items-center px-px"
+                              style={{ width: dayRailWidth(index, segment.days.length) }}
+                            >
+                              {status === "completed" || status === "failed" ? (
+                                <span
+                                  className={cn(
+                                    "h-0.75 w-full rounded-full",
+                                    status === "completed" ? "bg-success" : "bg-failed",
+                                  )}
+                                />
+                              ) : null}
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    );
+                  })}
+                  <div className="pointer-events-none absolute inset-0 flex flex-col justify-center gap-1 overflow-visible py-2">
+                    <p
+                      ref={(node) => {
+                        if (node) titleRefs.current.set(bar.id, node);
+                        else titleRefs.current.delete(bar.id);
+                      }}
+                      className="w-max self-start px-3 font-medium leading-snug text-fg"
+                    >
+                      <span className="whitespace-nowrap">{bar.label}</span>
+                    </p>
+                    <div className="h-1" aria-hidden />
                   </div>
                 </div>
               ))}
