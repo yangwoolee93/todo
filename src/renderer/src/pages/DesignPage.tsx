@@ -476,6 +476,13 @@ function DayTodoList({ todos, ready }: { todos: DisplayTodo[]; ready: boolean })
 }
 
 const DAY_COL_WIDTH = "4rem";
+const BAR_EDGE = "0.25rem";
+
+function barTitleSide(start: number, end: number, dayCount: number) {
+  if (start === 1 && end === dayCount) return "inside";
+  if (end === dayCount) return "right";
+  return "left";
+}
 
 function MonthTimelineDraft({
   year,
@@ -514,7 +521,7 @@ function MonthTimelineDraft({
 
   return (
     <div ref={scrollRef} className="scrollbar min-h-0 flex-1 overflow-auto">
-      <div className="inline-block align-top pr-40" style={{ minWidth: trackWidth }}>
+      <div className="inline-block align-top" style={{ minWidth: trackWidth }}>
         <div className="sticky top-0 z-20 border-b border-border bg-base" style={{ width: trackWidth }}>
           <div className="flex">
             {Array.from({ length: dayCount }).map((_, index) => {
@@ -557,25 +564,51 @@ function MonthTimelineDraft({
                 />
               ))}
             </div>
-            <div className="relative mt-2 flex flex-col gap-2 pb-2">
-              {bars.map((bar) => (
-                <div key={bar.id} className="flex" style={{ width: trackWidth }}>
-                  <div
-                    className="relative shrink-0 overflow-visible rounded-(--radius-card) bg-surface px-3 py-3"
-                    style={{
-                      marginLeft: `calc(${bar.start - 1} * ${DAY_COL_WIDTH})`,
-                      width: `calc(${bar.end - bar.start + 1} * ${DAY_COL_WIDTH} - 0.5rem)`,
-                    }}
-                  >
-                    <span className="invisible font-medium leading-snug">&nbsp;</span>
-                    <div className="pointer-events-none absolute inset-0 overflow-visible">
-                      <p className="sticky left-0 z-10 flex h-full w-max items-center px-3 font-medium leading-snug text-fg">
-                        <span className="whitespace-nowrap">{bar.label}</span>
-                      </p>
+            <div className="relative flex flex-col gap-2 pb-2">
+              {bars.map((bar) => {
+                const titleSide = barTitleSide(bar.start, bar.end, dayCount);
+                return (
+                  <div key={bar.id} className="flex" style={{ width: trackWidth }}>
+                    <div
+                      className={cn(
+                        "relative shrink-0 rounded-(--radius-card) bg-surface px-3 py-3",
+                        titleSide === "inside" ? "overflow-hidden" : "overflow-visible",
+                      )}
+                      style={{
+                        marginLeft: `calc(${bar.start - 1} * ${DAY_COL_WIDTH} + ${BAR_EDGE})`,
+                        width: `calc(${bar.end - bar.start + 1} * ${DAY_COL_WIDTH} - ${BAR_EDGE} - ${BAR_EDGE})`,
+                      }}
+                    >
+                      <span className="invisible font-medium leading-snug">&nbsp;</span>
+                      <div
+                        className={cn(
+                          "pointer-events-none absolute inset-0",
+                          titleSide === "inside" ? "overflow-hidden" : "overflow-visible",
+                          titleSide === "right" && "flex justify-end",
+                        )}
+                      >
+                        <p
+                          className={cn(
+                            "flex h-full w-max items-center px-3 font-medium leading-snug text-fg",
+                            titleSide === "left" && "sticky left-0",
+                            titleSide === "right" && "sticky right-0",
+                            titleSide === "inside" && "sticky left-0 max-w-full",
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              "whitespace-nowrap",
+                              titleSide === "inside" && "truncate",
+                            )}
+                          >
+                            {bar.label}
+                          </span>
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         ) : null}
