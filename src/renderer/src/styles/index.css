@@ -9,18 +9,18 @@
  * Tailwind 유틸: bg-base, text-fg, border-border 등
  */
 @theme {
-  --color-base: #f2f0eb;
-  --color-surface: #faf8f5;
-  --color-surface-raised: #fcfaf7;
-  --color-muted: #e8e4dd;
+  --color-base: #ebe8e1;
+  --color-surface: #f5f2ec;
+  --color-surface-raised: #f7f4ef;
+  --color-muted: #e4dfd6;
   --color-fg: #1c1917;
   --color-fg-secondary: #57534e;
   --color-fg-muted: #a8a29e;
   --color-accent: #2563eb;
   --color-accent-hover: #1d4ed8;
   --color-accent-soft: #dbeafe;
-  --color-border: #ddd8d0;
-  --color-border-strong: #c9c2b8;
+  --color-border: #d6d0c6;
+  --color-border-strong: #c4bcb0;
   --color-danger: #dc2626;
   --color-danger-soft: #fee2e2;
   --color-success: #16a34a;
@@ -37,30 +37,30 @@
   --scrollbar-size: 8px;
   --scrollbar-inset: 1rem; /* p-4 — 콘텐츠↔카드 우측 테두리 총 16px */
   --scrollbar-gap: calc((var(--scrollbar-inset) - var(--scrollbar-size)) / 2);
-  --scrollbar-thumb: #c9c2b8;
+  --scrollbar-thumb: #c4bcb0;
   --scrollbar-thumb-hover: #a8a29e;
 }
 
 .light {
-  --color-base: #f2f0eb;
-  --color-surface: #faf8f5;
-  --color-surface-raised: #fcfaf7;
-  --color-muted: #e8e4dd;
+  --color-base: #ebe8e1;
+  --color-surface: #f5f2ec;
+  --color-surface-raised: #f7f4ef;
+  --color-muted: #e4dfd6;
   --color-fg: #1c1917;
   --color-fg-secondary: #57534e;
   --color-fg-muted: #a8a29e;
   --color-accent: #2563eb;
   --color-accent-hover: #1d4ed8;
   --color-accent-soft: #dbeafe;
-  --color-border: #ddd8d0;
-  --color-border-strong: #c9c2b8;
+  --color-border: #d6d0c6;
+  --color-border-strong: #c4bcb0;
   --color-danger: #dc2626;
   --color-danger-soft: #fee2e2;
   --color-success: #16a34a;
   --color-failed: #ea580c;
   --color-failed-soft: #ffedd5;
   --color-today-ring: #2563eb;
-  --scrollbar-thumb: #c9c2b8;
+  --scrollbar-thumb: #c4bcb0;
   --scrollbar-thumb-hover: #a8a29e;
 }
 
