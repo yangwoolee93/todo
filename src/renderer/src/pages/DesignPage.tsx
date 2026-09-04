@@ -351,6 +351,7 @@ function DayStrip({
             const date = index + 1;
             const selected = date === day;
             const isToday = year === thisYear && month === thisMonth && date === thisDay;
+            const headColor = dateHeadTextClass(year, month, date);
             return (
               <button
                 key={date}
@@ -359,20 +360,31 @@ function DayStrip({
                   else cellRefs.current.delete(date);
                 }}
                 type="button"
+                aria-current={isToday ? "date" : undefined}
                 className={cn(
-                  "flex h-30 w-24 shrink-0 flex-col items-center justify-center rounded-(--radius-card) gap-4",
+                  "relative flex h-30 w-24 shrink-0 flex-col items-center justify-center rounded-(--radius-card) gap-4",
                   "border-2 border-transparent bg-surface",
                   "hover:bg-muted",
-                  isToday && !selected && "text-accent",
                   selected && "border-accent bg-accent text-white hover:bg-accent-hover",
                 )}
                 onClick={() => onSelectDay(date)}
               >
-                <span className="text-3xl font-bold leading-none">{date}</span>
+                {isToday ? (
+                  <span
+                    aria-hidden
+                    className={cn(
+                      "absolute top-2 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full",
+                      selected ? "bg-white" : "bg-fg",
+                    )}
+                  />
+                ) : null}
+                <span className={cn("text-3xl font-bold leading-none", !selected && headColor)}>
+                  {date}
+                </span>
                 <span
                   className={cn(
                     "mt-1 text-[0.75rem] font-normal",
-                    selected ? "text-white/80" : "text-fg-secondary",
+                    selected ? "text-white/80" : (headColor ?? "text-fg-secondary"),
                   )}
                 >
                   {weekdayLabel(year, month, date)}
