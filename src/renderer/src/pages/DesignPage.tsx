@@ -3,10 +3,7 @@ import {
   Button,
   ChevronLeftIcon,
   ChevronRightIcon,
-  CloseIcon,
   DragHandleIcon,
-  Modal,
-  ModalTitle,
   Tab,
 } from "@renderer/shared/ui";
 import { TodoItemMenu, TodoStatusIcon } from "@renderer/features/todo";
@@ -18,8 +15,8 @@ import { cn } from "@renderer/utils/cn";
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 const MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
-const YEAR_START = 2000;
-const YEAR_END = 2040;
+const YEAR_START = 2026;
+const YEAR_END = 2046;
 const YEARS = Array.from({ length: YEAR_END - YEAR_START + 1 }, (_, index) => YEAR_START + index);
 
 type TimelineSegment = {
@@ -92,11 +89,6 @@ const triggerClass = cn(
   "focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:outline-none",
 );
 
-const cellClass = cn(
-  "flex items-center justify-center rounded-(--radius-btn) border-2 border-transparent",
-  "bg-surface py-2 text-xl font-medium text-fg hover:bg-muted",
-);
-
 function daysInMonth(year: number, month: number) {
   return new Date(year, month, 0).getDate();
 }
@@ -158,11 +150,14 @@ function isTodayView(
   month: number,
   day: number,
   monthOverview: boolean,
+  yearOverview: boolean,
   thisYear: number,
   thisMonth: number,
   thisDay: number,
 ) {
-  return !monthOverview && year === thisYear && month === thisMonth && day === thisDay;
+  return (
+    !monthOverview && !yearOverview && year === thisYear && month === thisMonth && day === thisDay
+  );
 }
 
 function YearMonthHeader({
@@ -214,75 +209,6 @@ function YearMonthHeader({
         ) : null}
       </div>
     </div>
-  );
-}
-
-function YearPickerModal({
-  open,
-  year,
-  thisYear,
-  draftYear,
-  listRef,
-  cellRefs,
-  onClose,
-  onGoThisYear,
-  onPick,
-  onApply,
-}: {
-  open: boolean;
-  year: number;
-  thisYear: number;
-  draftYear: number;
-  listRef: RefObject<HTMLDivElement | null>;
-  cellRefs: RefObject<Map<number, HTMLButtonElement>>;
-  onClose: () => void;
-  onGoThisYear: () => void;
-  onPick: (year: number) => void;
-  onApply: () => void;
-}) {
-  return (
-    <Modal open={open} onClose={onClose} label="년도 선택" size="sm" className="overflow-hidden">
-      <div className="mb-3 flex items-center gap-2">
-        <ModalTitle className="text-md font-medium text-fg">년도</ModalTitle>
-        <button
-          type="button"
-          className="text-sm text-accent hover:text-accent-hover"
-          onClick={onGoThisYear}
-        >
-          올해로
-        </button>
-        <Button variant="ghost" className="ml-auto p-1.5" aria-label="닫기" onClick={onClose}>
-          <CloseIcon />
-        </Button>
-      </div>
-      <div ref={listRef} className="scrollbar max-h-[min(22rem,60vh)] overflow-y-auto">
-        <div className="grid grid-cols-3 gap-2">
-          {YEARS.map((item) => {
-            const selected = item === draftYear;
-            const isThisYear = item === thisYear;
-            return (
-              <button
-                key={item}
-                ref={(node) => {
-                  if (node) cellRefs.current.set(item, node);
-                  else cellRefs.current.delete(item);
-                }}
-                type="button"
-                className={cn(cellClass, isThisYear && "text-accent", selected && "border-accent")}
-                onClick={() => onPick(item)}
-              >
-                {item}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-      <div className="mt-3 flex justify-end">
-        <Button variant="primary" disabled={draftYear === year} onClick={onApply}>
-          적용
-        </Button>
-      </div>
-    </Modal>
   );
 }
 
@@ -484,6 +410,70 @@ function MonthStrip({
       </div>
       <div className="flex h-22 shrink-0 items-center">
         <StripArrow direction="next" disabled={!canNext} label="다음 해" onClick={onNext} />
+      </div>
+    </div>
+  );
+}
+
+function YearPicker({
+  listRef,
+  cellRefs,
+  year,
+  thisYear,
+  onSelectYear,
+  onConfirm,
+}: {
+  listRef: RefObject<HTMLDivElement | null>;
+  cellRefs: RefObject<Map<number, HTMLButtonElement>>;
+  year: number;
+  thisYear: number;
+  onSelectYear: (year: number) => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div className="mx-6 mb-6 mt-4 flex min-h-0 flex-1 flex-col">
+      <div ref={listRef} className="scrollbar min-h-0 flex-row-reverse overflow-y-auto">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,6.5rem),1fr))] gap-2">
+          {YEARS.map((item) => {
+            const selected = item === year;
+            const isThisYear = item === thisYear;
+            return (
+              <button
+                key={item}
+                ref={(node) => {
+                  if (node) cellRefs.current.set(item, node);
+                  else cellRefs.current.delete(item);
+                }}
+                type="button"
+                className={cn(
+                  "flex w-full items-center justify-center rounded-(--radius-card) py-3 gap-3",
+                  "border-2 border-transparent bg-surface",
+                  "hover:bg-muted",
+                  selected && "border-accent",
+                )}
+                onClick={() => onSelectYear(item)}
+              >
+                <span
+                  aria-hidden
+                  className={cn(
+                    "h-1.5 w-1.5 rounded-full",
+                    "bg-fg-secondary/10 hidden",
+                    isThisYear && "bg-fg-secondary flex",
+                  )}
+                />
+                <span className="text-xl font-medium leading-none">
+                  {item}
+                  <span className="text-[0.75rem] font-normal text-fg-secondary">년</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      <div className="mt-3 flex shrink-0 justify-end">
+        <Button variant="primary" onClick={onConfirm}>
+          선택
+        </Button>
       </div>
     </div>
   );
@@ -989,10 +979,9 @@ export default function DesignPage() {
   const [year, setYear] = useState(thisYear);
   const [month, setMonth] = useState(thisMonth);
   const [monthOverview, setMonthOverview] = useState(false);
+  const [yearOverview, setYearOverview] = useState(false);
   const thisDay = now.getDate();
   const [day, setDay] = useState(thisDay);
-  const [yearOpen, setYearOpen] = useState(false);
-  const [draftYear, setDraftYear] = useState(thisYear);
   const [scrollToTodayTick, setScrollToTodayTick] = useState(0);
   const [dayTodos, setDayTodos] = useState<DisplayTodo[]>([]);
   const [dayReady, setDayReady] = useState(false);
@@ -1012,13 +1001,7 @@ export default function DesignPage() {
   const canNextYear = year < YEAR_END;
 
   const scrollYearIntoView = (targetYear: number) => {
-    const root = yearListRef.current;
-    const target = yearCellRefs.current.get(targetYear);
-    if (!root || !target) return;
-
-    const rootRect = root.getBoundingClientRect();
-    const targetRect = target.getBoundingClientRect();
-    root.scrollTop += targetRect.top - rootRect.top - root.clientHeight / 2 + targetRect.height / 2;
+    scrollChildIntoView(yearListRef.current, yearCellRefs.current.get(targetYear) ?? null, "y");
   };
 
   const scrollDayIntoView = (targetDay: number) => {
@@ -1043,25 +1026,20 @@ export default function DesignPage() {
       targetRect.left - rootRect.left - root.clientWidth / 2 + targetRect.width / 2;
   };
 
-  useEffect(() => {
-    if (!yearOpen) return;
-
-    const frame = requestAnimationFrame(() => {
-      scrollYearIntoView(year);
-    });
-
-    return () => cancelAnimationFrame(frame);
-  }, [yearOpen, year]);
+  useLayoutEffect(() => {
+    if (!yearOverview) return;
+    scrollYearIntoView(year);
+  }, [year, yearOverview]);
 
   useLayoutEffect(() => {
-    if (monthOverview) return;
+    if (monthOverview || yearOverview) return;
     scrollDayIntoView(day);
-  }, [day, year, month, monthOverview, dayCount]);
+  }, [day, year, month, monthOverview, yearOverview, dayCount]);
 
   useLayoutEffect(() => {
-    if (!monthOverview) return;
+    if (!monthOverview || yearOverview) return;
     scrollMonthIntoView(month);
-  }, [month, year, monthOverview]);
+  }, [month, year, monthOverview, yearOverview]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1095,27 +1073,22 @@ export default function DesignPage() {
     };
   }, [year, month]);
 
-  const openYearModal = () => {
-    setDraftYear(year);
-    setYearOpen(true);
+  const openYearView = () => {
+    setYearOverview(true);
   };
 
-  const closeYearModal = () => {
-    setYearOpen(false);
-  };
-
-  const goThisYear = () => {
-    setDraftYear(thisYear);
-    requestAnimationFrame(() => scrollYearIntoView(thisYear));
+  const pickYear = (nextYear: number) => {
+    setYear(nextYear);
+    setDay((prev) => clampDay(nextYear, month, prev));
   };
 
   const applyYear = () => {
-    setYear(draftYear);
-    setDay((prev) => clampDay(draftYear, month, prev));
-    setYearOpen(false);
+    setYearOverview(false);
+    setMonthOverview(true);
   };
 
   const openMonthView = () => {
+    setYearOverview(false);
     setMonthOverview(true);
   };
 
@@ -1148,6 +1121,11 @@ export default function DesignPage() {
   };
 
   const goToToday = () => {
+    if (yearOverview) {
+      setYear(thisYear);
+      setDay((prev) => clampDay(thisYear, month, prev));
+      return;
+    }
     setYear(thisYear);
     setMonth(thisMonth);
     setDay(thisDay);
@@ -1164,26 +1142,35 @@ export default function DesignPage() {
       <YearMonthHeader
         year={year}
         month={month}
-        showMonth={!monthOverview}
-        showGoToday={!isTodayView(year, month, day, monthOverview, thisYear, thisMonth, thisDay)}
-        onOpenYear={openYearModal}
+        showMonth={!monthOverview && !yearOverview}
+        showGoToday={
+          yearOverview
+            ? year !== thisYear
+            : !isTodayView(
+                year,
+                month,
+                day,
+                monthOverview,
+                yearOverview,
+                thisYear,
+                thisMonth,
+                thisDay,
+              )
+        }
+        onOpenYear={openYearView}
         onOpenMonthView={openMonthView}
         onGoToday={goToToday}
       />
-      {/* 년 모달 */}
-      <YearPickerModal
-        open={yearOpen}
-        year={year}
-        thisYear={thisYear}
-        draftYear={draftYear}
-        listRef={yearListRef}
-        cellRefs={yearCellRefs}
-        onClose={closeYearModal}
-        onGoThisYear={goThisYear}
-        onPick={setDraftYear}
-        onApply={applyYear}
-      />
-      {monthOverview ? (
+      {yearOverview ? (
+        <YearPicker
+          listRef={yearListRef}
+          cellRefs={yearCellRefs}
+          year={year}
+          thisYear={thisYear}
+          onSelectYear={pickYear}
+          onConfirm={applyYear}
+        />
+      ) : monthOverview ? (
         <>
           {/* 월 줄 */}
           <MonthStrip
