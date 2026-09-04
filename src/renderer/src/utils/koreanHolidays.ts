@@ -1,5 +1,5 @@
 /**
- * 관공서 공휴일(법정 쉬는 날) 여부.
+ * 관공서 공휴일(법정 쉬는 날) 여부와 이름.
  * 음력 설·추석·부처님오신날은 2000–2040 양력 대응일을 쓴다.
  * 선거일·임시공휴일은 넣지 않는다.
  */
@@ -53,7 +53,7 @@ const LUNAR_MD: ReadonlyArray<readonly [number, number, number]> = [
 
 type SubRule = "none" | "sun" | "weekend";
 
-const holidayCache = new Map<number, Set<number>>();
+const holidayCache = new Map<number, Map<number, string>>();
 
 function toKey(year: number, month: number, day: number) {
   return year * 10000 + month * 100 + day;
@@ -96,35 +96,49 @@ function nextOpenDay(taken: Set<number>, year: number, month: number, day: numbe
 
 function addHoliday(
   dates: Map<number, SubRule[]>,
+  names: Map<number, string>,
   year: number,
   month: number,
   day: number,
   rule: SubRule,
+  name: string,
 ) {
   const key = toKey(year, month, day);
   const list = dates.get(key);
   if (list) list.push(rule);
   else dates.set(key, [rule]);
+  const prev = names.get(key);
+  if (!prev) names.set(key, name);
+  else if (prev !== name && !prev.split(" · ").includes(name)) names.set(key, `${prev} · ${name}`);
 }
 
-function holidaysInYear(year: number): Set<number> {
+function holidaysInYear(year: number): Map<number, string> {
   const cached = holidayCache.get(year);
   if (cached) return cached;
 
   const dates = new Map<number, SubRule[]>();
+  const names = new Map<number, string>();
   const hangulOn = year >= 2013;
   const laborConstitutionOn = year >= 2026;
 
-  addHoliday(dates, year, 1, 1, "none");
-  addHoliday(dates, year, 3, 1, year >= 2023 ? "weekend" : "none");
-  if (laborConstitutionOn) addHoliday(dates, year, 5, 1, "weekend");
-  addHoliday(dates, year, 5, 5, year >= 2021 ? "weekend" : year >= 2014 ? "sun" : "none");
-  addHoliday(dates, year, 6, 6, "none");
-  if (laborConstitutionOn) addHoliday(dates, year, 7, 17, "weekend");
-  addHoliday(dates, year, 8, 15, year >= 2023 ? "weekend" : "none");
-  addHoliday(dates, year, 10, 3, year >= 2023 ? "weekend" : "none");
-  if (hangulOn) addHoliday(dates, year, 10, 9, year >= 2023 ? "weekend" : "none");
-  addHoliday(dates, year, 12, 25, year >= 2023 ? "weekend" : "none");
+  addHoliday(dates, names, year, 1, 1, "none", "신정");
+  addHoliday(dates, names, year, 3, 1, year >= 2023 ? "weekend" : "none", "삼일절");
+  if (laborConstitutionOn) addHoliday(dates, names, year, 5, 1, "weekend", "근로자의 날");
+  addHoliday(
+    dates,
+    names,
+    year,
+    5,
+    5,
+    year >= 2021 ? "weekend" : year >= 2014 ? "sun" : "none",
+    "어린이날",
+  );
+  addHoliday(dates, names, year, 6, 6, "none", "현충일");
+  if (laborConstitutionOn) addHoliday(dates, names, year, 7, 17, "weekend", "제헌절");
+  addHoliday(dates, names, year, 8, 15, year >= 2023 ? "weekend" : "none", "광복절");
+  addHoliday(dates, names, year, 10, 3, year >= 2023 ? "weekend" : "none", "개천절");
+  if (hangulOn) addHoliday(dates, names, year, 10, 9, year >= 2023 ? "weekend" : "none", "한글날");
+  addHoliday(dates, names, year, 12, 25, year >= 2023 ? "weekend" : "none", "성탄절");
 
   const lunar = LUNAR_MD[year - LUNAR_YEAR_START];
   if (lunar) {
@@ -134,15 +148,23 @@ function holidaysInYear(year: number): Set<number> {
     const lunarSun = year >= 2013 ? "sun" : "none";
     const eve = shiftDay(seollal.year, seollal.month, seollal.day, -1);
     const seollalNext = shiftDay(seollal.year, seollal.month, seollal.day, 1);
-    addHoliday(dates, eve.year, eve.month, eve.day, lunarSun);
-    addHoliday(dates, seollal.year, seollal.month, seollal.day, lunarSun);
-    addHoliday(dates, seollalNext.year, seollalNext.month, seollalNext.day, lunarSun);
-    addHoliday(dates, buddha.year, buddha.month, buddha.day, year >= 2023 ? "weekend" : "none");
+    addHoliday(dates, names, eve.year, eve.month, eve.day, lunarSun, "설날 전날");
+    addHoliday(dates, names, seollal.year, seollal.month, seollal.day, lunarSun, "설날");
+    addHoliday(dates, names, seollalNext.year, seollalNext.month, seollalNext.day, lunarSun, "설날 다음날");
+    addHoliday(
+      dates,
+      names,
+      buddha.year,
+      buddha.month,
+      buddha.day,
+      year >= 2023 ? "weekend" : "none",
+      "부처님오신날",
+    );
     const chuseokEve = shiftDay(chuseok.year, chuseok.month, chuseok.day, -1);
     const chuseokNext = shiftDay(chuseok.year, chuseok.month, chuseok.day, 1);
-    addHoliday(dates, chuseokEve.year, chuseokEve.month, chuseokEve.day, lunarSun);
-    addHoliday(dates, chuseok.year, chuseok.month, chuseok.day, lunarSun);
-    addHoliday(dates, chuseokNext.year, chuseokNext.month, chuseokNext.day, lunarSun);
+    addHoliday(dates, names, chuseokEve.year, chuseokEve.month, chuseokEve.day, lunarSun, "추석 전날");
+    addHoliday(dates, names, chuseok.year, chuseok.month, chuseok.day, lunarSun, "추석");
+    addHoliday(dates, names, chuseokNext.year, chuseokNext.month, chuseokNext.day, lunarSun, "추석 다음날");
   }
 
   const taken = new Set(dates.keys());
@@ -174,12 +196,23 @@ function holidaysInYear(year: number): Set<number> {
     }
     extras.add(extra);
   }
-  extras.forEach((key) => taken.add(key));
+  extras.forEach((key) => {
+    taken.add(key);
+    names.set(key, "대체공휴일");
+  });
 
-  holidayCache.set(year, taken);
-  return taken;
+  holidayCache.set(year, names);
+  return names;
 }
 
 export function isKoreanPublicHoliday(year: number, month: number, day: number): boolean {
   return holidaysInYear(year).has(toKey(year, month, day));
+}
+
+export function koreanPublicHolidayName(
+  year: number,
+  month: number,
+  day: number,
+): string | null {
+  return holidaysInYear(year).get(toKey(year, month, day)) ?? null;
 }

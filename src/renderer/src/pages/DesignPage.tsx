@@ -13,7 +13,7 @@ import { TodoItemMenu, TodoStatusIcon } from "@renderer/features/todo";
 import { buildTimelineRows } from "@renderer/features/month/ui/buildTimelineRows";
 import type { DaySummary, DisplayTodo, TodoStatus } from "@shared/types/todo";
 import { formatDate } from "@renderer/utils/dateUtils";
-import { isKoreanPublicHoliday } from "@renderer/utils/koreanHolidays";
+import { isKoreanPublicHoliday, koreanPublicHolidayName } from "@renderer/utils/koreanHolidays";
 import { cn } from "@renderer/utils/cn";
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
@@ -31,6 +31,7 @@ type TimelineBar = {
   id: string;
   label: string;
   segments: TimelineSegment[];
+  settled: boolean;
 };
 
 function toYearMonthKey(year: number, month: number) {
@@ -67,6 +68,7 @@ function barsFromSummaries(summaries: DaySummary[]): TimelineBar[] {
       id: row.key,
       label: row.content,
       segments: segmentsFromCells(row.startIndex, row.cells),
+      settled: row.isSettled,
     }))
     .filter((bar) => bar.segments.length > 0);
 }
@@ -76,7 +78,11 @@ function agendaGroupsFromSummaries(summaries: DaySummary[], includeDay?: number)
     .filter((item) => item.todos.length > 0 || item.day === includeDay)
     .map((item) => ({
       day: item.day,
-      items: item.todos.map((todo) => todo.content),
+      items: item.todos.map((todo) => ({
+        id: todo.id,
+        title: todo.content,
+        status: todo.status,
+      })),
     }));
 }
 
@@ -742,7 +748,10 @@ function MonthTimelineDraft({
                         if (node) titleRefs.current.set(bar.id, node);
                         else titleRefs.current.delete(bar.id);
                       }}
-                      className="w-max self-start px-3 font-medium leading-snug text-fg"
+                      className={cn(
+                        "w-max self-start px-3 font-medium leading-snug",
+                        bar.settled ? "text-fg-muted" : "text-fg",
+                      )}
                     >
                       <span className="whitespace-nowrap">{bar.label}</span>
                     </p>
@@ -802,6 +811,8 @@ function MonthAgendaDraft({
         <div className="flex flex-col gap-4">
           {groups.map((group) => {
             const isToday = isCurrentMonth && group.day === thisDay;
+            const headColor = dateHeadTextClass(year, month, group.day);
+            const holidayName = koreanPublicHolidayName(year, month, group.day);
             return (
               <section
                 key={group.day}
@@ -810,24 +821,51 @@ function MonthAgendaDraft({
               >
                 <button
                   type="button"
-                  className="flex items-baseline gap-2 text-left"
+                  className="flex items-center gap-2 text-left"
                   onClick={() => onOpenDay(group.day)}
                 >
-                  <span className={cn("text-lg font-medium", isToday && "text-accent")}>
+                  <span
+                    className={cn(
+                      "text-lg font-medium",
+                      isToday
+                        ? "rounded-(--radius-btn) bg-accent px-1.5 py-0.5 text-white"
+                        : headColor,
+                    )}
+                  >
                     {group.day}일
                   </span>
-                  <span className="text-xs text-fg-secondary">
+                  <span className={cn("text-xs", headColor ?? "text-fg-secondary")}>
                     {weekdayLabel(year, month, group.day)}
                   </span>
+                  {holidayName ? (
+                    <span className="text-xs text-danger">· {holidayName}</span>
+                  ) : null}
                 </button>
                 {group.items.length > 0 ? (
                   <ul className="flex flex-col gap-2">
-                    {group.items.map((title, index) => (
+                    {group.items.map((item) => (
                       <li
-                        key={`${group.day}-${index}`}
-                        className="rounded-(--radius-card) bg-surface px-3 py-3 font-medium leading-snug text-fg line-clamp-2"
+                        key={item.id}
+                        className="relative rounded-(--radius-card) bg-surface py-3 pr-3 pl-6"
                       >
-                        {title}
+                        {item.status === "completed" || item.status === "failed" ? (
+                          <span
+                            aria-hidden
+                            className={cn(
+                              "absolute top-2.5 bottom-2.5 left-2.5 w-0.75 rounded-full",
+                              item.status === "completed" ? "bg-success" : "bg-failed",
+                            )}
+                          />
+                        ) : null}
+                        <span
+                          className={cn(
+                            "font-medium leading-snug text-fg line-clamp-2",
+                            item.status !== "pending" && "text-fg-muted",
+                            item.status === "failed" && "line-through",
+                          )}
+                        >
+                          {item.title}
+                        </span>
                       </li>
                     ))}
                   </ul>
