@@ -339,14 +339,14 @@ function DayStrip({
 }) {
   return (
     <div className="flex items-start gap-2 px-2">
-      <div className="flex h-30 shrink-0 items-center">
+      <div className="flex h-32 shrink-0 items-center">
         <StripArrow direction="prev" disabled={!canPrev} label="전달" onClick={onPrev} />
       </div>
       <div
         ref={listRef}
         className="scrollbar min-w-0 flex-1 overflow-x-auto overflow-y-hidden scrollbar-gutter-stable pb-1"
       >
-        <div className="flex h-30 gap-2">
+        <div className="flex h-32 gap-2 items-center">
           {Array.from({ length: dayCount }).map((_, index) => {
             const date = index + 1;
             const selected = date === day;
@@ -362,29 +362,27 @@ function DayStrip({
                 type="button"
                 aria-current={isToday ? "date" : undefined}
                 className={cn(
-                  "relative flex h-30 w-24 shrink-0 flex-col items-center justify-center rounded-(--radius-card) gap-4",
+                  "relative flex h-30 w-24 shrink-0 flex-col items-center justify-center rounded-(--radius-card) gap-2",
                   "border-2 border-transparent bg-surface",
                   "hover:bg-muted",
-                  selected && "border-accent bg-accent text-white hover:bg-accent-hover",
+                  selected && "border-accent w-26 h-32",
                 )}
                 onClick={() => onSelectDay(date)}
               >
-                {isToday ? (
-                  <span
-                    aria-hidden
-                    className={cn(
-                      "absolute top-2 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full",
-                      selected ? "bg-white" : "bg-fg",
-                    )}
-                  />
-                ) : null}
-                <span className={cn("text-3xl font-bold leading-none", !selected && headColor)}>
-                  {date}
-                </span>
+                <span
+                  aria-hidden
+                  className={cn(
+                    "h-1.5 w-1.5 rounded-full",
+                    "bg-fg-secondary/10 hidden",
+                    isToday && "bg-fg-secondary flex",
+                  )}
+                />
+                <span className={cn("text-3xl font-bold leading-none", headColor)}>{date}</span>
                 <span
                   className={cn(
-                    "mt-1 text-[0.75rem] font-normal",
-                    selected ? "text-white/80" : (headColor ?? "text-fg-secondary"),
+                    "text-[0.75rem] font-normal",
+                    headColor ?? "text-fg-secondary",
+                    selected && (headColor ?? "text-fg"),
                   )}
                 >
                   {weekdayLabel(year, month, date)}
@@ -394,7 +392,7 @@ function DayStrip({
           })}
         </div>
       </div>
-      <div className="flex h-30 shrink-0 items-center">
+      <div className="flex h-32 shrink-0 items-center">
         <StripArrow direction="next" disabled={!canNext} label="다음 달" onClick={onNext} />
       </div>
     </div>
