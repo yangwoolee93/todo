@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
 import {
   Button,
   ChevronLeftIcon,
@@ -783,28 +783,14 @@ export default function DesignPage() {
     return () => cancelAnimationFrame(frame);
   }, [yearOpen, year]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (monthOverview) return;
-
-    const frame = requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        scrollDayIntoView(day);
-      });
-    });
-
-    return () => cancelAnimationFrame(frame);
+    scrollDayIntoView(day);
   }, [day, year, month, monthOverview, dayCount]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!monthOverview) return;
-
-    const frame = requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        scrollMonthIntoView(month);
-      });
-    });
-
-    return () => cancelAnimationFrame(frame);
+    scrollMonthIntoView(month);
   }, [month, year, monthOverview]);
 
   useEffect(() => {
