@@ -668,7 +668,7 @@ function MonthTimelineDraft({
       <div className="inline-block align-top" style={{ minWidth: trackWidth }}>
         <div
           ref={headRowRef}
-          className="sticky top-0 z-20 border-b border-border bg-base"
+          className="sticky top-0 z-20 border-b border-border bg-surface"
           style={{ width: trackWidth }}
         >
           <div className="flex">

@@ -2,24 +2,25 @@
 
 /* 다크 모드: html.dark 클래스 기준 */
 @custom-variant dark (&:where(.dark, .dark *));
+@custom-variant light (&:where(.light, .light *));
 
 /*
  * 컬러 팔레트 (라이트 모드 기본값)
  * Tailwind 유틸: bg-base, text-fg, border-border 등
  */
 @theme {
-  --color-base: #f4f6f9;
-  --color-surface: #ffffff;
-  --color-surface-raised: #ffffff;
-  --color-muted: #eef2f6;
-  --color-fg: #1e293b;
-  --color-fg-secondary: #64748b;
-  --color-fg-muted: #94a3b8;
+  --color-base: #f2f0eb;
+  --color-surface: #faf8f5;
+  --color-surface-raised: #fcfaf7;
+  --color-muted: #e8e4dd;
+  --color-fg: #1c1917;
+  --color-fg-secondary: #57534e;
+  --color-fg-muted: #a8a29e;
   --color-accent: #2563eb;
   --color-accent-hover: #1d4ed8;
   --color-accent-soft: #dbeafe;
-  --color-border: #e2e8f0;
-  --color-border-strong: #cbd5e1;
+  --color-border: #ddd8d0;
+  --color-border-strong: #c9c2b8;
   --color-danger: #dc2626;
   --color-danger-soft: #fee2e2;
   --color-success: #16a34a;
@@ -36,8 +37,31 @@
   --scrollbar-size: 8px;
   --scrollbar-inset: 1rem; /* p-4 — 콘텐츠↔카드 우측 테두리 총 16px */
   --scrollbar-gap: calc((var(--scrollbar-inset) - var(--scrollbar-size)) / 2);
-  --scrollbar-thumb: #cbd5e1;
-  --scrollbar-thumb-hover: #94a3b8;
+  --scrollbar-thumb: #c9c2b8;
+  --scrollbar-thumb-hover: #a8a29e;
+}
+
+.light {
+  --color-base: #f2f0eb;
+  --color-surface: #faf8f5;
+  --color-surface-raised: #fcfaf7;
+  --color-muted: #e8e4dd;
+  --color-fg: #1c1917;
+  --color-fg-secondary: #57534e;
+  --color-fg-muted: #a8a29e;
+  --color-accent: #2563eb;
+  --color-accent-hover: #1d4ed8;
+  --color-accent-soft: #dbeafe;
+  --color-border: #ddd8d0;
+  --color-border-strong: #c9c2b8;
+  --color-danger: #dc2626;
+  --color-danger-soft: #fee2e2;
+  --color-success: #16a34a;
+  --color-failed: #ea580c;
+  --color-failed-soft: #ffedd5;
+  --color-today-ring: #2563eb;
+  --scrollbar-thumb: #c9c2b8;
+  --scrollbar-thumb-hover: #a8a29e;
 }
 
 /* 어두운 모드 팔레트 — 중립 다크 그레이 */
