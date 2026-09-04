@@ -13,6 +13,7 @@ import { TodoItemMenu, TodoStatusIcon } from "@renderer/features/todo";
 import { buildTimelineRows } from "@renderer/features/month/ui/buildTimelineRows";
 import type { DaySummary, DisplayTodo } from "@shared/types/todo";
 import { formatDate } from "@renderer/utils/dateUtils";
+import { isKoreanPublicHoliday } from "@renderer/utils/koreanHolidays";
 import { cn } from "@renderer/utils/cn";
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
@@ -62,6 +63,13 @@ function daysInMonth(year: number, month: number) {
 
 function weekdayLabel(year: number, month: number, day: number) {
   return `${WEEKDAYS[new Date(year, month - 1, day).getDay()]}요일`;
+}
+
+function dateHeadTextClass(year: number, month: number, day: number) {
+  const weekday = new Date(year, month - 1, day).getDay();
+  if (weekday === 0 || isKoreanPublicHoliday(year, month, day)) return "text-danger";
+  if (weekday === 6) return "text-accent";
+  return undefined;
 }
 
 function clampDay(year: number, month: number, day: number) {
@@ -491,6 +499,7 @@ function MonthTimelineDraft({
   onOpenDay: (day: number) => void;
 }) {
   const dayCount = daysInMonth(year, month);
+  const trackWidth = `calc(${dayCount} * ${DAY_COL_WIDTH})`;
   const scrollRef = useRef<HTMLDivElement>(null);
   const todayRef = useRef<HTMLButtonElement>(null);
 
@@ -504,63 +513,70 @@ function MonthTimelineDraft({
   }, [year, month, thisDay, scrollToTodayTick]);
 
   return (
-    <div ref={scrollRef} className="scrollbar flex min-h-0 flex-1 flex-col overflow-auto">
-      <div className="min-w-max pr-40">
-        <div className="flex">
-          {Array.from({ length: dayCount }).map((_, index) => {
-            const date = index + 1;
-            const isToday = year === thisYear && month === thisMonth && date === thisDay;
-            return (
-              <button
-                key={date}
-                ref={isToday ? todayRef : undefined}
-                type="button"
-                style={{ width: DAY_COL_WIDTH }}
-                className={cn(
-                  "flex shrink-0 flex-col items-center gap-0.5 py-2",
-                  isToday && "text-accent",
-                )}
-                onClick={() => onOpenDay(date)}
-              >
-                <span className="text-[0.75rem] text-fg-secondary">
-                  {WEEKDAYS[new Date(year, month - 1, date).getDay()]}
-                </span>
-                <span
-                  className={cn(
-                    "flex h-10 w-10 items-center justify-center rounded-(--radius-btn) text-lg font-medium",
-                    isToday && "bg-accent text-white",
-                  )}
+    <div ref={scrollRef} className="scrollbar min-h-0 flex-1 overflow-auto">
+      <div className="inline-block align-top pr-40" style={{ minWidth: trackWidth }}>
+        <div className="sticky top-0 z-20 border-b border-border bg-base" style={{ width: trackWidth }}>
+          <div className="flex">
+            {Array.from({ length: dayCount }).map((_, index) => {
+              const date = index + 1;
+              const isToday = year === thisYear && month === thisMonth && date === thisDay;
+              const headColor = dateHeadTextClass(year, month, date);
+              return (
+                <button
+                  key={date}
+                  ref={isToday ? todayRef : undefined}
+                  type="button"
+                  style={{ width: DAY_COL_WIDTH }}
+                  className="flex shrink-0 flex-col items-center gap-0.5 border-r border-border/50 py-2"
+                  onClick={() => onOpenDay(date)}
                 >
-                  {date}
-                </span>
-              </button>
-            );
-          })}
+                  <span className={cn("text-[0.75rem]", headColor ?? "text-fg-secondary")}>
+                    {WEEKDAYS[new Date(year, month - 1, date).getDay()]}
+                  </span>
+                  <span
+                    className={cn(
+                      "flex h-10 w-10 items-center justify-center rounded-(--radius-btn) text-lg font-medium",
+                      isToday ? "bg-accent text-white" : headColor,
+                    )}
+                  >
+                    {date}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
         {ready && bars.length > 0 ? (
-          <div className="mt-2 flex flex-col gap-2 pb-2">
-            {bars.map((bar) => (
-              <div
-                key={bar.id}
-                className="flex"
-                style={{ width: `calc(${dayCount} * ${DAY_COL_WIDTH})` }}
-              >
+          <div className="relative" style={{ width: trackWidth }}>
+            <div className="pointer-events-none absolute inset-0 flex" aria-hidden>
+              {Array.from({ length: dayCount }).map((_, index) => (
                 <div
-                  className="relative shrink-0 overflow-visible rounded-(--radius-card) bg-surface px-3 py-3"
-                  style={{
-                    marginLeft: `calc(${bar.start - 1} * ${DAY_COL_WIDTH})`,
-                    width: `calc(${bar.end - bar.start + 1} * ${DAY_COL_WIDTH} - 0.5rem)`,
-                  }}
-                >
-                  <span className="invisible font-medium leading-snug">&nbsp;</span>
-                  <div className="pointer-events-none absolute inset-0 overflow-visible">
-                    <p className="sticky left-0 z-10 flex h-full w-max items-center px-3 font-medium leading-snug text-fg">
-                      <span className="whitespace-nowrap">{bar.label}</span>
-                    </p>
+                  key={index}
+                  style={{ width: DAY_COL_WIDTH }}
+                  className="shrink-0 border-r border-border/50"
+                />
+              ))}
+            </div>
+            <div className="relative mt-2 flex flex-col gap-2 pb-2">
+              {bars.map((bar) => (
+                <div key={bar.id} className="flex" style={{ width: trackWidth }}>
+                  <div
+                    className="relative shrink-0 overflow-visible rounded-(--radius-card) bg-surface px-3 py-3"
+                    style={{
+                      marginLeft: `calc(${bar.start - 1} * ${DAY_COL_WIDTH})`,
+                      width: `calc(${bar.end - bar.start + 1} * ${DAY_COL_WIDTH} - 0.5rem)`,
+                    }}
+                  >
+                    <span className="invisible font-medium leading-snug">&nbsp;</span>
+                    <div className="pointer-events-none absolute inset-0 overflow-visible">
+                      <p className="sticky left-0 z-10 flex h-full w-max items-center px-3 font-medium leading-snug text-fg">
+                        <span className="whitespace-nowrap">{bar.label}</span>
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         ) : null}
       </div>
