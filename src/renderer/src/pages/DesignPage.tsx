@@ -477,11 +477,29 @@ function DayTodoList({ todos, ready }: { todos: DisplayTodo[]; ready: boolean })
 
 const DAY_COL_WIDTH = "4rem";
 const BAR_EDGE = "0.25rem";
+/** BAR_EDGE / DAY_COL_WIDTH — 실측한 칸 너비에서 여백 px을 얻는다 */
+const BAR_EDGE_RATIO = 0.25 / 4;
 
-function barTitleSide(start: number, end: number, dayCount: number) {
-  if (start === 1 && end === dayCount) return "inside";
-  if (end === dayCount) return "right";
-  return "left";
+/**
+ * 막대 제목의 가로 위치를 정한다. 트랙 왼쪽 기준 px.
+ * - 자연 위치는 막대 왼쪽. 단 우측 스크롤 끝을 넘기지 않는다
+ * - 화면 밖으로 밀리면 화면 안쪽으로 당기거나 민다
+ * - 막대에서 떨어지지 않도록 좌우를 묶는다
+ */
+function titleLeftInTrack(
+  barLeft: number,
+  barRight: number,
+  titleWidth: number,
+  trackWidth: number,
+  viewLeft: number,
+  viewRight: number,
+) {
+  let left = Math.min(barLeft, trackWidth - titleWidth);
+  if (left + titleWidth > viewRight) left = viewRight - titleWidth;
+  if (left < viewLeft) left = viewLeft;
+  left = Math.min(left, Math.max(barLeft, barRight - titleWidth));
+  left = Math.max(left, barLeft - titleWidth);
+  return Math.max(0, Math.min(left, Math.max(0, trackWidth - titleWidth)));
 }
 
 function MonthTimelineDraft({
@@ -509,6 +527,8 @@ function MonthTimelineDraft({
   const trackWidth = `calc(${dayCount} * ${DAY_COL_WIDTH})`;
   const scrollRef = useRef<HTMLDivElement>(null);
   const todayRef = useRef<HTMLButtonElement>(null);
+  const headRowRef = useRef<HTMLDivElement>(null);
+  const titleRefs = useRef(new Map<string, HTMLParagraphElement>());
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
@@ -519,10 +539,59 @@ function MonthTimelineDraft({
     return () => cancelAnimationFrame(frame);
   }, [year, month, thisDay, scrollToTodayTick]);
 
+  /** 스크롤에 맞춰 제목 위치와 표시 여부를 정한다 */
+  useLayoutEffect(() => {
+    const root = scrollRef.current;
+    const headRow = headRowRef.current;
+    if (!root || !headRow) return;
+
+    const update = () => {
+      const track = headRow.offsetWidth;
+      if (track === 0) return;
+
+      const colWidth = track / dayCount;
+      const edge = colWidth * BAR_EDGE_RATIO;
+      const viewLeft = root.scrollLeft;
+      const viewRight = viewLeft + root.clientWidth;
+
+      bars.forEach((bar) => {
+        const title = titleRefs.current.get(bar.id);
+        if (!title) return;
+
+        const barLeft = (bar.start - 1) * colWidth + edge;
+        const barRight = bar.end * colWidth - edge;
+        const titleWidth = title.offsetWidth;
+        const visible = barRight > viewLeft && barLeft < viewRight;
+
+        // 감출 때도 트랙 안에 세워 둔다. 안 그러면 가로 스크롤이 트랙보다 길어진다
+        const left = visible
+          ? titleLeftInTrack(barLeft, barRight, titleWidth, track, viewLeft, viewRight)
+          : Math.max(0, Math.min(barLeft, track - titleWidth));
+
+        title.style.opacity = visible ? "1" : "0";
+        title.style.transform = `translateX(${left - barLeft}px)`;
+      });
+    };
+
+    update();
+    root.addEventListener("scroll", update, { passive: true });
+    const observer = new ResizeObserver(update);
+    observer.observe(root);
+
+    return () => {
+      root.removeEventListener("scroll", update);
+      observer.disconnect();
+    };
+  }, [bars, dayCount]);
+
   return (
     <div ref={scrollRef} className="scrollbar min-h-0 flex-1 overflow-auto">
       <div className="inline-block align-top" style={{ minWidth: trackWidth }}>
-        <div className="sticky top-0 z-20 border-b border-border bg-base" style={{ width: trackWidth }}>
+        <div
+          ref={headRowRef}
+          className="sticky top-0 z-20 border-b border-border bg-base"
+          style={{ width: trackWidth }}
+        >
           <div className="flex">
             {Array.from({ length: dayCount }).map((_, index) => {
               const date = index + 1;
@@ -565,50 +634,30 @@ function MonthTimelineDraft({
               ))}
             </div>
             <div className="relative flex flex-col gap-2 pb-2">
-              {bars.map((bar) => {
-                const titleSide = barTitleSide(bar.start, bar.end, dayCount);
-                return (
-                  <div key={bar.id} className="flex" style={{ width: trackWidth }}>
-                    <div
-                      className={cn(
-                        "relative shrink-0 rounded-(--radius-card) bg-surface px-3 py-3",
-                        titleSide === "inside" ? "overflow-hidden" : "overflow-visible",
-                      )}
-                      style={{
-                        marginLeft: `calc(${bar.start - 1} * ${DAY_COL_WIDTH} + ${BAR_EDGE})`,
-                        width: `calc(${bar.end - bar.start + 1} * ${DAY_COL_WIDTH} - ${BAR_EDGE} - ${BAR_EDGE})`,
-                      }}
-                    >
-                      <span className="invisible font-medium leading-snug">&nbsp;</span>
-                      <div
-                        className={cn(
-                          "pointer-events-none absolute inset-0",
-                          titleSide === "inside" ? "overflow-hidden" : "overflow-visible",
-                          titleSide === "right" && "flex justify-end",
-                        )}
+              {bars.map((bar) => (
+                <div key={bar.id} className="flex" style={{ width: trackWidth }}>
+                  <div
+                    className="relative shrink-0 overflow-visible rounded-(--radius-card) bg-surface px-3 py-3"
+                    style={{
+                      marginLeft: `calc(${bar.start - 1} * ${DAY_COL_WIDTH} + ${BAR_EDGE})`,
+                      width: `calc(${bar.end - bar.start + 1} * ${DAY_COL_WIDTH} - ${BAR_EDGE} - ${BAR_EDGE})`,
+                    }}
+                  >
+                    <span className="invisible font-medium leading-snug">&nbsp;</span>
+                    <div className="pointer-events-none absolute inset-0 overflow-visible">
+                      <p
+                        ref={(node) => {
+                          if (node) titleRefs.current.set(bar.id, node);
+                          else titleRefs.current.delete(bar.id);
+                        }}
+                        className="flex h-full w-max items-center px-3 font-medium leading-snug text-fg"
                       >
-                        <p
-                          className={cn(
-                            "flex h-full w-max items-center px-3 font-medium leading-snug text-fg",
-                            titleSide === "left" && "sticky left-0",
-                            titleSide === "right" && "sticky right-0",
-                            titleSide === "inside" && "sticky left-0 max-w-full",
-                          )}
-                        >
-                          <span
-                            className={cn(
-                              "whitespace-nowrap",
-                              titleSide === "inside" && "truncate",
-                            )}
-                          >
-                            {bar.label}
-                          </span>
-                        </p>
-                      </div>
+                        <span className="whitespace-nowrap">{bar.label}</span>
+                      </p>
                     </div>
                   </div>
-                );
-              })}
+                </div>
+              ))}
             </div>
           </div>
         ) : null}
