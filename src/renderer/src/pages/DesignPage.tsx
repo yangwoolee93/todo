@@ -467,7 +467,7 @@ function DayTodoList({ todos, ready }: { todos: DisplayTodo[]; ready: boolean })
   );
 }
 
-const DAY_COL_WIDTH = "3rem";
+const DAY_COL_WIDTH = "4rem";
 
 function MonthTimelineDraft({
   year,
@@ -505,7 +505,7 @@ function MonthTimelineDraft({
 
   return (
     <div ref={scrollRef} className="scrollbar flex min-h-0 flex-1 flex-col overflow-auto">
-      <div className="min-w-max">
+      <div className="min-w-max pr-40">
         <div className="flex">
           {Array.from({ length: dayCount }).map((_, index) => {
             const date = index + 1;
@@ -522,12 +522,12 @@ function MonthTimelineDraft({
                 )}
                 onClick={() => onOpenDay(date)}
               >
-                <span className="text-[11px] text-fg-secondary">
+                <span className="text-[0.75rem] text-fg-secondary">
                   {WEEKDAYS[new Date(year, month - 1, date).getDay()]}
                 </span>
                 <span
                   className={cn(
-                    "flex h-8 w-8 items-center justify-center rounded-(--radius-btn) text-sm font-medium",
+                    "flex h-10 w-10 items-center justify-center rounded-(--radius-btn) text-lg font-medium",
                     isToday && "bg-accent text-white",
                   )}
                 >
@@ -538,21 +538,26 @@ function MonthTimelineDraft({
           })}
         </div>
         {ready && bars.length > 0 ? (
-          <div className="mt-2 flex flex-col gap-1.5 pb-2">
+          <div className="mt-2 flex flex-col gap-2 pb-2">
             {bars.map((bar) => (
               <div
                 key={bar.id}
-                className="relative h-8"
+                className="flex"
                 style={{ width: `calc(${dayCount} * ${DAY_COL_WIDTH})` }}
               >
                 <div
-                  className="absolute top-0 flex h-8 items-center truncate rounded-(--radius-btn) bg-muted px-2 text-xs text-fg"
+                  className="relative shrink-0 overflow-visible rounded-(--radius-card) bg-surface px-3 py-3"
                   style={{
-                    left: `calc(${bar.start - 1} * ${DAY_COL_WIDTH})`,
-                    width: `calc(${bar.end - bar.start + 1} * ${DAY_COL_WIDTH} - 0.25rem)`,
+                    marginLeft: `calc(${bar.start - 1} * ${DAY_COL_WIDTH})`,
+                    width: `calc(${bar.end - bar.start + 1} * ${DAY_COL_WIDTH} - 0.5rem)`,
                   }}
                 >
-                  {bar.label}
+                  <span className="invisible font-medium leading-snug">&nbsp;</span>
+                  <div className="pointer-events-none absolute inset-0 overflow-visible">
+                    <p className="sticky left-0 z-10 flex h-full w-max items-center px-3 font-medium leading-snug text-fg">
+                      <span className="whitespace-nowrap">{bar.label}</span>
+                    </p>
+                  </div>
                 </div>
               </div>
             ))}
