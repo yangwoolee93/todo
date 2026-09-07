@@ -15,6 +15,7 @@ type UIState = {
 type UIActions = {
   // view Actions
   goDesignView: () => void;
+  goTodoView: () => void;
   goMemoView: () => void;
   goScheduleView: () => void;
   goSettingsView: () => void;
@@ -35,7 +36,7 @@ type UIActions = {
 type UIStore = UIState & UIActions;
 
 const initialState: UIState = {
-  view: "schedule",
+  view: "todo",
   activeDate: getTodayString(),
   addModalOpen: false,
   duplicateContent: undefined,
@@ -45,6 +46,7 @@ const initialState: UIState = {
 
 const createActions = (set: (fn: (prev: UIStore) => Partial<UIStore>) => void): UIActions => ({
   goDesignView: () => set(() => ({ view: "design" })),
+  goTodoView: () => set(() => ({ view: "todo" })),
   goMemoView: () => set(() => ({ view: "memo" })),
   goScheduleView: () => set(() => ({ view: "schedule" })),
   goSettingsView: () => set(() => ({ view: "settings" })),

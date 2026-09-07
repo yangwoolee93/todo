@@ -7,6 +7,7 @@ import SchedulePage from "./pages/SchedulePage";
 import MemoPage from "./pages/MemoPage";
 import SettingPage from "./pages/SettingPage";
 import DesignPage from "./pages/DesignPage";
+import TodoPage from "./pages/TodoPage";
 
 /** 앱 루트 — 뷰 분기 + 공통 모달 */
 export function App() {
@@ -17,6 +18,8 @@ export function App() {
   return (
     <AppShell>
       {view === "design" && <DesignPage />}
+
+      {view === "todo" && <TodoPage />}
 
       {view === "settings" && <SettingPage />}
 

@@ -8,12 +8,14 @@ import { Tab } from "@renderer/shared/ui";
 const AppHeader = () => {
   const view = useUIStore((s) => s.view);
   const goDesignView = useUIStore((s) => s.goDesignView);
+  const goTodoView = useUIStore((s) => s.goTodoView);
   const goMemoView = useUIStore((s) => s.goMemoView);
   const goScheduleView = useUIStore((s) => s.goScheduleView);
   const goSettingsView = useUIStore((s) => s.goSettingsView);
 
   const tabs: { id: AppView; label: string; onClick: () => void }[] = [
     { id: "design", label: "디자인", onClick: () => goDesignView() },
+    { id: "todo", label: "할일", onClick: () => goTodoView() },
     { id: "schedule", label: "일정", onClick: () => goScheduleView() },
     { id: "memo", label: "메모", onClick: () => goMemoView() },
     { id: "settings", label: "설정", onClick: () => goSettingsView() },
