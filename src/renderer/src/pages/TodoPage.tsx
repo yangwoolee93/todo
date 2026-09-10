@@ -6,7 +6,7 @@ import GoToTodayButton from "@renderer/widgets/todo/GoToTodayButton";
 import MonthStrip from "@renderer/widgets/todo/month/MonthStrip";
 import MonthTimeline from "@renderer/widgets/todo/month/MonthTimeline";
 import YearGrid from "@renderer/widgets/todo/year/YearGrid";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export default function TodoPage() {
   const now = new Date();
@@ -37,6 +37,16 @@ export default function TodoPage() {
 
   const goNextYear = () => {
     goToMonth(year + 1, month);
+  };
+
+  const goPrevMonth = () => {
+    const prev = new Date(year, month - 2, 1);
+    goToMonth(prev.getFullYear(), prev.getMonth() + 1);
+  };
+
+  const goNextMonth = () => {
+    const next = new Date(year, month, 1);
+    goToMonth(next.getFullYear(), next.getMonth() + 1);
   };
 
   const [selectedYear, setSelectedYear] = useState(year);
@@ -89,6 +99,7 @@ export default function TodoPage() {
             onSelectYear={() => {
               setYear(selectedYear);
               setIsYearView(false);
+              setIsMonthView(true);
             }}
           />
         )}
@@ -115,6 +126,16 @@ export default function TodoPage() {
               >
                 {month}월
               </div>
+              {/* 오늘 버튼 */}
+              {(year !== thisYear || month !== thisMonth || day !== now.getDate()) && (
+                <GoToTodayButton
+                  onClick={() => {
+                    setYear(thisYear);
+                    setMonth(thisMonth);
+                    setDay(now.getDate());
+                  }}
+                />
+              )}
             </div>
           )}
         </>
@@ -154,7 +175,14 @@ export default function TodoPage() {
       {/* 일 화면 영역 - day overview */}
       {isDayView && (
         <div>
-          <DayStrip />
+          <DayStrip
+            year={year}
+            month={month}
+            day={day}
+            setDay={setDay}
+            onPrev={goPrevMonth}
+            onNext={goNextMonth}
+          />
           <DayTodoList />
         </div>
       )}
