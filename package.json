@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "desktop": "pnpm --filter @orbit/desktop tauri:dev"
+    "desktop": "pnpm --filter @orbit/desktop tauri dev"
   },
   "devDependencies": {
     "nx": "^21.0.0"
