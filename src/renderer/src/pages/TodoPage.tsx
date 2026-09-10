@@ -3,6 +3,7 @@ import { cn } from "@renderer/utils/cn";
 import DayStrip from "@renderer/widgets/todo/day/DayStrip";
 import DayTodoList from "@renderer/widgets/todo/day/DayTodoList";
 import GoToTodayButton from "@renderer/widgets/todo/GoToTodayButton";
+import MonthAgenda from "@renderer/widgets/todo/month/MonthAgenda";
 import MonthStrip from "@renderer/widgets/todo/month/MonthStrip";
 import MonthTimeline from "@renderer/widgets/todo/month/MonthTimeline";
 import YearGrid from "@renderer/widgets/todo/year/YearGrid";
@@ -156,18 +157,7 @@ export default function TodoPage() {
           {mode === "timeline" ? (
             <MonthTimeline year={year} month={month} onClickDay={onClickDay} />
           ) : (
-            // <MonthAgendaDraft
-            //   year={year}
-            //   month={month}
-            //   thisYear={thisYear}
-            //   thisMonth={thisMonth}
-            //   thisDay={thisDay}
-            //   summaries={summaries}
-            //   ready={ready}
-            //   scrollToTodayTick={scrollToTodayTick}
-            //   onOpenDay={onOpenDay}
-            // />
-            <>목록</>
+            <MonthAgenda year={year} month={month} onClickDay={onClickDay} />
           )}
         </div>
       )}

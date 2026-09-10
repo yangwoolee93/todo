@@ -36,6 +36,7 @@ export function scrollChildIntoView(
   root: HTMLElement | null,
   target: HTMLElement | null,
   axis: "x" | "y",
+  behavior: ScrollBehavior = "auto",
 ) {
   if (!root || !target) return;
 
@@ -43,12 +44,17 @@ export function scrollChildIntoView(
   const targetRect = target.getBoundingClientRect();
 
   if (axis === "x") {
-    root.scrollLeft +=
-      targetRect.left - rootRect.left - root.clientWidth / 2 + targetRect.width / 2;
+    const left =
+      root.scrollLeft +
+      (targetRect.left - rootRect.left - root.clientWidth / 2 + targetRect.width / 2);
+    root.scrollTo({ left, behavior });
     return;
   }
 
-  root.scrollTop += targetRect.top - rootRect.top - root.clientHeight / 2 + targetRect.height / 2;
+  const top =
+    root.scrollTop +
+    (targetRect.top - rootRect.top - root.clientHeight / 2 + targetRect.height / 2);
+  root.scrollTo({ top, behavior });
 }
 
 /** 가운데가 비면 이어진 날만 한 조각으로 나눈다 */

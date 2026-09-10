@@ -30,6 +30,8 @@
   --font-sans: "Segoe UI", system-ui, sans-serif;
   --radius-card: 0.5rem;
   --radius-btn: 0.5rem;
+
+  --animate-shimmer: shimmer 1.6s linear infinite;
 }
 
 /* 스크롤바 토큰 — :root에 두어 var()가 Electron에서 확실히 해석되게 */
@@ -86,6 +88,15 @@
   --color-today-ring: #3b82f6;
   --scrollbar-thumb: #404040;
   --scrollbar-thumb-hover: #525252;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-120%) rotate(12deg);
+  }
+  100% {
+    transform: translateX(120%) rotate(12deg);
+  }
 }
 
 @layer base {
