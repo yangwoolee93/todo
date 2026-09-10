@@ -1,5 +1,7 @@
 import { Tab } from "@renderer/shared/ui";
 import { cn } from "@renderer/utils/cn";
+import DayStrip from "@renderer/widgets/todo/day/DayStrip";
+import DayTodoList from "@renderer/widgets/todo/day/DayTodoList";
 import GoToTodayButton from "@renderer/widgets/todo/GoToTodayButton";
 import MonthStrip from "@renderer/widgets/todo/month/MonthStrip";
 import MonthTimeline from "@renderer/widgets/todo/month/MonthTimeline";
@@ -17,7 +19,7 @@ export default function TodoPage() {
   const [isYearView, setIsYearView] = useState(false); // 연 선택화면 열림 여부
   const [isMonthView, setIsMonthView] = useState(false); // 월 선택화면 열림 여부
   const [mode, setMode] = useState<"timeline" | "agenda">("timeline");
-  const [isDayView, setIsDayView] = useState(false); // 일 선택화면 열림 여부
+  const [isDayView, setIsDayView] = useState(true); // 일 선택화면 열림 여부
 
   function clampDay(year: number, month: number, day: number) {
     return Math.min(day, new Date(year, month, 0).getDate());
@@ -44,13 +46,6 @@ export default function TodoPage() {
     setIsMonthView(false);
     setIsDayView(true);
   };
-
-  useEffect(() => {
-    console.log(isYearView);
-    if (!isYearView) {
-      setIsMonthView(true);
-    }
-  }, [isYearView]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -157,7 +152,12 @@ export default function TodoPage() {
       )}
 
       {/* 일 화면 영역 - day overview */}
-      {isDayView && <>일화면</>}
+      {isDayView && (
+        <div>
+          <DayStrip />
+          <DayTodoList />
+        </div>
+      )}
     </div>
   );
 }
