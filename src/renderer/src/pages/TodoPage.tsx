@@ -174,7 +174,7 @@ export default function TodoPage() {
 
       {/* 일 화면 영역 - day overview */}
       {isDayView && (
-        <div>
+        <div className="flex min-h-0 flex-1 flex-col">
           <DayStrip
             year={year}
             month={month}
@@ -183,7 +183,7 @@ export default function TodoPage() {
             onPrev={goPrevMonth}
             onNext={goNextMonth}
           />
-          <DayTodoList />
+          <DayTodoList year={year} month={month} day={day} />
         </div>
       )}
     </div>
