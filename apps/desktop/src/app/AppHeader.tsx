@@ -91,7 +91,7 @@ const AppHeader = () => {
         </div>
 
         {/* 탭 네비게이션 — 클릭은 탭 전환, 드래그는 창 이동 */}
-        <nav className="flex gap-1">
+        <nav className="flex gap-1 ml-1">
           {tabs.map((tab) => (
             <Tab key={tab.id} active={view === tab.id} onClick={tab.onClick}>
               {tab.label}
