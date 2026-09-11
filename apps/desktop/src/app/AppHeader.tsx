@@ -11,10 +11,10 @@ const DRAG_THRESHOLD = 4; // px — 이 이상 움직이면 창 드래그 시작
 
 const AppHeader = () => {
   const view = useUIStore((s) => s.view);
-  const goDesignView = useUIStore((s) => s.goDesignView);
+  // const goDesignView = useUIStore((s) => s.goDesignView);
   const goTodoView = useUIStore((s) => s.goTodoView);
   const goMemoView = useUIStore((s) => s.goMemoView);
-  const goScheduleView = useUIStore((s) => s.goScheduleView);
+  // const goScheduleView = useUIStore((s) => s.goScheduleView);
   const goSettingsView = useUIStore((s) => s.goSettingsView);
 
   const tabs: { id: AppView; label: string; onClick: () => void }[] = [
