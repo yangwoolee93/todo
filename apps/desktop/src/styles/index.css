@@ -1,0 +1,157 @@
+@import "tailwindcss";
+
+/* 다크 모드: html.dark 클래스 기준 */
+@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant light (&:where(.light, .light *));
+
+/*
+ * 컬러 팔레트 (라이트 모드 기본값)
+ * Tailwind 유틸: bg-base, text-fg, border-border 등
+ */
+@theme {
+  --color-base: #ebe8e1;
+  --color-surface: #f5f2ec;
+  --color-surface-raised: #f7f4ef;
+  --color-muted: #e4dfd6;
+  --color-fg: #1c1917;
+  --color-fg-secondary: #57534e;
+  --color-fg-muted: #a8a29e;
+  --color-accent: #2563eb;
+  --color-accent-hover: #1d4ed8;
+  --color-accent-soft: #dbeafe;
+  --color-border: #d6d0c6;
+  --color-border-strong: #c4bcb0;
+  --color-danger: #dc2626;
+  --color-danger-soft: #fee2e2;
+  --color-success: #16a34a;
+  --color-failed: #ea580c;
+  --color-failed-soft: #ffedd5;
+  --color-today-ring: #2563eb;
+  --font-sans: "Segoe UI", system-ui, sans-serif;
+  --radius-card: 0.5rem;
+  --radius-btn: 0.5rem;
+}
+
+/* 스크롤바 토큰 — :root에 두어 var()가 Electron에서 확실히 해석되게 */
+:root {
+  --scrollbar-size: 8px;
+  --scrollbar-inset: 1rem; /* p-4 — 콘텐츠↔카드 우측 테두리 총 16px */
+  --scrollbar-gap: calc((var(--scrollbar-inset) - var(--scrollbar-size)) / 2);
+  --scrollbar-thumb: #c4bcb0;
+  --scrollbar-thumb-hover: #a8a29e;
+}
+
+.light {
+  --color-base: #ebe8e1;
+  --color-surface: #f5f2ec;
+  --color-surface-raised: #f7f4ef;
+  --color-muted: #e4dfd6;
+  --color-fg: #1c1917;
+  --color-fg-secondary: #57534e;
+  --color-fg-muted: #a8a29e;
+  --color-accent: #2563eb;
+  --color-accent-hover: #1d4ed8;
+  --color-accent-soft: #dbeafe;
+  --color-border: #d6d0c6;
+  --color-border-strong: #c4bcb0;
+  --color-danger: #dc2626;
+  --color-danger-soft: #fee2e2;
+  --color-success: #16a34a;
+  --color-failed: #ea580c;
+  --color-failed-soft: #ffedd5;
+  --color-today-ring: #2563eb;
+  --scrollbar-thumb: #c4bcb0;
+  --scrollbar-thumb-hover: #a8a29e;
+}
+
+/* 어두운 모드 팔레트 — 중립 다크 그레이 */
+.dark {
+  --color-base: #121212;
+  --color-surface: #1a1a1a;
+  --color-surface-raised: #222222;
+  --color-muted: #2a2a2a;
+  --color-fg: #ececec;
+  --color-fg-secondary: #a3a3a3;
+  --color-fg-muted: #737373;
+  --color-accent: #3b82f6;
+  --color-accent-hover: #60a5fa;
+  --color-accent-soft: #333333;
+  --color-border: #333333;
+  --color-border-strong: #404040;
+  --color-danger: #f87171;
+  --color-danger-soft: #450a0a;
+  --color-success: #4ade80;
+  --color-failed: #fb923c;
+  --color-failed-soft: #431407;
+  --color-today-ring: #3b82f6;
+  --scrollbar-thumb: #404040;
+  --scrollbar-thumb-hover: #525252;
+}
+
+@layer base {
+  html {
+    @apply antialiased h-full overflow-hidden;
+  }
+
+  body {
+    @apply bg-base text-fg font-sans m-0 h-full overflow-hidden;
+  }
+
+  #root {
+    @apply h-full;
+  }
+
+  button {
+    @apply cursor-pointer;
+  }
+
+  button:disabled {
+    @apply cursor-not-allowed opacity-40;
+  }
+}
+
+/*
+ * 스크롤바 — Electron(Chromium) webkit 전용, 규칙은 여기만
+ * overflow 영역에 .scrollbar 클래스를 붙인다.
+ */
+.scrollbar {
+  cursor: default;
+}
+
+.scrollbar::-webkit-scrollbar {
+  width: var(--scrollbar-size);
+  height: var(--scrollbar-size);
+}
+
+.scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: 9999px;
+  cursor: pointer;
+}
+
+.scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
+}
+
+.scrollbar::-webkit-scrollbar-thumb:active {
+  cursor: grabbing;
+}
+
+.scrollbar::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/*
+ * 세로 스크롤 — 카드 p-4 우측 16px: gap(4) + bar(8) + gap(4)
+ * overflow-y: scroll 로 바 슬롯 항상 확보 → 스크롤 유무에 레이아웃 변화 없음
+ */
+.scrollbar-y-inset {
+  overflow-y: scroll;
+  padding-right: var(--scrollbar-gap);
+}

@@ -1,51 +1,33 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/core";
-import "./App.css";
+import { useThemeSync } from "@renderer/hooks/useThemeSync";
+import { AppShell } from "./app/AppShell";
+import { AddTodoModal } from "@renderer/features/todo";
+import { useUIStore } from "@renderer/stores/useUIStore";
 
-function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+import SchedulePage from "./pages/SchedulePage";
+import MemoPage from "./pages/MemoPage";
+import SettingPage from "./pages/SettingPage";
+import DesignPage from "./pages/DesignPage";
+import TodoPage from "./pages/TodoPage";
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
-  }
+/** 앱 루트 — 뷰 분기 + 공통 모달 */
+export function App() {
+  const view = useUIStore((s) => s.view);
+
+  useThemeSync();
 
   return (
-    <main className="container">
-      <h1>Welcome to Tauri + React</h1>
+    <AppShell>
+      {view === "design" && <DesignPage />}
 
-      <div className="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
+      {view === "todo" && <TodoPage />}
 
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
-        />
-        <button type="submit">Greet</button>
-      </form>
-      <p>{greetMsg}</p>
-    </main>
+      {view === "settings" && <SettingPage />}
+
+      {view === "schedule" && <SchedulePage />}
+
+      {view === "memo" && <MemoPage />}
+
+      <AddTodoModal />
+    </AppShell>
   );
 }
-
-export default App;
