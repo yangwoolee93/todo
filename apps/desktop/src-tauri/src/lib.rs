@@ -3,12 +3,26 @@ mod memo;
 mod models;
 mod storage;
 mod todo;
+mod tray;
+
+use tauri::WindowEvent;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
+        .setup(|app| {
+            tray::setup_tray(&app.handle())?;
+            Ok(())
+        })
+        .on_window_event(|window, event| {
+            // X 버튼 → 트레이로 숨기기 (종료 아님)
+            if let WindowEvent::CloseRequested { api, .. } = event {
+                api.prevent_close();
+                let _ = window.hide();
+            }
+        })
         .invoke_handler(tauri::generate_handler![
             // Todo
             todo::get_todos_by_date,
