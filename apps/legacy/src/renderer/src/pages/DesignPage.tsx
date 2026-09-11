@@ -1,0 +1,1230 @@
+import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
+import {
+  Button,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  DragHandleIcon,
+  Tab,
+} from "@renderer/shared/ui";
+import { TodoItemMenu, TodoStatusIcon } from "@renderer/features/todo";
+import { buildTimelineRows } from "@renderer/features/month/ui/buildTimelineRows";
+import type { DaySummary, DisplayTodo, TodoStatus } from "@shared/types/todo";
+import { formatDate } from "@renderer/utils/dateUtils";
+import { isKoreanPublicHoliday, koreanPublicHolidayName } from "@renderer/utils/koreanHolidays";
+import { cn } from "@renderer/utils/cn";
+
+const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
+const MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+const YEAR_START = 2026;
+const YEAR_END = 2046;
+const YEARS = Array.from({ length: YEAR_END - YEAR_START + 1 }, (_, index) => YEAR_START + index);
+
+type TimelineSegment = {
+  start: number;
+  days: TodoStatus[];
+};
+
+type TimelineBar = {
+  id: string;
+  label: string;
+  segments: TimelineSegment[];
+  settled: boolean;
+};
+
+function toYearMonthKey(year: number, month: number) {
+  return `${year}-${String(month).padStart(2, "0")}`;
+}
+
+/** 가운데가 비면 이어진 날만 한 조각으로 나눈다 */
+function segmentsFromCells(
+  startIndex: number,
+  cells: { todo: DisplayTodo | null }[],
+): TimelineSegment[] {
+  const segments: TimelineSegment[] = [];
+  let current: TimelineSegment | null = null;
+
+  cells.forEach((cell, offset) => {
+    if (!cell.todo) {
+      current = null;
+      return;
+    }
+    if (!current) {
+      current = { start: startIndex + offset + 1, days: [cell.todo.status] };
+      segments.push(current);
+      return;
+    }
+    current.days.push(cell.todo.status);
+  });
+
+  return segments;
+}
+
+function barsFromSummaries(summaries: DaySummary[]): TimelineBar[] {
+  return buildTimelineRows(summaries)
+    .map((row) => ({
+      id: row.key,
+      label: row.content,
+      segments: segmentsFromCells(row.startIndex, row.cells),
+      settled: row.isSettled,
+    }))
+    .filter((bar) => bar.segments.length > 0);
+}
+
+function agendaGroupsFromSummaries(summaries: DaySummary[], includeDay?: number) {
+  return summaries
+    .filter((item) => item.todos.length > 0 || item.day === includeDay)
+    .map((item) => ({
+      day: item.day,
+      items: item.todos.map((todo) => ({
+        id: todo.id,
+        title: todo.content,
+        status: todo.status,
+      })),
+    }));
+}
+
+const triggerClass = cn(
+  "w-fit cursor-pointer rounded-(--radius-btn) bg-surface px-3 py-1 text-2xl font-medium text-fg",
+  "hover:bg-muted",
+  "focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:outline-none",
+);
+
+function daysInMonth(year: number, month: number) {
+  return new Date(year, month, 0).getDate();
+}
+
+function weekdayLabel(year: number, month: number, day: number) {
+  return `${WEEKDAYS[new Date(year, month - 1, day).getDay()]}요일`;
+}
+
+function dateHeadTextClass(year: number, month: number, day: number) {
+  const weekday = new Date(year, month - 1, day).getDay();
+  if (weekday === 0 || isKoreanPublicHoliday(year, month, day)) return "text-danger";
+  if (weekday === 6) return "text-accent";
+  return undefined;
+}
+
+function clampDay(year: number, month: number, day: number) {
+  return Math.min(day, daysInMonth(year, month));
+}
+
+function shiftYearMonth(year: number, month: number, deltaMonths: number) {
+  const next = new Date(year, month - 1 + deltaMonths, 1);
+  return { year: next.getFullYear(), month: next.getMonth() + 1 };
+}
+
+function canShiftYearMonth(year: number, month: number, deltaMonths: number) {
+  const next = shiftYearMonth(year, month, deltaMonths);
+  return next.year >= YEAR_START && next.year <= YEAR_END;
+}
+
+function scrollChildIntoView(
+  root: HTMLElement | null,
+  target: HTMLElement | null,
+  axis: "x" | "y",
+) {
+  if (!root || !target) return;
+
+  const rootRect = root.getBoundingClientRect();
+  const targetRect = target.getBoundingClientRect();
+
+  if (axis === "x") {
+    root.scrollLeft +=
+      targetRect.left - rootRect.left - root.clientWidth / 2 + targetRect.width / 2;
+    return;
+  }
+
+  root.scrollTop += targetRect.top - rootRect.top - root.clientHeight / 2 + targetRect.height / 2;
+}
+
+function EmptyHint({ children }: { children: string }) {
+  return (
+    <p className="flex flex-1 items-center justify-center px-4 py-8 text-center text-sm text-fg-muted">
+      {children}
+    </p>
+  );
+}
+
+function isTodayView(
+  year: number,
+  month: number,
+  day: number,
+  monthOverview: boolean,
+  yearOverview: boolean,
+  thisYear: number,
+  thisMonth: number,
+  thisDay: number,
+) {
+  return (
+    !monthOverview && !yearOverview && year === thisYear && month === thisMonth && day === thisDay
+  );
+}
+
+function YearMonthHeader({
+  year,
+  month,
+  showMonth,
+  showGoToday,
+  onOpenYear,
+  onOpenMonthView,
+  onGoToday,
+}: {
+  year: number;
+  month: number;
+  showMonth: boolean;
+  showGoToday: boolean;
+  onOpenYear: () => void;
+  onOpenMonthView: () => void;
+  onGoToday: () => void;
+}) {
+  const GoToday = () => {
+    return (
+      showGoToday && (
+        <button
+          type="button"
+          className="text-sm text-accent hover:text-accent-hover"
+          onClick={onGoToday}
+        >
+          오늘로
+        </button>
+      )
+    );
+  };
+  return (
+    <div className="m-6 mb-2 flex gap-4 items-center">
+      <div className="flex flex-col gap-2">
+        <div className="flex gap-4">
+          <div className={triggerClass} onClick={onOpenYear}>
+            {year}년
+          </div>
+          {!showMonth && <GoToday />}
+        </div>
+        {showMonth ? (
+          <div className="flex gap-4">
+            <div className={triggerClass} onClick={onOpenMonthView}>
+              {month}월
+            </div>
+            <GoToday />
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function StripArrow({
+  direction,
+  disabled,
+  label,
+  onClick,
+}: {
+  direction: "prev" | "next";
+  disabled: boolean;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      aria-label={label}
+      className={cn(
+        "flex h-full w-4 shrink-0 items-center justify-center rounded-sm text-fg-secondary",
+        "hover:bg-muted hover:text-fg",
+        "disabled:pointer-events-none disabled:opacity-30",
+      )}
+      onClick={onClick}
+    >
+      {direction === "prev" ? (
+        <ChevronLeftIcon className="h-4 w-4 shrink-0" />
+      ) : (
+        <ChevronRightIcon className="h-4 w-4 shrink-0" />
+      )}
+    </button>
+  );
+}
+
+function DayStrip({
+  listRef,
+  cellRefs,
+  dayCount,
+  day,
+  year,
+  month,
+  thisYear,
+  thisMonth,
+  thisDay,
+  canPrev,
+  canNext,
+  onSelectDay,
+  onPrev,
+  onNext,
+}: {
+  listRef: RefObject<HTMLDivElement | null>;
+  cellRefs: RefObject<Map<number, HTMLButtonElement>>;
+  dayCount: number;
+  day: number;
+  year: number;
+  month: number;
+  thisYear: number;
+  thisMonth: number;
+  thisDay: number;
+  canPrev: boolean;
+  canNext: boolean;
+  onSelectDay: (day: number) => void;
+  onPrev: () => void;
+  onNext: () => void;
+}) {
+  return (
+    <div className="flex items-start gap-2 px-2">
+      <div className="flex h-28 shrink-0 items-center">
+        <StripArrow direction="prev" disabled={!canPrev} label="전달" onClick={onPrev} />
+      </div>
+      <div
+        ref={listRef}
+        className="scrollbar min-w-0 flex-1 overflow-x-auto overflow-y-hidden scrollbar-gutter-stable pb-1"
+      >
+        <div className="flex h-28 gap-2 items-center">
+          {Array.from({ length: dayCount }).map((_, index) => {
+            const date = index + 1;
+            const selected = date === day;
+            const isToday = year === thisYear && month === thisMonth && date === thisDay;
+            const headColor = dateHeadTextClass(year, month, date);
+            return (
+              <button
+                key={date}
+                ref={(node) => {
+                  if (node) cellRefs.current.set(date, node);
+                  else cellRefs.current.delete(date);
+                }}
+                type="button"
+                aria-current={isToday ? "date" : undefined}
+                className={cn(
+                  "relative flex h-26 w-24 shrink-0 flex-col items-center justify-center rounded-(--radius-card) gap-2",
+                  "border-2 border-transparent bg-surface",
+                  "hover:bg-muted",
+                  selected && "border-accent w-26 h-28",
+                )}
+                onClick={() => onSelectDay(date)}
+              >
+                <span
+                  aria-hidden
+                  className={cn(
+                    "h-1.5 w-1.5 rounded-full",
+                    "bg-fg-secondary/10 hidden",
+                    isToday && "bg-fg-secondary flex",
+                  )}
+                />
+                <span className={cn("text-3xl font-bold leading-none", headColor)}>{date}</span>
+                <span
+                  className={cn(
+                    "text-[0.75rem] font-normal",
+                    headColor ?? "text-fg-secondary",
+                    selected && (headColor ?? "text-fg"),
+                  )}
+                >
+                  {weekdayLabel(year, month, date)}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      <div className="flex h-28 shrink-0 items-center">
+        <StripArrow direction="next" disabled={!canNext} label="다음 달" onClick={onNext} />
+      </div>
+    </div>
+  );
+}
+
+function MonthStrip({
+  listRef,
+  cellRefs,
+  year,
+  month,
+  thisYear,
+  thisMonth,
+  canPrev,
+  canNext,
+  onSelectMonth,
+  onPrev,
+  onNext,
+}: {
+  listRef: RefObject<HTMLDivElement | null>;
+  cellRefs: RefObject<Map<number, HTMLButtonElement>>;
+  year: number;
+  month: number;
+  thisYear: number;
+  thisMonth: number;
+  canPrev: boolean;
+  canNext: boolean;
+  onSelectMonth: (month: number) => void;
+  onPrev: () => void;
+  onNext: () => void;
+}) {
+  return (
+    <div className="flex items-start gap-2 px-2">
+      <div className="flex h-22 shrink-0 items-center">
+        <StripArrow direction="prev" disabled={!canPrev} label="전년" onClick={onPrev} />
+      </div>
+      <div
+        ref={listRef}
+        className="scrollbar min-w-0 flex-1 overflow-x-auto overflow-y-hidden scrollbar-gutter-stable pb-1"
+      >
+        <div className="flex h-22 gap-2 items-center">
+          {MONTHS.map((item) => {
+            const selected = item === month;
+            const isThisMonth = year === thisYear && item === thisMonth;
+            return (
+              <button
+                key={item}
+                ref={(node) => {
+                  if (node) cellRefs.current.set(item, node);
+                  else cellRefs.current.delete(item);
+                }}
+                type="button"
+                className={cn(
+                  "flex h-20 w-24 shrink-0 flex-col items-center justify-center rounded-(--radius-card) gap-2",
+                  "border-2 border-transparent bg-surface",
+                  "hover:bg-muted",
+                  selected && "border-accent w-26 h-22",
+                )}
+                onClick={() => onSelectMonth(item)}
+              >
+                <span
+                  aria-hidden
+                  className={cn(
+                    "h-1.5 w-1.5 rounded-full",
+                    "bg-fg-secondary/10 hidden",
+                    isThisMonth && "bg-fg-secondary flex",
+                  )}
+                />
+                <span className="text-3xl font-bold leading-none">
+                  {item}
+                  <span className={cn("text-[0.75rem] font-normal text-fg-secondary")}>월</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      <div className="flex h-22 shrink-0 items-center">
+        <StripArrow direction="next" disabled={!canNext} label="다음 해" onClick={onNext} />
+      </div>
+    </div>
+  );
+}
+
+function YearPicker({
+  listRef,
+  cellRefs,
+  year,
+  thisYear,
+  onSelectYear,
+  onConfirm,
+}: {
+  listRef: RefObject<HTMLDivElement | null>;
+  cellRefs: RefObject<Map<number, HTMLButtonElement>>;
+  year: number;
+  thisYear: number;
+  onSelectYear: (year: number) => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div className="mx-6 mb-6 mt-4 flex min-h-0 flex-1 flex-col">
+      <div ref={listRef} className="scrollbar min-h-0 flex-row-reverse overflow-y-auto">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,6.5rem),1fr))] gap-2">
+          {YEARS.map((item) => {
+            const selected = item === year;
+            const isThisYear = item === thisYear;
+            return (
+              <button
+                key={item}
+                ref={(node) => {
+                  if (node) cellRefs.current.set(item, node);
+                  else cellRefs.current.delete(item);
+                }}
+                type="button"
+                className={cn(
+                  "flex w-full items-center justify-center rounded-(--radius-card) py-3 gap-3",
+                  "border-2 border-transparent bg-surface",
+                  "hover:bg-muted",
+                  selected && "border-accent",
+                )}
+                onClick={() => onSelectYear(item)}
+              >
+                <span
+                  aria-hidden
+                  className={cn(
+                    "h-1.5 w-1.5 rounded-full",
+                    "bg-fg-secondary/10 hidden",
+                    isThisYear && "bg-fg-secondary flex",
+                  )}
+                />
+                <span className="text-xl font-medium leading-none">
+                  {item}
+                  <span className="text-[0.75rem] font-normal text-fg-secondary">년</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      <div className="mt-3 flex shrink-0 justify-end">
+        <Button variant="primary" onClick={onConfirm}>
+          선택
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function DayTodoList({ todos, ready }: { todos: DisplayTodo[]; ready: boolean }) {
+  return (
+    <div className="mx-6 mb-6 mt-4 flex min-h-0 flex-1 flex-col">
+      <button
+        type="button"
+        className="mb-3 w-full shrink-0 rounded-(--radius-card) bg-surface px-3 py-3 text-left text-sm text-fg-secondary hover:bg-muted hover:text-fg"
+      >
+        + 할 일 추가
+      </button>
+      <div className="scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto">
+        {!ready ? null : todos.length === 0 ? (
+          <EmptyHint>등록된 할 일이 없습니다.</EmptyHint>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {todos.map((item) => (
+              <li
+                key={item.id}
+                className="group flex items-center gap-2 rounded-(--radius-card) bg-surface px-3 py-3"
+              >
+                <Button
+                  variant="ghost"
+                  className="shrink-0 cursor-grab px-1 py-1 text-fg-muted opacity-30 hover:text-fg group-hover:opacity-100 group-focus-within:opacity-100"
+                  aria-label="순서 변경"
+                >
+                  <DragHandleIcon />
+                </Button>
+                <span className="shrink-0 p-0.5">
+                  <TodoStatusIcon status={item.status} />
+                </span>
+                <span
+                  className={cn(
+                    "min-w-0 flex-1 text-left font-medium leading-snug line-clamp-2",
+                    item.status === "pending" ? "text-fg" : "text-fg-muted",
+                    item.status === "failed" && "line-through",
+                  )}
+                >
+                  {item.content}
+                </span>
+                <div className="opacity-30 group-hover:opacity-100 group-focus-within:opacity-100">
+                  <TodoItemMenu
+                    todo={item}
+                    onEdit={() => undefined}
+                    onDuplicate={() => undefined}
+                    onDelete={() => undefined}
+                    onSetStatus={() => undefined}
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const DAY_COL_WIDTH = "4rem";
+const BAR_EDGE = "0.25rem";
+/** BAR_EDGE / DAY_COL_WIDTH — 실측한 칸 너비에서 여백 px을 얻는다 */
+const BAR_EDGE_RATIO = 0.25 / 4;
+
+/** 띠 칸 너비 — 막대 좌우 여백을 첫날·마지막 날에 반영한다 */
+function dayRailWidth(index: number, count: number) {
+  if (count === 1) return `calc(${DAY_COL_WIDTH} - ${BAR_EDGE} - ${BAR_EDGE})`;
+  if (index === 0 || index === count - 1) return `calc(${DAY_COL_WIDTH} - ${BAR_EDGE})`;
+  return DAY_COL_WIDTH;
+}
+
+function segmentEdgePx(start: number, dayCount: number, colWidth: number, edge: number) {
+  return {
+    left: (start - 1) * colWidth + edge,
+    right: (start + dayCount - 1) * colWidth - edge,
+  };
+}
+
+function viewOverlap(left: number, right: number, viewLeft: number, viewRight: number) {
+  return Math.max(0, Math.min(right, viewRight) - Math.max(left, viewLeft));
+}
+
+/**
+ * 막대 제목의 가로 위치를 정한다. 트랙 왼쪽 기준 px.
+ * - 자연 위치는 막대 왼쪽. 단 우측 스크롤 끝을 넘기지 않는다
+ * - 화면 밖으로 밀리면 화면 안쪽으로 당기거나 민다
+ * - 막대에서 떨어지지 않도록 좌우를 묶는다
+ */
+function titleLeftInTrack(
+  barLeft: number,
+  barRight: number,
+  titleWidth: number,
+  trackWidth: number,
+  viewLeft: number,
+  viewRight: number,
+) {
+  let left = Math.min(barLeft, trackWidth - titleWidth);
+  if (left + titleWidth > viewRight) left = viewRight - titleWidth;
+  if (left < viewLeft) left = viewLeft;
+  left = Math.min(left, Math.max(barLeft, barRight - titleWidth));
+  left = Math.max(left, barLeft - titleWidth);
+  return Math.max(0, Math.min(left, Math.max(0, trackWidth - titleWidth)));
+}
+
+function MonthTimelineDraft({
+  year,
+  month,
+  thisYear,
+  thisMonth,
+  thisDay,
+  bars,
+  ready,
+  scrollToTodayTick,
+  onOpenDay,
+}: {
+  year: number;
+  month: number;
+  thisYear: number;
+  thisMonth: number;
+  thisDay: number;
+  bars: TimelineBar[];
+  ready: boolean;
+  scrollToTodayTick: number;
+  onOpenDay: (day: number) => void;
+}) {
+  const dayCount = daysInMonth(year, month);
+  const trackWidth = `calc(${dayCount} * ${DAY_COL_WIDTH})`;
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const todayRef = useRef<HTMLButtonElement>(null);
+  const headRowRef = useRef<HTMLDivElement>(null);
+  const titleRefs = useRef(new Map<string, HTMLParagraphElement>());
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        scrollChildIntoView(scrollRef.current, todayRef.current, "x");
+      });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [year, month, thisDay, scrollToTodayTick]);
+
+  /** 스크롤에 맞춰 제목 위치와 표시 여부를 정한다 */
+  useLayoutEffect(() => {
+    const root = scrollRef.current;
+    const headRow = headRowRef.current;
+    if (!root || !headRow) return;
+
+    const update = () => {
+      const track = headRow.offsetWidth;
+      if (track === 0) return;
+
+      const colWidth = track / dayCount;
+      const edge = colWidth * BAR_EDGE_RATIO;
+      const viewLeft = root.scrollLeft;
+      const viewRight = viewLeft + root.clientWidth;
+
+      bars.forEach((bar) => {
+        const title = titleRefs.current.get(bar.id);
+        if (!title || bar.segments.length === 0) return;
+
+        const ranges = bar.segments.map((segment) =>
+          segmentEdgePx(segment.start, segment.days.length, colWidth, edge),
+        );
+        let best = -1;
+        let bestOverlap = 0;
+        ranges.forEach((range, index) => {
+          const overlap = viewOverlap(range.left, range.right, viewLeft, viewRight);
+          if (overlap > bestOverlap) {
+            bestOverlap = overlap;
+            best = index;
+          }
+        });
+
+        const titleWidth = title.offsetWidth;
+        const visible = best >= 0;
+        const home = ranges[visible ? best : 0];
+        // 감출 때도 트랙 안에 세워 둔다. 안 그러면 가로 스크롤이 트랙보다 길어진다
+        const left = visible
+          ? titleLeftInTrack(home.left, home.right, titleWidth, track, viewLeft, viewRight)
+          : Math.max(0, Math.min(home.left, track - titleWidth));
+
+        title.style.opacity = visible ? "1" : "0";
+        title.style.transform = `translateX(${left}px)`;
+      });
+    };
+
+    update();
+    root.addEventListener("scroll", update, { passive: true });
+    const observer = new ResizeObserver(update);
+    observer.observe(root);
+
+    return () => {
+      root.removeEventListener("scroll", update);
+      observer.disconnect();
+    };
+  }, [bars, dayCount]);
+
+  return (
+    <div ref={scrollRef} className="scrollbar min-h-0 flex-1 overflow-auto">
+      <div className="inline-block align-top" style={{ minWidth: trackWidth }}>
+        <div
+          ref={headRowRef}
+          className="sticky top-0 z-20 border-b border-border bg-surface"
+          style={{ width: trackWidth }}
+        >
+          <div className="flex">
+            {Array.from({ length: dayCount }).map((_, index) => {
+              const date = index + 1;
+              const isToday = year === thisYear && month === thisMonth && date === thisDay;
+              const headColor = dateHeadTextClass(year, month, date);
+              return (
+                <button
+                  key={date}
+                  ref={isToday ? todayRef : undefined}
+                  type="button"
+                  style={{ width: DAY_COL_WIDTH }}
+                  className="flex shrink-0 flex-col items-center gap-1 border-r border-border/50 py-2"
+                  onClick={() => onOpenDay(date)}
+                >
+                  <span
+                    aria-hidden
+                    className={cn(
+                      "h-1.5 w-1.5 rounded-full",
+                      "bg-fg-secondary/10 opacity-0",
+                      isToday && "bg-fg-secondary opacity-100",
+                    )}
+                  />
+                  <span className={cn("text-[0.75rem]", headColor ?? "text-fg-secondary")}>
+                    {WEEKDAYS[new Date(year, month - 1, date).getDay()]}
+                  </span>
+                  <span
+                    className={cn(
+                      "flex w-10 items-center justify-center rounded-(--radius-btn) text-lg font-medium",
+                      headColor,
+                    )}
+                  >
+                    {date}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        {ready && bars.length > 0 ? (
+          <div className="relative" style={{ width: trackWidth }}>
+            <div className="pointer-events-none absolute inset-0 flex" aria-hidden>
+              {Array.from({ length: dayCount }).map((_, index) => (
+                <div
+                  key={index}
+                  style={{ width: DAY_COL_WIDTH }}
+                  className="shrink-0 border-r border-border/50"
+                />
+              ))}
+            </div>
+            <div className="relative flex flex-col gap-2 pb-2">
+              {bars.map((bar) => (
+                <div key={bar.id} className="relative flex" style={{ width: trackWidth }}>
+                  {bar.segments.map((segment, segmentIndex) => {
+                    const prev = bar.segments[segmentIndex - 1];
+                    const gapDays = prev ? segment.start - prev.start - prev.days.length : 0;
+                    return (
+                      <div
+                        key={`${bar.id}-${segment.start}`}
+                        className="relative flex shrink-0 flex-col justify-center gap-1 overflow-visible rounded-(--radius-card) bg-surface py-2"
+                        style={{
+                          marginLeft:
+                            segmentIndex === 0
+                              ? `calc(${segment.start - 1} * ${DAY_COL_WIDTH} + ${BAR_EDGE})`
+                              : `calc(${gapDays} * ${DAY_COL_WIDTH} + ${BAR_EDGE} + ${BAR_EDGE})`,
+                          width: `calc(${segment.days.length} * ${DAY_COL_WIDTH} - ${BAR_EDGE} - ${BAR_EDGE})`,
+                        }}
+                      >
+                        <p className="invisible px-3 font-medium leading-snug">&nbsp;</p>
+                        <div className="flex h-1 w-full" aria-hidden>
+                          {segment.days.map((status, index) => (
+                            <div
+                              key={index}
+                              className="flex h-full items-center px-px"
+                              style={{ width: dayRailWidth(index, segment.days.length) }}
+                            >
+                              <span
+                                className={cn(
+                                  "h-0.75 w-full rounded-full",
+                                  "bg-fg-muted/50",
+                                  status === "completed" && "bg-success",
+                                  status === "failed" && "bg-failed",
+                                )}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div className="pointer-events-none absolute inset-0 flex flex-col justify-center gap-1 overflow-visible py-2">
+                    <p
+                      ref={(node) => {
+                        if (node) titleRefs.current.set(bar.id, node);
+                        else titleRefs.current.delete(bar.id);
+                      }}
+                      className={cn(
+                        "w-max self-start px-3 font-medium leading-snug",
+                        bar.settled ? "text-fg-muted" : "text-fg",
+                      )}
+                    >
+                      <span className="whitespace-nowrap">{bar.label}</span>
+                    </p>
+                    <div className="h-1" aria-hidden />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </div>
+      {ready && bars.length === 0 ? <EmptyHint>이 달에 등록된 할 일이 없습니다.</EmptyHint> : null}
+    </div>
+  );
+}
+
+function MonthAgendaDraft({
+  year,
+  month,
+  thisYear,
+  thisMonth,
+  thisDay,
+  summaries,
+  ready,
+  scrollToTodayTick,
+  onOpenDay,
+}: {
+  year: number;
+  month: number;
+  thisYear: number;
+  thisMonth: number;
+  thisDay: number;
+  summaries: DaySummary[];
+  ready: boolean;
+  scrollToTodayTick: number;
+  onOpenDay: (day: number) => void;
+}) {
+  const isCurrentMonth = year === thisYear && month === thisMonth;
+  const groups = agendaGroupsFromSummaries(summaries, isCurrentMonth ? thisDay : undefined);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const todayRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        scrollChildIntoView(scrollRef.current, todayRef.current, "y");
+      });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [year, month, thisDay, scrollToTodayTick]);
+
+  return (
+    <div ref={scrollRef} className="scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto">
+      {!ready ? null : groups.length === 0 ? (
+        <EmptyHint>이 달에 등록된 할 일이 없습니다.</EmptyHint>
+      ) : (
+        <div className="flex flex-col gap-4">
+          {groups.map((group) => {
+            const isToday = isCurrentMonth && group.day === thisDay;
+            const headColor = dateHeadTextClass(year, month, group.day);
+            const holidayName = koreanPublicHolidayName(year, month, group.day);
+            return (
+              <section
+                key={group.day}
+                ref={isToday ? todayRef : undefined}
+                className="flex flex-col gap-2"
+              >
+                <button
+                  type="button"
+                  className="flex items-center gap-2 text-left"
+                  onClick={() => onOpenDay(group.day)}
+                >
+                  <span
+                    className={cn(
+                      "text-xs hidden bg-accent text-white px-1.5 py-0.5 rounded-(--radius-btn)",
+                      isToday && "flex",
+                    )}
+                  >
+                    오늘
+                  </span>
+                  <span className={cn("text-lg font-medium", headColor)}>{group.day}일</span>
+
+                  <span className={cn("text-xs", headColor ?? "text-fg-secondary")}>
+                    {weekdayLabel(year, month, group.day)}
+                  </span>
+                  {holidayName ? (
+                    <span className="text-xs text-danger">· {holidayName}</span>
+                  ) : null}
+                </button>
+                {group.items.length > 0 ? (
+                  <ul className="flex flex-col gap-2">
+                    {group.items.map((item) => (
+                      <li
+                        key={item.id}
+                        className="relative rounded-(--radius-card) bg-surface py-3 pr-3 pl-6"
+                      >
+                        <span
+                          aria-hidden
+                          className={cn(
+                            "absolute top-2.5 bottom-2.5 left-2.5 w-0.75 rounded-full",
+                            "bg-fg-muted/50",
+                            item.status === "completed" && "bg-success",
+                            item.status === "failed" && "bg-failed",
+                          )}
+                        />
+                        <span
+                          className={cn(
+                            "font-medium leading-snug text-fg line-clamp-2",
+                            item.status !== "pending" && "text-fg-muted",
+                            item.status === "failed" && "line-through",
+                          )}
+                        >
+                          {item.title}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="px-1 py-2 text-sm text-fg-muted">등록된 할 일이 없습니다.</p>
+                )}
+              </section>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MonthOverview({
+  year,
+  month,
+  thisYear,
+  thisMonth,
+  thisDay,
+  summaries,
+  ready,
+  scrollToTodayTick,
+  onOpenDay,
+}: {
+  year: number;
+  month: number;
+  thisYear: number;
+  thisMonth: number;
+  thisDay: number;
+  summaries: DaySummary[];
+  ready: boolean;
+  scrollToTodayTick: number;
+  onOpenDay: (day: number) => void;
+}) {
+  const [mode, setMode] = useState<"timeline" | "agenda">("timeline");
+  const bars = barsFromSummaries(summaries);
+
+  return (
+    <div className="mx-6 mb-6 mt-4 flex min-h-0 flex-1 flex-col">
+      <div className="mb-3 flex shrink-0 justify-end gap-1">
+        <Tab active={mode === "timeline"} onClick={() => setMode("timeline")}>
+          타임라인
+        </Tab>
+        <Tab active={mode === "agenda"} onClick={() => setMode("agenda")}>
+          목록
+        </Tab>
+      </div>
+      {mode === "timeline" ? (
+        <MonthTimelineDraft
+          year={year}
+          month={month}
+          thisYear={thisYear}
+          thisMonth={thisMonth}
+          thisDay={thisDay}
+          bars={bars}
+          ready={ready}
+          scrollToTodayTick={scrollToTodayTick}
+          onOpenDay={onOpenDay}
+        />
+      ) : (
+        <MonthAgendaDraft
+          year={year}
+          month={month}
+          thisYear={thisYear}
+          thisMonth={thisMonth}
+          thisDay={thisDay}
+          summaries={summaries}
+          ready={ready}
+          scrollToTodayTick={scrollToTodayTick}
+          onOpenDay={onOpenDay}
+        />
+      )}
+    </div>
+  );
+}
+
+export default function DesignPage() {
+  const now = new Date();
+  const thisYear = now.getFullYear();
+  const thisMonth = now.getMonth() + 1;
+  const [year, setYear] = useState(thisYear);
+  const [month, setMonth] = useState(thisMonth);
+  const [monthOverview, setMonthOverview] = useState(false);
+  const [yearOverview, setYearOverview] = useState(false);
+  const thisDay = now.getDate();
+  const [day, setDay] = useState(thisDay);
+  const [scrollToTodayTick, setScrollToTodayTick] = useState(0);
+  const [dayTodos, setDayTodos] = useState<DisplayTodo[]>([]);
+  const [dayReady, setDayReady] = useState(false);
+  const [summaries, setSummaries] = useState<DaySummary[]>([]);
+  const [monthReady, setMonthReady] = useState(false);
+  const yearListRef = useRef<HTMLDivElement>(null);
+  const yearCellRefs = useRef(new Map<number, HTMLButtonElement>());
+  const dayListRef = useRef<HTMLDivElement>(null);
+  const dayCellRefs = useRef(new Map<number, HTMLButtonElement>());
+  const monthListRef = useRef<HTMLDivElement>(null);
+  const monthCellRefs = useRef(new Map<number, HTMLButtonElement>());
+
+  const dayCount = daysInMonth(year, month);
+  const canPrevMonth = canShiftYearMonth(year, month, -1);
+  const canNextMonth = canShiftYearMonth(year, month, 1);
+  const canPrevYear = year > YEAR_START;
+  const canNextYear = year < YEAR_END;
+
+  const scrollYearIntoView = (targetYear: number) => {
+    scrollChildIntoView(yearListRef.current, yearCellRefs.current.get(targetYear) ?? null, "y");
+  };
+
+  const scrollDayIntoView = (targetDay: number) => {
+    const root = dayListRef.current;
+    const target = dayCellRefs.current.get(targetDay);
+    if (!root || !target) return;
+
+    const rootRect = root.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+    root.scrollLeft +=
+      targetRect.left - rootRect.left - root.clientWidth / 2 + targetRect.width / 2;
+  };
+
+  const scrollMonthIntoView = (targetMonth: number) => {
+    const root = monthListRef.current;
+    const target = monthCellRefs.current.get(targetMonth);
+    if (!root || !target) return;
+
+    const rootRect = root.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+    root.scrollLeft +=
+      targetRect.left - rootRect.left - root.clientWidth / 2 + targetRect.width / 2;
+  };
+
+  useLayoutEffect(() => {
+    if (!yearOverview) return;
+    scrollYearIntoView(year);
+  }, [year, yearOverview]);
+
+  useLayoutEffect(() => {
+    if (monthOverview || yearOverview) return;
+    scrollDayIntoView(day);
+  }, [day, year, month, monthOverview, yearOverview, dayCount]);
+
+  useLayoutEffect(() => {
+    if (!monthOverview || yearOverview) return;
+    scrollMonthIntoView(month);
+  }, [month, year, monthOverview, yearOverview]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const date = formatDate(new Date(year, month - 1, day));
+    setDayReady(false);
+
+    void window.api.getTodosByDate(date).then((result) => {
+      if (cancelled) return;
+      setDayTodos(result.success ? (result.data ?? []) : []);
+      setDayReady(true);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [year, month, day]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const yearMonth = toYearMonthKey(year, month);
+    setMonthReady(false);
+
+    void window.api.getMonthSummary(yearMonth).then((result) => {
+      if (cancelled) return;
+      setSummaries(result.success ? (result.data ?? []) : []);
+      setMonthReady(true);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [year, month]);
+
+  const openYearView = () => {
+    setYearOverview(true);
+  };
+
+  const pickYear = (nextYear: number) => {
+    setYear(nextYear);
+    setDay((prev) => clampDay(nextYear, month, prev));
+  };
+
+  const applyYear = () => {
+    setYearOverview(false);
+    setMonthOverview(true);
+  };
+
+  const openMonthView = () => {
+    setYearOverview(false);
+    setMonthOverview(true);
+  };
+
+  const goToMonth = (nextYear: number, nextMonth: number) => {
+    setYear(nextYear);
+    setMonth(nextMonth);
+    setDay((prev) => clampDay(nextYear, nextMonth, prev));
+  };
+
+  const goPrevMonth = () => {
+    if (!canPrevMonth) return;
+    const next = shiftYearMonth(year, month, -1);
+    goToMonth(next.year, next.month);
+  };
+
+  const goNextMonth = () => {
+    if (!canNextMonth) return;
+    const next = shiftYearMonth(year, month, 1);
+    goToMonth(next.year, next.month);
+  };
+
+  const goPrevYear = () => {
+    if (!canPrevYear) return;
+    goToMonth(year - 1, month);
+  };
+
+  const goNextYear = () => {
+    if (!canNextYear) return;
+    goToMonth(year + 1, month);
+  };
+
+  const goToToday = () => {
+    if (yearOverview) {
+      setYear(thisYear);
+      setDay((prev) => clampDay(thisYear, month, prev));
+      return;
+    }
+    setYear(thisYear);
+    setMonth(thisMonth);
+    setDay(thisDay);
+    if (monthOverview) {
+      setScrollToTodayTick((n) => n + 1);
+      return;
+    }
+    setMonthOverview(false);
+  };
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      {/* 년월 */}
+      <YearMonthHeader
+        year={year}
+        month={month}
+        showMonth={!monthOverview && !yearOverview}
+        showGoToday={
+          yearOverview
+            ? year !== thisYear
+            : !isTodayView(
+                year,
+                month,
+                day,
+                monthOverview,
+                yearOverview,
+                thisYear,
+                thisMonth,
+                thisDay,
+              )
+        }
+        onOpenYear={openYearView}
+        onOpenMonthView={openMonthView}
+        onGoToday={goToToday}
+      />
+      {yearOverview ? (
+        <YearPicker
+          listRef={yearListRef}
+          cellRefs={yearCellRefs}
+          year={year}
+          thisYear={thisYear}
+          onSelectYear={pickYear}
+          onConfirm={applyYear}
+        />
+      ) : monthOverview ? (
+        <>
+          {/* 월 줄 */}
+          <MonthStrip
+            listRef={monthListRef}
+            cellRefs={monthCellRefs}
+            year={year}
+            month={month}
+            thisYear={thisYear}
+            thisMonth={thisMonth}
+            canPrev={canPrevYear}
+            canNext={canNextYear}
+            onSelectMonth={(nextMonth) => goToMonth(year, nextMonth)}
+            onPrev={goPrevYear}
+            onNext={goNextYear}
+          />
+          {/* 월 */}
+          <MonthOverview
+            year={year}
+            month={month}
+            thisYear={thisYear}
+            thisMonth={thisMonth}
+            thisDay={thisDay}
+            summaries={summaries}
+            ready={monthReady}
+            scrollToTodayTick={scrollToTodayTick}
+            onOpenDay={(nextDay) => {
+              setDay(nextDay);
+              setMonthOverview(false);
+            }}
+          />
+        </>
+      ) : (
+        <>
+          {/* 일 */}
+          <DayStrip
+            listRef={dayListRef}
+            cellRefs={dayCellRefs}
+            dayCount={dayCount}
+            day={day}
+            year={year}
+            month={month}
+            thisYear={thisYear}
+            thisMonth={thisMonth}
+            thisDay={thisDay}
+            canPrev={canPrevMonth}
+            canNext={canNextMonth}
+            onSelectDay={setDay}
+            onPrev={goPrevMonth}
+            onNext={goNextMonth}
+          />
+          {/* 일 - 할일 목록 */}
+          <DayTodoList todos={dayTodos} ready={dayReady} />
+        </>
+      )}
+    </div>
+  );
+}
