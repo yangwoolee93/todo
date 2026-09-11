@@ -1,8 +1,8 @@
-import { EmptyHint } from "@renderer/widgets/todo/month/tempMonthTimeline";
+import { useEffect } from "react";
 import { formatDate } from "@renderer/utils/dateUtils";
-import type { DisplayTodo } from "@shared/types/todo";
-import { useEffect, useState } from "react";
-import DayTodoItem from "./DayTodoItem";
+import { useUIStore } from "@renderer/stores/useUIStore";
+import TodoList from "@renderer/features/todo/ui/TodoList";
+import { DeleteBatchModal, DeleteConfirmModal, EditTodoModal } from "@renderer/features/todo";
 
 export default function DayTodoList({
   year,
@@ -13,46 +13,31 @@ export default function DayTodoList({
   month: number;
   day: number;
 }) {
-  const [todos, setTodos] = useState<DisplayTodo[]>([]);
-  const [ready, setReady] = useState(false);
+  const setActiveDate = useUIStore((s) => s.setActiveDate);
+  const openAddModal = useUIStore((s) => s.openAddModal);
 
+  // year/month/day 변경 시 스토어 activeDate 동기화
   useEffect(() => {
-    let cancelled = false;
-    const date = formatDate(new Date(year, month - 1, day));
-    setReady(false);
-
-    void window.api.getTodosByDate(date).then((result) => {
-      if (cancelled) return;
-      setTodos(result.success ? (result.data ?? []) : []);
-      setReady(true);
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [year, month, day]);
+    setActiveDate(formatDate(new Date(year, month - 1, day)));
+  }, [year, month, day, setActiveDate]);
 
   return (
     <div className="mx-6 mb-6 mt-4 flex min-h-0 flex-1 flex-col">
       <button
         type="button"
         className="mb-3 w-full shrink-0 rounded-(--radius-card) bg-surface px-3 py-3 text-left text-sm text-fg-secondary hover:bg-muted hover:text-fg"
+        onClick={openAddModal}
       >
         + 할 일 추가
       </button>
+
       <div className="scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto">
-        {!ready ? null : todos.length === 0 ? (
-          <div>
-            <EmptyHint>등록된 할 일이 없습니다.</EmptyHint>
-          </div>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {todos.map((todo) => (
-              <DayTodoItem key={todo.id} todo={todo} />
-            ))}
-          </ul>
-        )}
+        <TodoList />
       </div>
+
+      <EditTodoModal />
+      <DeleteConfirmModal />
+      <DeleteBatchModal />
     </div>
   );
 }
