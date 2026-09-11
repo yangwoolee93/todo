@@ -8,7 +8,7 @@ import { Card } from "@renderer/shared/ui";
  */
 export default function SettingPage() {
   return (
-    <div className="flex flex-col gap-4">
+    <div className="scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto px-6 py-4 gap-4">
       <Card as="section">
         <h2 className="mb-1 font-semibold text-fg">테마</h2>
         <p className="mb-4 text-xs text-fg-secondary">
@@ -18,7 +18,7 @@ export default function SettingPage() {
       </Card>
       <Card as="section">
         <h2 className="mb-1 font-semibold text-fg">데이터 백업</h2>
-        <p className="mb-4 text-xs text-fg-secondary">JSON/SQL 내보내기 및 JSON 불러오기</p>
+        <p className="mb-4 text-xs text-fg-secondary">JSON 내보내기 및 불러오기</p>
         <BackupPanel />
       </Card>
     </div>
