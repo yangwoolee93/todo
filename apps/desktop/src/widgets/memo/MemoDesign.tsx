@@ -3,7 +3,7 @@ import Masonry from "react-masonry-css";
 import { useUIStore } from "@renderer/stores/useUIStore";
 import { useMemoStore } from "@renderer/features/memo";
 import type { MemoItem, MemoKind } from "@shared/types/memo";
-import { Button, Card, CloseIcon, Input, Modal, ModalTitle, Tab } from "@renderer/shared/ui";
+import { Button, CloseIcon, Input, Modal, ModalTitle, Tab } from "@renderer/shared/ui";
 import { cn } from "@renderer/utils/cn";
 
 /** 창 너비 기준 Masonry 열 수 */
@@ -63,43 +63,34 @@ export default function MemoDesign() {
   };
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden px-6 py-4">
-      <Card className="shrink-0">
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="flex min-w-0 flex-col gap-2">
-              <div className="flex w-fit gap-1" role="group" aria-label="메모 종류">
-                <Tab
-                  active={kind === "routine"}
-                  className="px-2.5 py-0.5 text-xs"
-                  onClick={() => setKind("routine")}
-                >
-                  루틴
-                </Tab>
-                <Tab
-                  active={kind === "planned"}
-                  className="px-2.5 py-0.5 text-xs"
-                  onClick={() => setKind("planned")}
-                >
-                  예정
-                </Tab>
-              </div>
-              <h2 className="text-xl font-semibold text-fg">{heading}</h2>
-              <p className="text-xs text-fg-secondary">{hint}</p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-fg-secondary">{items.length}건의 항목</p>
-            <Button variant="primary" className="text-sm" onClick={() => setAddOpen(true)}>
-              항목 추가
-            </Button>
-          </div>
+    <div className="flex min-h-0 flex-1 flex-col">
+      {/* 헤더 — TodoPage 패턴 */}
+      <div className="m-6 mb-2 flex flex-col gap-2">
+        <div className="flex items-baseline gap-3">
+          <h1 className="text-2xl font-medium text-fg">{heading}</h1>
+          <p className="text-xs text-fg-secondary">{hint}</p>
         </div>
-      </Card>
+        <div className="flex w-fit gap-1" role="group" aria-label="메모 종류">
+          <Tab active={kind === "routine"} onClick={() => setKind("routine")}>
+            루틴
+          </Tab>
+          <Tab active={kind === "planned"} onClick={() => setKind("planned")}>
+            예정
+          </Tab>
+        </div>
+      </div>
 
-      <Card className="flex min-h-0 flex-1 flex-col overflow-hidden p-0">
-        <div className="scrollbar min-h-0 flex-1 overflow-auto p-4">
+      {/* 콘텐츠 — DayTodoList 패턴 */}
+      <div className="mx-6 mb-6 mt-4 flex min-h-0 flex-1 flex-col">
+        <button
+          type="button"
+          className="mb-3 w-full shrink-0 rounded-(--radius-card) bg-surface px-3 py-3 text-left text-sm text-fg-secondary hover:bg-muted hover:text-fg"
+          onClick={() => setAddOpen(true)}
+        >
+          + 항목 추가
+        </button>
+
+        <div className="scrollbar min-h-0 flex-1 overflow-y-auto">
           {loading && items.length === 0 ? (
             <p className="px-4 py-8 text-center text-sm text-fg-secondary">불러오는 중...</p>
           ) : items.length === 0 ? (
@@ -135,7 +126,7 @@ export default function MemoDesign() {
             </Masonry>
           )}
         </div>
-      </Card>
+      </div>
 
       <MemoAddModal
         open={addOpen}
