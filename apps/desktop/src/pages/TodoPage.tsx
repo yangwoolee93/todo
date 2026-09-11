@@ -60,10 +60,6 @@ export default function TodoPage() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      {/* 선택된 YYYY-MM-DD 표시 */}
-      <div className="text-sm bg-red-500 text-white">
-        TEST : {year}-{month}-{day}
-      </div>
       <div className="flex flex-col m-6 mb-2 gap-2">
         <div className="flex gap-4">
           <div
@@ -128,7 +124,9 @@ export default function TodoPage() {
                 {month}월
               </div>
               {/* 오늘 버튼 */}
-              {(year !== thisYear || month !== thisMonth || day !== now.getDate()) && (
+              {(year !== thisYear ||
+                month !== thisMonth ||
+                day !== now.getDate()) && (
                 <GoToTodayButton
                   onClick={() => {
                     setYear(thisYear);
@@ -147,7 +145,10 @@ export default function TodoPage() {
       {isMonthView && (
         <div className="mx-6 mb-6 mt-4 flex min-h-0 flex-1 flex-col">
           <div className="mb-3 flex shrink-0 justify-end gap-1">
-            <Tab active={mode === "timeline"} onClick={() => setMode("timeline")}>
+            <Tab
+              active={mode === "timeline"}
+              onClick={() => setMode("timeline")}
+            >
               타임라인
             </Tab>
             <Tab active={mode === "agenda"} onClick={() => setMode("agenda")}>

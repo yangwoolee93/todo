@@ -88,22 +88,16 @@ export const api = {
     });
   },
 
-  exportJson(): Promise<IpcResult<{ filePath?: string }>> {
-    // 추후 구현: 파일 저장 경로 반환
-    return call("get_store_path_str").then((res) => ({
-      success: res.success,
-      data: { filePath: res.data as string | undefined },
-    }));
+  async exportJson(): Promise<IpcResult<{ filePath?: string }>> {
+    const res = await call<string | null>("export_json");
+    if (!res.success) return { success: false, error: res.error };
+    return { success: true, data: { filePath: res.data ?? undefined } };
   },
 
-  exportSql(): Promise<IpcResult<{ filePath?: string }>> {
-    // SQLite 미사용 — JSON 경로 반환
-    return api.exportJson();
-  },
-
-  importJson(): Promise<IpcResult<{ filePath?: string }>> {
-    // 추후 구현
-    return Promise.resolve({ success: false, error: "미구현" });
+  async importJson(): Promise<IpcResult<{ filePath?: string }>> {
+    const res = await call<string | null>("import_json");
+    if (!res.success) return { success: false, error: res.error };
+    return { success: true, data: { filePath: res.data ?? undefined } };
   },
 
   listMemos(): Promise<IpcResult<MemoItem[]>> {

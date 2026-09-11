@@ -35,15 +35,6 @@ export function BackupPanel() {
     }
   };
 
-  const handleExportSql = async () => {
-    const res = await window.api.exportSql();
-    if (res.success && res.data?.filePath) {
-      setResult({ title: "SQL 내보내기 완료", message: res.data.filePath });
-    } else if (!res.success && res.error) {
-      setResult({ title: "내보내기 실패", message: res.error, isError: true });
-    }
-  };
-
   const handleImportConfirm = async () => {
     setImportConfirmOpen(false);
     const res = await window.api.importJson();
@@ -59,7 +50,6 @@ export function BackupPanel() {
     <>
       <div className="flex flex-wrap gap-2">
         <Button onClick={() => void handleExportJson()}>JSON 내보내기</Button>
-        <Button onClick={() => void handleExportSql()}>SQL 내보내기</Button>
         <Button onClick={() => setImportConfirmOpen(true)}>JSON 불러오기</Button>
       </div>
 

@@ -1,3 +1,4 @@
+mod export;
 mod memo;
 mod models;
 mod storage;
@@ -7,6 +8,7 @@ mod todo;
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             // Todo
             todo::get_todos_by_date,
@@ -25,6 +27,9 @@ pub fn run() {
             memo::create_memo,
             memo::update_memo,
             memo::delete_memo,
+            // Export / Import
+            export::export_json,
+            export::import_json,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
