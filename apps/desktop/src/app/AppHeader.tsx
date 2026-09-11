@@ -18,9 +18,9 @@ const AppHeader = () => {
   const goSettingsView = useUIStore((s) => s.goSettingsView);
 
   const tabs: { id: AppView; label: string; onClick: () => void }[] = [
-    { id: "design", label: "디자인", onClick: () => goDesignView() },
+    // { id: "design", label: "디자인", onClick: () => goDesignView() },
     { id: "todo", label: "할일", onClick: () => goTodoView() },
-    { id: "schedule", label: "일정", onClick: () => goScheduleView() },
+    // { id: "schedule", label: "일정", onClick: () => goScheduleView() },
     { id: "memo", label: "메모", onClick: () => goMemoView() },
     { id: "settings", label: "설정", onClick: () => goSettingsView() },
   ];
@@ -80,7 +80,9 @@ const AppHeader = () => {
 
     return (
       <header
-        className={cn("h-11 flex items-center gap-2 border-b border-border select-none")}
+        className={cn(
+          "h-11 flex items-center gap-2 border-b border-border select-none",
+        )}
         onMouseDown={handleHeaderMouseDown}
       >
         {/* 아이콘 */}
@@ -126,12 +128,26 @@ const AppHeader = () => {
             title={isMaximized ? "이전 크기로" : "최대화"}
           >
             {isMaximized ? (
-              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.2">
+              <svg
+                width="10"
+                height="10"
+                viewBox="0 0 10 10"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.2"
+              >
                 <rect x="2.5" y="0.5" width="7" height="7" />
                 <polyline points="0.5,2.5 0.5,9.5 7.5,9.5" />
               </svg>
             ) : (
-              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.2">
+              <svg
+                width="10"
+                height="10"
+                viewBox="0 0 10 10"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.2"
+              >
                 <rect x="0.5" y="0.5" width="9" height="9" />
               </svg>
             )}
@@ -145,7 +161,12 @@ const AppHeader = () => {
             title="닫기"
           >
             <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
-              <path d="M1 1l8 8M9 1l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              <path
+                d="M1 1l8 8M9 1l-8 8"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              />
             </svg>
           </button>
         </div>
@@ -185,12 +206,16 @@ const AppHeader = () => {
 
     return (
       <header
-        className={cn("relative flex shrink-0 items-center justify-between h-11")}
+        className={cn(
+          "relative flex shrink-0 items-center justify-between h-11",
+        )}
         onMouseDown={handleHeaderMouseDown}
       >
         <div className="flex flex-1 h-full items-center gap-1.5 pl-20">
           <img src={IconMac} className="w-6 h-6 pointer-events-none" />
-          <span className="truncate text-md font-bold tracking-[-0.8px] text-fg">할 일</span>
+          <span className="truncate text-md font-bold tracking-[-0.8px] text-fg">
+            할 일
+          </span>
         </div>
         <nav className="flex gap-1 pr-2">
           {tabs.map((tab) => (
