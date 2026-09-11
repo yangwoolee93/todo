@@ -1,9 +1,13 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
+import Masonry from "react-masonry-css";
 import { useUIStore } from "@renderer/stores/useUIStore";
 import { useMemoStore } from "@renderer/features/memo";
 import type { MemoItem, MemoKind } from "@shared/types/memo";
 import { Button, Card, CloseIcon, Input, Modal, ModalTitle, Tab } from "@renderer/shared/ui";
 import { cn } from "@renderer/utils/cn";
+
+/** 창 너비 기준 Masonry 열 수 */
+const MASONRY_BREAKPOINTS = { default: 4, 800: 3, 600: 2, 400: 1 };
 
 const fieldClass = cn(
   "w-full rounded-(--radius-btn) border border-border bg-surface px-3 py-2 text-sm text-fg",
@@ -105,33 +109,30 @@ export default function MemoDesign() {
               <span className="text-xs">상단 「항목 추가」로 등록하세요.</span>
             </p>
           ) : (
-            <div className="grid grid-cols-3 items-start gap-3">
-              {[0, 1, 2].map((col) => (
-                <ul key={col} className="flex min-w-0 flex-col gap-3">
-                  {items
-                    .filter((_, index) => index % 3 === col)
-                    .map((item) => (
-                      <li key={item.id}>
-                        <button
-                          type="button"
-                          className={cn(
-                            "w-full max-h-36 overflow-hidden rounded-(--radius-card) border border-border bg-surface p-3 text-left",
-                            "transition-colors hover:bg-muted/20",
-                          )}
-                          onClick={() => setOpened(item)}
-                        >
-                          <p className="text-sm font-medium text-fg">{item.title}</p>
-                          {kind === "planned" && item.note ? (
-                            <p className="mt-2 whitespace-pre-wrap text-xs leading-relaxed text-fg-secondary">
-                              {item.note}
-                            </p>
-                          ) : null}
-                        </button>
-                      </li>
-                    ))}
-                </ul>
+            <Masonry
+              breakpointCols={MASONRY_BREAKPOINTS}
+              className="flex -ml-3"
+              columnClassName="pl-3 flex flex-col gap-3"
+            >
+              {items.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={cn(
+                    "w-full rounded-(--radius-card) border border-border bg-surface p-3 text-left",
+                    "transition-colors hover:bg-muted/20",
+                  )}
+                  onClick={() => setOpened(item)}
+                >
+                  <p className="text-sm font-medium text-fg">{item.title}</p>
+                  {item.note ? (
+                    <p className="mt-2 whitespace-pre-wrap text-xs leading-relaxed text-fg-secondary">
+                      {item.note}
+                    </p>
+                  ) : null}
+                </button>
               ))}
-            </div>
+            </Masonry>
           )}
         </div>
       </Card>
