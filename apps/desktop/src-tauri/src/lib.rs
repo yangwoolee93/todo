@@ -33,6 +33,10 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            // 두 번째 실행 시 → 기존 창 복원
+            tray::show_main_window(app);
+        }))
         .setup(|app| {
             tray::setup_tray(&app.handle())?;
 
