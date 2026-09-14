@@ -105,6 +105,10 @@ export const api = {
     return call("get_data_transfer_meta");
   },
 
+  getStorePath(): Promise<IpcResult<string>> {
+    return call("get_store_path_str");
+  },
+
   listMemos(): Promise<IpcResult<MemoItem[]>> {
     return call("list_memos");
   },

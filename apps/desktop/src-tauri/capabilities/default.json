@@ -17,6 +17,10 @@
     "core:window:allow-center",
     "dialog:allow-save",
     "dialog:allow-open",
-    "core:tray:default"
+    "core:tray:default",
+    {
+      "identifier": "opener:allow-open-path",
+      "allow": [{ "path": "$APPDATA" }, { "path": "$APPDATA/**" }]
+    }
   ]
 }
