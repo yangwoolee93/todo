@@ -16,20 +16,21 @@
   --color-fg: #1c1917;
   --color-fg-secondary: #57534e;
   --color-fg-muted: #a8a29e;
-  --color-accent: #2563eb;
-  --color-accent-hover: #1d4ed8;
-  --color-accent-soft: #dbeafe;
+  --color-accent: #45ada5;
+  --color-accent-hover: #3d968f;
+  --color-accent-soft: #dce8e6;
   --color-border: #d6d0c6;
   --color-border-strong: #c4bcb0;
   --color-danger: #dc2626;
   --color-danger-soft: #fee2e2;
-  --color-success: #16a34a;
+  --color-success: #15803d;
   --color-failed: #ea580c;
   --color-failed-soft: #ffedd5;
-  --color-today-ring: #2563eb;
+  --color-today-ring: #45ada5;
   --font-sans: "Segoe UI", system-ui, sans-serif;
   --radius-card: 0.5rem;
   --radius-btn: 0.5rem;
+  --color-saturday: #2563eb;
 }
 
 /* 스크롤바 토큰 — :root에 두어 var()가 Electron에서 확실히 해석되게 */
@@ -49,19 +50,20 @@
   --color-fg: #1c1917;
   --color-fg-secondary: #57534e;
   --color-fg-muted: #a8a29e;
-  --color-accent: #2563eb;
-  --color-accent-hover: #1d4ed8;
-  --color-accent-soft: #dbeafe;
+  --color-accent: #45ada5;
+  --color-accent-hover: #3d968f;
+  --color-accent-soft: #dce8e6;
   --color-border: #d6d0c6;
   --color-border-strong: #c4bcb0;
   --color-danger: #dc2626;
   --color-danger-soft: #fee2e2;
-  --color-success: #16a34a;
+  --color-success: #16885a;
   --color-failed: #ea580c;
   --color-failed-soft: #ffedd5;
-  --color-today-ring: #2563eb;
+  --color-today-ring: #45ada5;
   --scrollbar-thumb: #c4bcb0;
   --scrollbar-thumb-hover: #a8a29e;
+  --color-saturday: #2563eb;
 }
 
 /* 어두운 모드 팔레트 — 중립 다크 그레이 */
@@ -73,19 +75,20 @@
   --color-fg: #ececec;
   --color-fg-secondary: #a3a3a3;
   --color-fg-muted: #737373;
-  --color-accent: #3b82f6;
-  --color-accent-hover: #60a5fa;
-  --color-accent-soft: #333333;
+  --color-accent: #2dd4bf;
+  --color-accent-hover: #14b8a6;
+  --color-accent-soft: #134e4a;
   --color-border: #333333;
   --color-border-strong: #404040;
   --color-danger: #f87171;
   --color-danger-soft: #450a0a;
-  --color-success: #4ade80;
+  --color-success: #22c55e;
   --color-failed: #fb923c;
   --color-failed-soft: #431407;
-  --color-today-ring: #3b82f6;
+  --color-today-ring: #2dd4bf;
   --scrollbar-thumb: #404040;
   --scrollbar-thumb-hover: #525252;
+  --color-saturday: #3b82f6;
 }
 
 @layer base {

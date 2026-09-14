@@ -20,7 +20,12 @@ export default function YearGrid({
           {YEARS.map((item) => {
             const isSelected = item === selectedYear;
             return (
-              <YearCell key={item} item={item} isSelected={isSelected} onClick={setSelectedYear} />
+              <YearCell
+                key={item}
+                item={item}
+                isSelected={isSelected}
+                onClick={setSelectedYear}
+              />
             );
           })}
         </div>

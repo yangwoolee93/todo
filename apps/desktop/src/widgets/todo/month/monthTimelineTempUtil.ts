@@ -19,15 +19,17 @@ export type TimelineBar = {
 /** 날짜 헤드 텍스트 색상 정하기 */
 export function dateHeadTextClass(year: number, month: number, day: number) {
   const weekday = new Date(year, month - 1, day).getDay();
-  if (weekday === 0 || isKoreanPublicHoliday(year, month, day)) return "text-danger";
-  if (weekday === 6) return "text-accent";
+  if (weekday === 0 || isKoreanPublicHoliday(year, month, day))
+    return "text-danger";
+  if (weekday === 6) return "text-saturday";
   return undefined;
 }
 
 /** 띠 칸 너비 — 막대 좌우 여백을 첫날·마지막 날에 반영한다 */
 export function dayRailWidth(index: number, count: number) {
   if (count === 1) return `calc(${DAY_COL_WIDTH} - ${BAR_EDGE} - ${BAR_EDGE})`;
-  if (index === 0 || index === count - 1) return `calc(${DAY_COL_WIDTH} - ${BAR_EDGE})`;
+  if (index === 0 || index === count - 1)
+    return `calc(${DAY_COL_WIDTH} - ${BAR_EDGE})`;
   return DAY_COL_WIDTH;
 }
 
@@ -46,14 +48,20 @@ export function scrollChildIntoView(
   if (axis === "x") {
     const left =
       root.scrollLeft +
-      (targetRect.left - rootRect.left - root.clientWidth / 2 + targetRect.width / 2);
+      (targetRect.left -
+        rootRect.left -
+        root.clientWidth / 2 +
+        targetRect.width / 2);
     root.scrollTo({ left, behavior });
     return;
   }
 
   const top =
     root.scrollTop +
-    (targetRect.top - rootRect.top - root.clientHeight / 2 + targetRect.height / 2);
+    (targetRect.top -
+      rootRect.top -
+      root.clientHeight / 2 +
+      targetRect.height / 2);
   root.scrollTo({ top, behavior });
 }
 
@@ -99,7 +107,12 @@ export function toYearMonthKey(year: number, month: number) {
 }
 
 /** 막대 조각 가장자리 px 계산 */
-export function segmentEdgePx(start: number, dayCount: number, colWidth: number, edge: number) {
+export function segmentEdgePx(
+  start: number,
+  dayCount: number,
+  colWidth: number,
+  edge: number,
+) {
   return {
     left: (start - 1) * colWidth + edge,
     right: (start + dayCount - 1) * colWidth - edge,
@@ -107,7 +120,12 @@ export function segmentEdgePx(start: number, dayCount: number, colWidth: number,
 }
 
 /** 뷰포트 중복 계산 */
-export function viewOverlap(left: number, right: number, viewLeft: number, viewRight: number) {
+export function viewOverlap(
+  left: number,
+  right: number,
+  viewLeft: number,
+  viewRight: number,
+) {
   return Math.max(0, Math.min(right, viewRight) - Math.max(left, viewLeft));
 }
 
@@ -177,7 +195,14 @@ export function updateTitlePositions({
     const home = ranges[visible ? best : 0];
     // 감출 때도 트랙 안에 세워 둔다. 안 그러면 가로 스크롤이 트랙보다 길어진다
     const left = visible
-      ? titleLeftInTrack(home.left, home.right, titleWidth, track, viewLeft, viewRight)
+      ? titleLeftInTrack(
+          home.left,
+          home.right,
+          titleWidth,
+          track,
+          viewLeft,
+          viewRight,
+        )
       : Math.max(0, Math.min(home.left, track - titleWidth));
 
     title.style.opacity = visible ? "1" : "0";
