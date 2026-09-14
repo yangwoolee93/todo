@@ -11,20 +11,14 @@ const DRAG_THRESHOLD = 4; // px — 이 이상 움직이면 창 드래그 시작
 
 const AppHeader = () => {
   const view = useUIStore((s) => s.view);
-  // const goDesignView = useUIStore((s) => s.goDesignView);
   const goTodoView = useUIStore((s) => s.goTodoView);
   const goMemoView = useUIStore((s) => s.goMemoView);
-  // const goScheduleView = useUIStore((s) => s.goScheduleView);
-  const goSettingsView = useUIStore((s) => s.goSettingsView);
   const goSettingsV2View = useUIStore((s) => s.goSettingsV2View);
 
   const tabs: { id: AppView; label: string; onClick: () => void }[] = [
-    // { id: "design", label: "디자인", onClick: () => goDesignView() },
     { id: "todo", label: "할일", onClick: () => goTodoView() },
-    // { id: "schedule", label: "일정", onClick: () => goScheduleView() },
     { id: "memo", label: "메모", onClick: () => goMemoView() },
-    { id: "settings", label: "설정", onClick: () => goSettingsView() },
-    { id: "settingsV2", label: "설정2", onClick: () => goSettingsV2View() },
+    { id: "settingsV2", label: "설정", onClick: () => goSettingsV2View() },
   ];
 
   const isWin = window.electron?.platform === "win32";
