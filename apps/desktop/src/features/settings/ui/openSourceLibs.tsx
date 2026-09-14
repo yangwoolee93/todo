@@ -1,143 +1,147 @@
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { useThemeStore } from "@renderer/stores/useThemeStore";
+import { cn } from "@renderer/utils/cn";
+import tauriMark from "@renderer/assets/credits/tauri.svg";
+import reactLight from "@renderer/assets/credits/react-light.svg";
+import reactDark from "@renderer/assets/credits/react-dark.svg";
+import viteMark from "@renderer/assets/credits/vite.svg";
+import tailwindMark from "@renderer/assets/credits/tailwindcss.svg";
+import typescriptMark from "@renderer/assets/credits/typescript.svg";
+import radixMark from "@renderer/assets/credits/radixui.svg";
+import dndkitMark from "@renderer/assets/credits/dndkit.svg";
 
-const iconClass = "h-5 w-5 shrink-0 text-fg-secondary";
+const markClass = "h-5 w-5 shrink-0 object-contain";
 
-function Mark({ children }: { children: ReactNode }) {
+function useIsDark(): boolean {
+  const mode = useThemeStore((s) => s.mode);
+  const [isDark, setIsDark] = useState(() =>
+    document.documentElement.classList.contains("dark"),
+  );
+
+  useEffect(() => {
+    if (mode === "dark") {
+      setIsDark(true);
+      return;
+    }
+    if (mode === "light") {
+      setIsDark(false);
+      return;
+    }
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const sync = () => setIsDark(media.matches);
+    sync();
+    media.addEventListener("change", sync);
+    return () => media.removeEventListener("change", sync);
+  }, [mode]);
+
+  return isDark;
+}
+
+function Mark({
+  src,
+  invertInDark,
+  className,
+}: {
+  src: string;
+  invertInDark?: boolean;
+  className?: string;
+}) {
+  const isDark = useIsDark();
   return (
-    <svg className={iconClass} viewBox="0 0 20 20" fill="none" aria-hidden="true">
-      {children}
+    <img
+      src={src}
+      alt=""
+      className={cn(markClass, invertInDark && isDark && "invert", className)}
+    />
+  );
+}
+
+function ReactMark({ className }: { className?: string }) {
+  const isDark = useIsDark();
+  return <Mark src={isDark ? reactDark : reactLight} className={className} />;
+}
+
+function ZustandMark({ className }: { className?: string }) {
+  return (
+    <svg
+      className={cn(markClass, className)}
+      viewBox="0 0 20 20"
+      aria-hidden="true"
+    >
+      <circle cx="10" cy="11" r="6.2" fill="#C4A574" />
+      <circle cx="5.2" cy="6.2" r="2.4" fill="#C4A574" />
+      <circle cx="14.8" cy="6.2" r="2.4" fill="#C4A574" />
+      <circle cx="5.2" cy="6.2" r="1.15" fill="#8B6914" />
+      <circle cx="14.8" cy="6.2" r="1.15" fill="#8B6914" />
+      <ellipse cx="10" cy="12.4" rx="2" ry="1.35" fill="#6B4F32" />
+      <circle cx="7.6" cy="10.2" r="0.7" fill="#3F2A14" />
+      <circle cx="12.4" cy="10.2" r="0.7" fill="#3F2A14" />
     </svg>
-  );
-}
-
-function TauriMark() {
-  return (
-    <Mark>
-      <circle cx="8" cy="10" r="4.25" stroke="currentColor" strokeWidth="1.5" />
-      <circle cx="12" cy="10" r="4.25" stroke="currentColor" strokeWidth="1.5" />
-    </Mark>
-  );
-}
-
-function ReactMark() {
-  return (
-    <Mark>
-      <circle cx="10" cy="10" r="1.4" fill="currentColor" />
-      <ellipse cx="10" cy="10" rx="7.25" ry="2.8" stroke="currentColor" strokeWidth="1.25" />
-      <ellipse
-        cx="10"
-        cy="10"
-        rx="7.25"
-        ry="2.8"
-        stroke="currentColor"
-        strokeWidth="1.25"
-        transform="rotate(60 10 10)"
-      />
-      <ellipse
-        cx="10"
-        cy="10"
-        rx="7.25"
-        ry="2.8"
-        stroke="currentColor"
-        strokeWidth="1.25"
-        transform="rotate(120 10 10)"
-      />
-    </Mark>
-  );
-}
-
-function ViteMark() {
-  return (
-    <Mark>
-      <path
-        d="M10 3.5 16.5 16H3.5L10 3.5Z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-      />
-      <path d="M10 8v5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </Mark>
-  );
-}
-
-function TailwindMark() {
-  return (
-    <Mark>
-      <path
-        d="M3.5 10.2c1-2.6 2.3-4 4.8-4 3.6 0 3.6 5.2 7.3 5.2 2.3 0 3.6-1.4 4.7-4"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-      />
-      <path
-        d="M3.5 14c1-2.6 2.3-4 4.8-4 3.6 0 3.6 5.2 7.3 5.2 2.3 0 3.6-1.4 4.7-4"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-      />
-    </Mark>
-  );
-}
-
-function ZustandMark() {
-  return (
-    <Mark>
-      <rect x="4.25" y="4.25" width="11.5" height="11.5" rx="2" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M7 10h6M10 7v6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </Mark>
-  );
-}
-
-function DndKitMark() {
-  return (
-    <Mark>
-      <circle cx="6" cy="6" r="1.25" fill="currentColor" />
-      <circle cx="14" cy="6" r="1.25" fill="currentColor" />
-      <circle cx="6" cy="10" r="1.25" fill="currentColor" />
-      <circle cx="14" cy="10" r="1.25" fill="currentColor" />
-      <circle cx="6" cy="14" r="1.25" fill="currentColor" />
-      <circle cx="14" cy="14" r="1.25" fill="currentColor" />
-    </Mark>
-  );
-}
-
-function RadixMark() {
-  return (
-    <Mark>
-      <circle cx="7" cy="10" r="3.1" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M11.2 6.9 16 10l-4.8 3.1V6.9Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
-    </Mark>
-  );
-}
-
-function TypeScriptMark() {
-  return (
-    <Mark>
-      <rect x="3.25" y="3.25" width="13.5" height="13.5" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
-      <path
-        d="M7 9.2h6M10 9.2V15"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </Mark>
   );
 }
 
 export type OpenSourceLib = {
   name: string;
   url: string;
-  icon: () => ReactNode;
+  icon: ({ className }: { className?: string }) => ReactNode;
 };
 
-/** 앱이 직접 쓰는 오픈소스 */
+/** 앱이 직접 쓰는 오픈소스 — 마크는 가능하면 공식 SVG */
 export const OPEN_SOURCE_LIBS: OpenSourceLib[] = [
-  { name: "Tauri", url: "https://tauri.app", icon: TauriMark },
-  { name: "React", url: "https://react.dev", icon: ReactMark },
-  { name: "Vite", url: "https://vite.dev", icon: ViteMark },
-  { name: "Tailwind CSS", url: "https://tailwindcss.com", icon: TailwindMark },
-  { name: "Zustand", url: "https://github.com/pmndrs/zustand", icon: ZustandMark },
-  { name: "dnd-kit", url: "https://dndkit.com", icon: DndKitMark },
-  { name: "Radix UI", url: "https://www.radix-ui.com", icon: RadixMark },
-  { name: "TypeScript", url: "https://www.typescriptlang.org", icon: TypeScriptMark },
+  {
+    name: "Tauri",
+    url: "https://tauri.app",
+    icon: ({ className }: { className?: string }) => (
+      <Mark src={tauriMark} className={className} />
+    ),
+  },
+  {
+    name: "React",
+    url: "https://react.dev",
+    icon: ({ className }: { className?: string }) => (
+      <ReactMark className={className} />
+    ),
+  },
+  {
+    name: "Vite",
+    url: "https://vite.dev",
+    icon: ({ className }: { className?: string }) => (
+      <Mark src={viteMark} className={className} />
+    ),
+  },
+  {
+    name: "Tailwind CSS",
+    url: "https://tailwindcss.com",
+    icon: ({ className }: { className?: string }) => (
+      <Mark src={tailwindMark} className={className} />
+    ),
+  },
+  {
+    name: "Zustand",
+    url: "https://github.com/pmndrs/zustand",
+    icon: ({ className }: { className?: string }) => (
+      <ZustandMark className={className} />
+    ),
+  },
+  {
+    name: "dnd-kit",
+    url: "https://dndkit.com",
+    icon: ({ className }: { className?: string }) => (
+      <Mark src={dndkitMark} className={className} />
+    ),
+  },
+  {
+    name: "Radix UI",
+    url: "https://www.radix-ui.com",
+    icon: ({ className }: { className?: string }) => (
+      <Mark src={radixMark} invertInDark className={className} />
+    ),
+  },
+  {
+    name: "TypeScript",
+    url: "https://www.typescriptlang.org",
+    icon: ({ className }: { className?: string }) => (
+      <Mark src={typescriptMark} className={className} />
+    ),
+  },
 ];

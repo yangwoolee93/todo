@@ -1,7 +1,14 @@
 import { useEffect, useState } from "react";
 import { cn } from "@renderer/utils/cn";
 import { useUIStore, type SettingsSection } from "@renderer/stores/useUIStore";
-import { Button, Modal, ModalTitle, MonitorIcon, MoonIcon, SunIcon } from "@renderer/shared/ui";
+import {
+  Button,
+  Modal,
+  ModalTitle,
+  MonitorIcon,
+  MoonIcon,
+  SunIcon,
+} from "@renderer/shared/ui";
 import { ThemeMode, useThemeStore } from "@renderer/stores/useThemeStore";
 import { APP_VERSION } from "@renderer/constants/appVersion";
 import {
@@ -16,7 +23,9 @@ const rowClass = cn(
   "hover:bg-muted",
 );
 
-const infoRowClass = cn("w-full rounded-(--radius-card) bg-surface px-3 py-3 text-left");
+const infoRowClass = cn(
+  "w-full rounded-(--radius-card) bg-surface px-3 py-3 text-left",
+);
 
 function readHistorySection(state: unknown): SettingsSection {
   const section = (state as { settingsSection?: unknown } | null)
@@ -154,8 +163,8 @@ function HomeList({ onOpen }: { onOpen: (section: SettingsSection) => void }) {
       <button type="button" className={rowClass} onClick={() => onOpen("data")}>
         <span className="block text-sm text-fg">데이터</span>
         <span className="mt-0.5 block text-xs text-fg-secondary">
-          마지막 내보내기 {transferTimeLabel(meta.last_exported_at)} · 마지막 불러오기{" "}
-          {transferTimeLabel(meta.last_imported_at)}
+          마지막 내보내기 {transferTimeLabel(meta.last_exported_at)} · 마지막
+          불러오기 {transferTimeLabel(meta.last_imported_at)}
         </span>
       </button>
       <button type="button" className={rowClass} onClick={() => onOpen("info")}>
@@ -334,7 +343,9 @@ function InfoSection() {
       >
         <p className="text-xs text-fg-secondary">데이터 경로</p>
         <p className="mt-0.5 break-all text-sm text-fg">
-          {pathError ? "경로를 불러오지 못했습니다" : (storePath ?? "불러오는 중…")}
+          {pathError
+            ? "경로를 불러오지 못했습니다"
+            : (storePath ?? "불러오는 중…")}
         </p>
       </button>
       <div className="flex min-h-0 flex-1 flex-col gap-2">
@@ -351,14 +362,16 @@ function InfoSection() {
               <button
                 type="button"
                 className={cn(
-                  "flex w-full min-w-0 flex-col items-center justify-center gap-1.5",
-                  "rounded-(--radius-card) bg-surface px-1.5 py-2.5",
-                  "hover:bg-muted",
+                  "flex w-full min-w-0 flex-col items-center justify-center gap-3",
+                  "rounded-(--radius-card) bg-surface px-1.5 py-2.5 border-2 border-transparent",
+                  "hover:border-accent-soft hover:bg-muted",
                 )}
                 onClick={() => void openLibSite(lib.url)}
               >
-                <lib.icon />
-                <span className="w-full text-center text-xs leading-tight text-fg">{lib.name}</span>
+                <lib.icon className="size-8" />
+                <span className="w-full text-center text-sm font-semibold leading-tight text-fg">
+                  {lib.name}
+                </span>
               </button>
             </li>
           ))}
@@ -369,8 +382,12 @@ function InfoSection() {
         onClose={() => setOpenDirConfirm(false)}
         label="데이터 폴더 열기"
       >
-        <ModalTitle className="mb-2 text-base font-semibold text-fg">데이터 폴더 열기</ModalTitle>
-        <p className="text-sm text-fg-secondary">데이터가 저장된 폴더를 엽니다.</p>
+        <ModalTitle className="mb-2 text-base font-semibold text-fg">
+          데이터 폴더 열기
+        </ModalTitle>
+        <p className="text-sm text-fg-secondary">
+          데이터가 저장된 폴더를 엽니다.
+        </p>
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="ghost" onClick={() => setOpenDirConfirm(false)}>
             취소
