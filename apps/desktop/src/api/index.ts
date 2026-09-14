@@ -4,6 +4,7 @@ import type {
   CreateTodoMonthPayload,
   CreateTodoPayload,
   CreateTodoRangePayload,
+  DataTransferMeta,
   DaySummary,
   DeleteTodoPayload,
   DisplayTodo,
@@ -98,6 +99,10 @@ export const api = {
     const res = await call<string | null>("import_json");
     if (!res.success) return { success: false, error: res.error };
     return { success: true, data: { filePath: res.data ?? undefined } };
+  },
+
+  getDataTransferMeta(): Promise<IpcResult<DataTransferMeta>> {
+    return call("get_data_transfer_meta");
   },
 
   listMemos(): Promise<IpcResult<MemoItem[]>> {

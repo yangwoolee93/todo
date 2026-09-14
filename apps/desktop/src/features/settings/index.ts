@@ -1,2 +1,3 @@
 export { ThemeSelector } from "./ui/ThemeSelector";
-export { BackupPanel } from "./ui/BackupPanel";
+export { BackupPanel, DataTransferModals } from "./ui/BackupPanel";
+export { useDataTransfer, transferTimeLabel } from "./model/useDataTransfer";

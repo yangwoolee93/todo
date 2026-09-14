@@ -25,6 +25,14 @@ export interface TodoItem {
 export interface TodoDatabase {
   todos: TodoItem[];
   memos: MemoItem[];
+  last_exported_at?: number | null;
+  last_imported_at?: number | null;
+}
+
+/** 설정 화면에 쓰는 보내기·불러오기 최근 시각 */
+export interface DataTransferMeta {
+  last_exported_at: number | null;
+  last_imported_at: number | null;
 }
 
 export interface DisplayTodo {

@@ -3,6 +3,11 @@ import { cn } from "@renderer/utils/cn";
 import { useUIStore, type SettingsSection } from "@renderer/stores/useUIStore";
 import { MonitorIcon, MoonIcon, SunIcon } from "@renderer/shared/ui";
 import { ThemeMode, useThemeStore } from "@renderer/stores/useThemeStore";
+import {
+  DataTransferModals,
+  transferTimeLabel,
+  useDataTransfer,
+} from "@renderer/features/settings";
 
 const rowClass = cn(
   "w-full rounded-(--radius-card) bg-surface px-3 py-3 text-left",
@@ -23,7 +28,7 @@ function readHistorySection(state: unknown): SettingsSection {
   return "home";
 }
 
-/** 설정 v2 — UI 골격만. 기능은 이후 이관. */
+/** 설정 v2 — 테마·데이터(보내기/불러오기) · 정보. */
 export default function SettingPageV2() {
   const section = useUIStore((s) => s.settingsSection);
   const setSettingsSection = useUIStore((s) => s.setSettingsSection);
@@ -81,7 +86,7 @@ export default function SettingPageV2() {
       <div className="mx-6 mb-6 mt-4 flex min-h-0 flex-1 flex-col">
         {section === "home" && <HomeList onOpen={openSection} />}
         {section === "theme" && <ThemeSection />}
-        {section === "data" && <DataPlaceholder />}
+        {section === "data" && <DataSection />}
         {section === "info" && <InfoPlaceholder />}
       </div>
     </div>
@@ -128,6 +133,7 @@ function themeLabel(mode: ThemeMode) {
 
 function HomeList({ onOpen }: { onOpen: (section: SettingsSection) => void }) {
   const mode = useThemeStore((s) => s.mode);
+  const { meta } = useDataTransfer();
 
   return (
     <div className="flex flex-col gap-2">
@@ -144,7 +150,8 @@ function HomeList({ onOpen }: { onOpen: (section: SettingsSection) => void }) {
       <button type="button" className={rowClass} onClick={() => onOpen("data")}>
         <span className="block text-sm text-fg">데이터</span>
         <span className="mt-0.5 block text-xs text-fg-secondary">
-          JSON 내보내기 · 불러오기
+          마지막 내보내기 {transferTimeLabel(meta.last_exported_at)} · 마지막 불러오기{" "}
+          {transferTimeLabel(meta.last_imported_at)}
         </span>
       </button>
       <button type="button" className={rowClass} onClick={() => onOpen("info")}>
@@ -224,18 +231,49 @@ function ThemeSection() {
   );
 }
 
-function DataPlaceholder() {
+function DataSection() {
+  const {
+    meta,
+    importConfirmOpen,
+    setImportConfirmOpen,
+    result,
+    setResult,
+    handleExportJson,
+    handleImportConfirm,
+  } = useDataTransfer();
+
   return (
     <div className="flex flex-col gap-2">
-      <button type="button" className={rowClass}>
-        JSON 내보내기
+      <button
+        type="button"
+        className={rowClass}
+        onClick={() => void handleExportJson()}
+      >
+        <span className="block text-sm text-fg">JSON 내보내기</span>
+        <span className="mt-0.5 block text-xs text-fg-secondary">
+          마지막 {transferTimeLabel(meta.last_exported_at)}
+        </span>
       </button>
-      <button type="button" className={rowClass}>
-        JSON 불러오기
+      <button
+        type="button"
+        className={rowClass}
+        onClick={() => setImportConfirmOpen(true)}
+      >
+        <span className="block text-sm text-fg">JSON 불러오기</span>
+        <span className="mt-0.5 block text-xs text-fg-secondary">
+          마지막 {transferTimeLabel(meta.last_imported_at)}
+        </span>
       </button>
       <p className="px-1 pt-1 text-xs text-fg-secondary">
         불러오면 할 일과 메모가 파일 내용으로 바뀝니다. 되돌릴 수 없습니다.
       </p>
+      <DataTransferModals
+        importConfirmOpen={importConfirmOpen}
+        setImportConfirmOpen={setImportConfirmOpen}
+        result={result}
+        setResult={setResult}
+        handleImportConfirm={handleImportConfirm}
+      />
     </div>
   );
 }

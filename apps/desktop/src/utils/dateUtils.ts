@@ -59,6 +59,17 @@ export function isToday(dateString: string): boolean {
   return dateString === getTodayString();
 }
 
+/** 밀리초 시각을 화면용 날짜·시간으로 변환한다. */
+export function formatDateTime(ms: number): string {
+  return new Date(ms).toLocaleString("ko-KR", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 /** 화면용 전체 날짜 라벨 (예: "2026년 5월 23일 (토)") */
 export function toFullLabel(dateString: string): string {
   const [yearStr, monthStr, dayStr] = dateString.split("-");

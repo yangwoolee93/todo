@@ -1,58 +1,27 @@
-import { useState } from "react";
-import { useUIStore } from "@renderer/stores/useUIStore";
-import { useTodoStore } from "@renderer/features/todo/model/useTodoStore";
-import { useMonthStore } from "@renderer/features/month/model/useMonthStore";
+import {
+  useDataTransfer,
+  transferTimeLabel,
+  type TransferResult,
+} from "../model/useDataTransfer";
 import { Modal, ModalTitle, Button } from "@renderer/shared/ui";
 
-type ResultModal = {
-  title: string;
-  message: string;
-  isError?: boolean;
+type DataTransferModalsProps = {
+  importConfirmOpen: boolean;
+  setImportConfirmOpen: (open: boolean) => void;
+  result: TransferResult | null;
+  setResult: (result: TransferResult | null) => void;
+  handleImportConfirm: () => void | Promise<void>;
 };
 
-/**
- * 데이터 백업·복원 패널 (F-04)
- */
-export function BackupPanel() {
-  const activeDate = useUIStore((s) => s.activeDate);
-  const yearMonth = useMonthStore((s) => s.yearMonth);
-  const loadTodosByDate = useTodoStore((s) => s.loadTodosByDate);
-  const loadMonthSummary = useMonthStore((s) => s.loadMonthSummary);
-
-  const [importConfirmOpen, setImportConfirmOpen] = useState(false);
-  const [result, setResult] = useState<ResultModal | null>(null);
-
-  const refresh = async () => {
-    await Promise.all([loadTodosByDate(activeDate), loadMonthSummary(yearMonth)]);
-  };
-
-  const handleExportJson = async () => {
-    const res = await window.api.exportJson();
-    if (res.success && res.data?.filePath) {
-      setResult({ title: "JSON 내보내기 완료", message: res.data.filePath });
-    } else if (!res.success && res.error) {
-      setResult({ title: "내보내기 실패", message: res.error, isError: true });
-    }
-  };
-
-  const handleImportConfirm = async () => {
-    setImportConfirmOpen(false);
-    const res = await window.api.importJson();
-    if (res.success && res.data?.filePath) {
-      setResult({ title: "JSON 불러오기 완료", message: res.data.filePath });
-      await refresh();
-    } else if (!res.success && res.error) {
-      setResult({ title: "불러오기 실패", message: res.error, isError: true });
-    }
-  };
-
+export function DataTransferModals({
+  importConfirmOpen,
+  setImportConfirmOpen,
+  result,
+  setResult,
+  handleImportConfirm,
+}: DataTransferModalsProps) {
   return (
     <>
-      <div className="flex flex-wrap gap-2">
-        <Button onClick={() => void handleExportJson()}>JSON 내보내기</Button>
-        <Button onClick={() => setImportConfirmOpen(true)}>JSON 불러오기</Button>
-      </div>
-
       <Modal
         open={importConfirmOpen}
         onClose={() => setImportConfirmOpen(false)}
@@ -90,6 +59,43 @@ export function BackupPanel() {
           </Button>
         </div>
       </Modal>
+    </>
+  );
+}
+
+/**
+ * 데이터 백업·복원 패널 (F-04)
+ */
+export function BackupPanel() {
+  const {
+    meta,
+    importConfirmOpen,
+    setImportConfirmOpen,
+    result,
+    setResult,
+    handleExportJson,
+    handleImportConfirm,
+  } = useDataTransfer();
+
+  return (
+    <>
+      <div className="flex flex-wrap gap-2">
+        <Button onClick={() => void handleExportJson()}>JSON 내보내기</Button>
+        <Button onClick={() => setImportConfirmOpen(true)}>JSON 불러오기</Button>
+      </div>
+      <p className="mt-3 text-xs text-fg-secondary">
+        마지막 내보내기 {transferTimeLabel(meta.last_exported_at)}
+      </p>
+      <p className="mt-1 text-xs text-fg-secondary">
+        마지막 불러오기 {transferTimeLabel(meta.last_imported_at)}
+      </p>
+      <DataTransferModals
+        importConfirmOpen={importConfirmOpen}
+        setImportConfirmOpen={setImportConfirmOpen}
+        result={result}
+        setResult={setResult}
+        handleImportConfirm={handleImportConfirm}
+      />
     </>
   );
 }

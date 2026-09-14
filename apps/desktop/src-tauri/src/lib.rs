@@ -87,6 +87,7 @@ pub fn run() {
             // Export / Import
             export::export_json,
             export::import_json,
+            export::get_data_transfer_meta,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

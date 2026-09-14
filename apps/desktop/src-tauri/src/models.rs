@@ -14,7 +14,18 @@ pub struct TodoItem {
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct TodoDatabase {
     pub todos: Vec<TodoItem>,
+    #[serde(default)]
     pub memos: Vec<MemoItem>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_exported_at: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_imported_at: Option<i64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DataTransferMeta {
+    pub last_exported_at: Option<i64>,
+    pub last_imported_at: Option<i64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
