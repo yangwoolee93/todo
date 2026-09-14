@@ -96,3 +96,42 @@ export function DragHandleIcon({ className }: { className?: string }) {
     </svg>
   );
 }
+
+/** 밝은 테마 */
+export function SunIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <circle cx="10" cy="10" r="3.25" stroke="currentColor" strokeWidth="1.5" />
+      <path
+        d="M10 3.25v1.5M10 15.25v1.5M3.25 10h1.5M15.25 10h1.5M5.4 5.4l1.06 1.06M13.54 13.54l1.06 1.06M5.4 14.6l1.06-1.06M13.54 6.46l1.06-1.06"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+/** 어두운 테마 */
+export function MoonIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path
+        d="M11.5 4.25A5.75 5.75 0 1 0 15.75 12 4.75 4.75 0 0 1 11.5 4.25Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+/** 시스템 테마 */
+export function MonitorIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <rect x="3.25" y="4.25" width="13.5" height="9.5" rx="1.25" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M7 16.5h6M10 13.75V16.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}

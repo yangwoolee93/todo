@@ -12,4 +12,7 @@ export {
   DragHandleIcon,
   MonthColumnsViewIcon,
   MonthTimelineViewIcon,
+  SunIcon,
+  MoonIcon,
+  MonitorIcon,
 } from "./icons";

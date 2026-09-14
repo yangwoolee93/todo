@@ -3,8 +3,11 @@ import type { AppView } from "@renderer/types/views";
 import type { DisplayTodo } from "@shared/types/todo";
 import { getTodayString, shiftDate } from "@renderer/utils/dateUtils";
 
+export type SettingsSection = "home" | "theme" | "data" | "info";
+
 type UIState = {
   view: AppView;
+  settingsSection: SettingsSection;
   activeDate: string;
   addModalOpen: boolean;
   duplicateContent: string | undefined;
@@ -19,6 +22,8 @@ type UIActions = {
   goMemoView: () => void;
   goScheduleView: () => void;
   goSettingsView: () => void;
+  goSettingsV2View: () => void;
+  setSettingsSection: (section: SettingsSection) => void;
   // activeDate Actions
   setActiveDate: (activeDate: string) => void;
   goTodayDate: () => void;
@@ -37,6 +42,7 @@ type UIStore = UIState & UIActions;
 
 const initialState: UIState = {
   view: "todo",
+  settingsSection: "home",
   activeDate: getTodayString(),
   addModalOpen: false,
   duplicateContent: undefined,
@@ -44,12 +50,23 @@ const initialState: UIState = {
   deleteTarget: null,
 };
 
-const createActions = (set: (fn: (prev: UIStore) => Partial<UIStore>) => void): UIActions => ({
+const createActions = (
+  set: (fn: (prev: UIStore) => Partial<UIStore>) => void,
+  get: () => UIStore,
+): UIActions => ({
   goDesignView: () => set(() => ({ view: "design" })),
   goTodoView: () => set(() => ({ view: "todo" })),
   goMemoView: () => set(() => ({ view: "memo" })),
   goScheduleView: () => set(() => ({ view: "schedule" })),
   goSettingsView: () => set(() => ({ view: "settings" })),
+  goSettingsV2View: () => {
+    const { view, settingsSection } = get();
+    if (view === "settingsV2" && settingsSection !== "home") {
+      history.back();
+    }
+    set(() => ({ view: "settingsV2", settingsSection: "home" }));
+  },
+  setSettingsSection: (settingsSection) => set(() => ({ settingsSection })),
   //
   setActiveDate: (activeDate: string) => set(() => ({ activeDate })),
   goTodayDate: () => set(() => ({ activeDate: getTodayString() })),
@@ -64,7 +81,7 @@ const createActions = (set: (fn: (prev: UIStore) => Partial<UIStore>) => void): 
   setDeleteTarget: (todo) => set(() => ({ deleteTarget: todo })),
 });
 
-export const useUIStore = create<UIStore>()((set) => ({
+export const useUIStore = create<UIStore>()((set, get) => ({
   ...initialState,
-  ...createActions(set),
+  ...createActions(set, get),
 }));

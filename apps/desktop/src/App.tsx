@@ -8,6 +8,7 @@ import { useUIStore } from "@renderer/stores/useUIStore";
 import SchedulePage from "./pages/SchedulePage";
 import MemoPage from "./pages/MemoPage";
 import SettingPage from "./pages/SettingPage";
+import SettingPageV2 from "./pages/SettingPageV2";
 import DesignPage from "./pages/DesignPage";
 import TodoPage from "./pages/TodoPage";
 
@@ -29,6 +30,8 @@ export function App() {
       {view === "todo" && <TodoPage />}
 
       {view === "settings" && <SettingPage />}
+
+      {view === "settingsV2" && <SettingPageV2 />}
 
       {view === "schedule" && <SchedulePage />}
 
