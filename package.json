@@ -4,7 +4,8 @@
   "version": "0.2.0",
   "scripts": {
     "desktop": "pnpm --filter @orbit/desktop tauri dev",
-    "desktop:build": "pnpm --filter @orbit/desktop tauri build"
+    "desktop:build": "pnpm --filter @orbit/desktop tauri build",
+    "dev": "pnpm desktop"
   },
   "devDependencies": {
     "nx": "^21.0.0"
