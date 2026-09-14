@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { cn } from "@renderer/utils/cn";
 import { useUIStore, type SettingsSection } from "@renderer/stores/useUIStore";
 import {
   Button,
+  ChevronRightIcon,
   Modal,
   ModalTitle,
   MonitorIcon,
@@ -144,35 +145,55 @@ function themeLabel(mode: ThemeMode) {
   );
 }
 
+function HomeNavButton({
+  title,
+  children,
+  onClick,
+}: {
+  title: string;
+  children: ReactNode;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className={cn(rowClass, "flex items-center gap-3")}
+      onClick={onClick}
+    >
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm text-fg">{title}</span>
+        {children}
+      </span>
+      <ChevronRightIcon className="text-fg-muted" />
+    </button>
+  );
+}
+
 function HomeList({ onOpen }: { onOpen: (section: SettingsSection) => void }) {
   const mode = useThemeStore((s) => s.mode);
   const { meta } = useDataTransfer();
 
   return (
     <div className="flex flex-col gap-2">
-      <button
-        type="button"
-        className={rowClass}
-        onClick={() => onOpen("theme")}
-      >
-        <span className="block text-sm text-fg">테마</span>
+      <HomeNavButton title="테마 설정" onClick={() => onOpen("theme")}>
         <span className="mt-0.5 block text-xs text-fg-secondary">
           {themeLabel(mode)}
         </span>
-      </button>
-      <button type="button" className={rowClass} onClick={() => onOpen("data")}>
-        <span className="block text-sm text-fg">데이터</span>
+      </HomeNavButton>
+      <HomeNavButton title="데이터 관리" onClick={() => onOpen("data")}>
         <span className="mt-0.5 block text-xs text-fg-secondary">
-          마지막 내보내기 {transferTimeLabel(meta.last_exported_at)} · 마지막
-          불러오기 {transferTimeLabel(meta.last_imported_at)}
+          마지막 내보내기 {transferTimeLabel(meta.last_exported_at)}
         </span>
-      </button>
-      <button type="button" className={rowClass} onClick={() => onOpen("info")}>
-        <span className="block text-sm text-fg">정보</span>
-        <span className="mt-0.5 block text-xs text-fg-secondary">
-          {APP_VERSION} (프리릴리즈)
+        <span className="block text-xs text-fg-secondary">
+          마지막 불러오기 {transferTimeLabel(meta.last_imported_at)}
         </span>
-      </button>
+      </HomeNavButton>
+      <HomeNavButton title="앱 정보" onClick={() => onOpen("info")}>
+        <span className="mt-0.5 block text-xs text-fg-secondary">앱, 버전</span>
+        <span className="block text-xs text-fg-secondary">
+          데이터 경로, 사용한 오픈소스
+        </span>
+      </HomeNavButton>
     </div>
   );
 }
