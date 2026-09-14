@@ -5,7 +5,7 @@ mod storage;
 mod todo;
 mod tray;
 
-use tauri::{Manager, WindowEvent};
+use tauri::{webview::PageLoadEvent, Manager, WindowEvent};
 
 const MIN_WIDTH: u32 = 480;
 const MIN_HEIGHT: u32 = 720;
@@ -40,16 +40,24 @@ pub fn run() {
         .setup(|app| {
             tray::setup_tray(&app.handle())?;
 
-            // 주 모니터 해상도 기반으로 초기 창 크기 동적 조정
+            // 숨긴 상태에서 동적 크기·위치를 먼저 맞춘다. 표시는 페이지 로드 후.
             if let Some(window) = app.get_webview_window("main") {
                 if let Ok(Some(monitor)) = window.primary_monitor() {
                     let (width, height) = calc_window_size(&monitor);
-                    let _ = window.set_size(tauri::Size::Physical(tauri::PhysicalSize { width, height }));
+                    let _ = window.set_size(tauri::Size::Physical(tauri::PhysicalSize {
+                        width,
+                        height,
+                    }));
                     let _ = window.center();
                 }
             }
 
             Ok(())
+        })
+        .on_page_load(|webview, payload| {
+            if payload.event() == PageLoadEvent::Finished {
+                let _ = webview.show();
+            }
         })
         .on_window_event(|window, event| {
             // X 버튼 → 트레이로 숨기기 (종료 아님)
