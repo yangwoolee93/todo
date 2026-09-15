@@ -10,8 +10,6 @@ export {
   CloseIcon,
   MoreVerticalIcon,
   DragHandleIcon,
-  MonthColumnsViewIcon,
-  MonthTimelineViewIcon,
   SunIcon,
   MoonIcon,
   MonitorIcon,

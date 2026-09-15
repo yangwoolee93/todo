@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { AppView } from "@renderer/types/views";
 import type { DisplayTodo } from "@shared/types/todo";
-import { getTodayString, shiftDate } from "@renderer/utils/dateUtils";
+import { getTodayString } from "@renderer/utils/dateUtils";
 
 export type SettingsSection = "home" | "theme" | "data" | "info";
 
@@ -16,23 +16,14 @@ type UIState = {
 };
 
 type UIActions = {
-  // view Actions
-  goDesignView: () => void;
   goTodoView: () => void;
   goMemoView: () => void;
-  goScheduleView: () => void;
   goSettingsView: () => void;
   setSettingsSection: (section: SettingsSection) => void;
-  // activeDate Actions
   setActiveDate: (activeDate: string) => void;
-  goTodayDate: () => void;
-  goPrevDate: () => void;
-  goNextDate: () => void;
-  // addModal Actions
   openAddModal: () => void;
   openAddModalWithDuplicate: (content: string) => void;
   closeAddModal: () => void;
-  // 편집/삭제 모달 대상
   setEditTarget: (todo: DisplayTodo | null) => void;
   setDeleteTarget: (todo: DisplayTodo | null) => void;
 };
@@ -53,10 +44,8 @@ const createActions = (
   set: (fn: (prev: UIStore) => Partial<UIStore>) => void,
   get: () => UIStore,
 ): UIActions => ({
-  goDesignView: () => set(() => ({ view: "design" })),
   goTodoView: () => set(() => ({ view: "todo" })),
   goMemoView: () => set(() => ({ view: "memo" })),
-  goScheduleView: () => set(() => ({ view: "schedule" })),
   goSettingsView: () => {
     const { view, settingsSection } = get();
     if (view === "settings" && settingsSection !== "home") {
@@ -65,12 +54,7 @@ const createActions = (
     set(() => ({ view: "settings", settingsSection: "home" }));
   },
   setSettingsSection: (settingsSection) => set(() => ({ settingsSection })),
-  //
   setActiveDate: (activeDate: string) => set(() => ({ activeDate })),
-  goTodayDate: () => set(() => ({ activeDate: getTodayString() })),
-  goPrevDate: () => set((state) => ({ activeDate: shiftDate(state.activeDate, -1) })),
-  goNextDate: () => set((state) => ({ activeDate: shiftDate(state.activeDate, 1) })),
-  //
   openAddModal: () => set(() => ({ addModalOpen: true, duplicateContent: undefined })),
   openAddModalWithDuplicate: (content) =>
     set(() => ({ addModalOpen: true, duplicateContent: content })),

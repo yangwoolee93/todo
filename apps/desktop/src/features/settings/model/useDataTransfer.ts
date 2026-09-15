@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useUIStore } from "@renderer/stores/useUIStore";
 import { useTodoStore } from "@renderer/features/todo/model/useTodoStore";
-import { useMonthStore } from "@renderer/features/month/model/useMonthStore";
 import { useMemoStore } from "@renderer/features/memo/model/useMemoStore";
 import { formatDateTime } from "@renderer/utils/dateUtils";
 import type { DataTransferMeta } from "@shared/types/todo";
@@ -26,9 +25,7 @@ export function transferTimeLabel(ms: number | null | undefined): string {
 /** JSON 보내기·불러오기와 최근 시각 조회 */
 export function useDataTransfer() {
   const activeDate = useUIStore((s) => s.activeDate);
-  const yearMonth = useMonthStore((s) => s.yearMonth);
   const loadTodosByDate = useTodoStore((s) => s.loadTodosByDate);
-  const loadMonthSummary = useMonthStore((s) => s.loadMonthSummary);
   const loadMemos = useMemoStore((s) => s.loadMemos);
 
   const [meta, setMeta] = useState<DataTransferMeta>(EMPTY_META);
@@ -50,11 +47,7 @@ export function useDataTransfer() {
   }, [loadMeta]);
 
   const refreshAppData = async () => {
-    await Promise.all([
-      loadTodosByDate(activeDate),
-      loadMonthSummary(yearMonth),
-      loadMemos(),
-    ]);
+    await Promise.all([loadTodosByDate(activeDate), loadMemos()]);
   };
 
   const handleExportJson = async () => {
