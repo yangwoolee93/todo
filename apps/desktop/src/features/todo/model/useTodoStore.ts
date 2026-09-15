@@ -5,6 +5,7 @@ import {
   CreateTodoRangePayload,
   DisplayTodo,
   TodoItem,
+  TodoSpan,
   TodoStatus,
 } from "@shared/types/todo";
 import { create } from "zustand";
@@ -41,6 +42,13 @@ type TodoActions = {
   setTodoStatus: (todoId: number, status: TodoStatus) => Promise<boolean>;
   deleteTodo: (todoId: number, scope: "day" | "batch") => Promise<boolean>;
   updateTodoContent: (todoId: number, content: string) => Promise<boolean>;
+  getTodoSpan: (todoId: number) => Promise<TodoSpan | null>;
+  updateTodo: (
+    todoId: number,
+    content: string,
+    startDate: string,
+    endDate: string,
+  ) => Promise<boolean>;
   createTodo: (content: string, targetDate: string) => Promise<boolean>;
   createTodoRange: (payload: CreateTodoRangePayload) => Promise<boolean>;
   createTodoMonth: (payload: CreateTodoMonthPayload) => Promise<boolean>;
@@ -196,6 +204,30 @@ const createActions = (
           todos: current.map((t) => (t.id === todoId ? { ...t, content } : t)),
         }));
       }
+      return true;
+    },
+
+    getTodoSpan: async (todoId) => {
+      const result = await window.api.getTodoSpan(todoId);
+      if (!result.success || !result.data) {
+        set(() => ({ error: result.error ?? "기간 조회 실패" }));
+        return null;
+      }
+      return result.data;
+    },
+
+    updateTodo: async (todoId, content, startDate, endDate) => {
+      const result = await window.api.updateTodo({
+        id: todoId,
+        content,
+        start_date: startDate,
+        end_date: endDate,
+      });
+      if (!result.success) {
+        set(() => ({ error: result.error ?? "수정 실패" }));
+        return false;
+      }
+      await syncDaily();
       return true;
     },
 

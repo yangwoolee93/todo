@@ -77,6 +77,18 @@ export interface UpdateTodoContentPayload {
   content: string;
 }
 
+export interface TodoSpan {
+  start_date: string;
+  end_date: string;
+}
+
+export interface UpdateTodoPayload {
+  id: number;
+  content: string;
+  start_date: string;
+  end_date: string;
+}
+
 export interface SetTodoStatusPayload {
   id: number;
   status: TodoStatus;

@@ -1,7 +1,8 @@
+use std::collections::HashSet;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::AppHandle;
 
-use crate::models::{DaySummary, DisplayTodo, TodoDatabase, TodoItem};
+use crate::models::{DaySummary, DisplayTodo, TodoDatabase, TodoItem, TodoSpan};
 use crate::storage::{mutate_store, read_store};
 
 // ─── 유틸 ───────────────────────────────────────────────────────────────────
@@ -324,6 +325,145 @@ pub fn update_todo_content(app: AppHandle, id: i64, content: String) -> Result<b
             item.content = content.clone();
             changed = true;
         }
+    });
+
+    Ok(changed)
+}
+
+fn sibling_ids(store: &TodoDatabase, id: i64) -> Vec<i64> {
+    match find_by_id(store, id) {
+        Some(item) => {
+            if let Some(bid) = &item.batch_id {
+                store
+                    .todos
+                    .iter()
+                    .filter(|t| t.batch_id.as_deref() == Some(bid.as_str()))
+                    .map(|t| t.id)
+                    .collect()
+            } else {
+                vec![item.id]
+            }
+        }
+        None => Vec::new(),
+    }
+}
+
+#[tauri::command]
+pub fn get_todo_span(app: AppHandle, id: i64) -> Result<TodoSpan, String> {
+    let store = read_store(&app);
+    let item = find_by_id(&store, id).ok_or("할 일을 찾을 수 없습니다")?;
+    if let Some(bid) = &item.batch_id {
+        let mut dates: Vec<String> = store
+            .todos
+            .iter()
+            .filter(|t| t.batch_id.as_deref() == Some(bid.as_str()))
+            .map(|t| t.target_date.clone())
+            .collect();
+        dates.sort();
+        let start = dates
+            .first()
+            .cloned()
+            .unwrap_or_else(|| item.target_date.clone());
+        let end = dates
+            .last()
+            .cloned()
+            .unwrap_or_else(|| item.target_date.clone());
+        Ok(TodoSpan {
+            start_date: start,
+            end_date: end,
+        })
+    } else {
+        Ok(TodoSpan {
+            start_date: item.target_date.clone(),
+            end_date: item.target_date.clone(),
+        })
+    }
+}
+
+#[tauri::command]
+pub fn update_todo(
+    app: AppHandle,
+    id: i64,
+    content: String,
+    start_date: String,
+    end_date: String,
+) -> Result<bool, String> {
+    let content = sanitize_content(&content).ok_or("내용이 비어있습니다")?;
+    if !is_valid_date(&start_date) || !is_valid_date(&end_date) {
+        return Err("날짜 형식이 올바르지 않습니다".into());
+    }
+    if start_date > end_date {
+        return Err("시작일은 종료일보다 늦을 수 없습니다".into());
+    }
+
+    let store = read_store(&app);
+    if find_by_id(&store, id).is_none() {
+        return Err("할 일을 찾을 수 없습니다".into());
+    }
+
+    let new_dates = enumerate_date_range(&start_date, &end_date);
+    let mut changed = false;
+
+    mutate_store(&app, |store| {
+        let ids = sibling_ids(store, id);
+        if ids.is_empty() {
+            return;
+        }
+        let id_set: HashSet<i64> = ids.iter().copied().collect();
+
+        if new_dates.len() == 1 {
+            let only = new_dates[0].clone();
+            store.todos.retain(|t| !id_set.contains(&t.id) || t.id == id);
+            if let Some(item) = store.todos.iter_mut().find(|t| t.id == id) {
+                item.content = content.clone();
+                item.target_date = only;
+                item.batch_id = None;
+                changed = true;
+            }
+            return;
+        }
+
+        let batch_id = find_by_id(store, id)
+            .and_then(|t| t.batch_id.clone())
+            .unwrap_or_else(new_batch_id);
+
+        let keep: HashSet<String> = new_dates.iter().cloned().collect();
+        store.todos.retain(|t| {
+            if id_set.contains(&t.id) {
+                keep.contains(&t.target_date)
+            } else {
+                true
+            }
+        });
+
+        let mut have: HashSet<String> = HashSet::new();
+        for t in store.todos.iter_mut() {
+            if id_set.contains(&t.id) {
+                t.content = content.clone();
+                t.batch_id = Some(batch_id.clone());
+                have.insert(t.target_date.clone());
+            }
+        }
+
+        let base_order = next_sort_order(store);
+        let mut add_i = 0i64;
+        for date in &new_dates {
+            if have.contains(date) {
+                continue;
+            }
+            let ts = now_ms() + add_i;
+            store.todos.push(TodoItem {
+                id: ts,
+                content: content.clone(),
+                target_date: date.clone(),
+                status: "pending".into(),
+                created_at: ts,
+                sort_order: base_order + add_i,
+                batch_id: Some(batch_id.clone()),
+            });
+            add_i += 1;
+        }
+        changed = true;
     });
 
     Ok(changed)

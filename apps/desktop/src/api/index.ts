@@ -12,7 +12,9 @@ import type {
   ReorderTodoPayload,
   SetTodoStatusPayload,
   TodoItem,
+  TodoSpan,
   UpdateTodoContentPayload,
+  UpdateTodoPayload,
 } from "@shared/types/todo";
 import type { CreateMemoPayload, MemoItem, UpdateMemoPayload } from "@shared/types/memo";
 
@@ -79,6 +81,19 @@ export const api = {
 
   updateTodoContent(payload: UpdateTodoContentPayload): Promise<IpcResult> {
     return call("update_todo_content", { id: payload.id, content: payload.content });
+  },
+
+  getTodoSpan(id: number): Promise<IpcResult<TodoSpan>> {
+    return call("get_todo_span", { id });
+  },
+
+  updateTodo(payload: UpdateTodoPayload): Promise<IpcResult> {
+    return call("update_todo", {
+      id: payload.id,
+      content: payload.content,
+      startDate: payload.start_date,
+      endDate: payload.end_date,
+    });
   },
 
   reorderTodo(payload: ReorderTodoPayload): Promise<IpcResult> {

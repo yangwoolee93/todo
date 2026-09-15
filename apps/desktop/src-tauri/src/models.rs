@@ -54,3 +54,9 @@ pub struct DaySummary {
     pub day: u32,
     pub todos: Vec<DisplayTodo>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TodoSpan {
+    pub start_date: String,
+    pub end_date: String,
+}

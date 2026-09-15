@@ -77,6 +77,8 @@ pub fn run() {
             todo::set_todo_status,
             todo::delete_todo,
             todo::update_todo_content,
+            todo::get_todo_span,
+            todo::update_todo,
             todo::reorder_todo,
             todo::get_store_path_str,
             // Memo
