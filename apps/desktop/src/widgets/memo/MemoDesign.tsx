@@ -1,13 +1,9 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
-import Masonry from "react-masonry-css";
 import { useUIStore } from "@renderer/stores/useUIStore";
 import { useMemoStore } from "@renderer/features/memo";
 import type { MemoItem, MemoKind } from "@shared/types/memo";
 import { Button, CloseIcon, Input, Modal, ModalTitle, Tab } from "@renderer/shared/ui";
 import { cn } from "@renderer/utils/cn";
-
-/** 창 너비 기준 Masonry 열 수 */
-const MASONRY_BREAKPOINTS = { default: 4, 800: 3, 600: 2, 400: 1 };
 
 const fieldClass = cn(
   "w-full rounded-(--radius-btn) border border-border bg-surface px-3 py-2 text-sm text-fg",
@@ -34,8 +30,6 @@ export default function MemoDesign() {
 
   const items = memos.filter((item) => item.kind === kind);
   const heading = kind === "routine" ? "루틴" : "예정";
-  const hint =
-    kind === "routine" ? "반복해서 쓰는 할 일 제목입니다." : "아직 날짜가 없는 할 일·메모입니다.";
 
   const handleAdd = async (title: string, note: string) => {
     const success = await createMemo({
@@ -64,12 +58,8 @@ export default function MemoDesign() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      {/* 헤더 — TodoPage 패턴 */}
-      <div className="m-6 mb-2 flex flex-col gap-2">
-        <div className="flex items-baseline gap-3">
-          <h1 className="text-2xl font-medium text-fg">{heading}</h1>
-          <p className="text-xs text-fg-secondary">{hint}</p>
-        </div>
+      <div className="m-6 mb-2 flex items-center justify-between gap-3">
+        <h1 className="text-2xl font-medium text-fg">{heading}</h1>
         <div className="flex w-fit gap-1" role="group" aria-label="메모 종류">
           <Tab active={kind === "routine"} onClick={() => setKind("routine")}>
             루틴
@@ -80,7 +70,6 @@ export default function MemoDesign() {
         </div>
       </div>
 
-      {/* 콘텐츠 — DayTodoList 패턴 */}
       <div className="mx-6 mb-6 mt-4 flex min-h-0 flex-1 flex-col">
         <button
           type="button"
@@ -100,30 +89,30 @@ export default function MemoDesign() {
               <span className="text-xs">상단 「항목 추가」로 등록하세요.</span>
             </p>
           ) : (
-            <Masonry
-              breakpointCols={MASONRY_BREAKPOINTS}
-              className="flex -ml-3"
-              columnClassName="pl-3 flex flex-col gap-3"
-            >
+            <ul className="flex flex-col gap-2">
               {items.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  className={cn(
-                    "w-full rounded-(--radius-card) border border-border bg-surface p-3 text-left",
-                    "transition-colors hover:bg-muted/20",
-                  )}
-                  onClick={() => setOpened(item)}
-                >
-                  <p className="text-sm font-medium text-fg">{item.title}</p>
-                  {item.note ? (
-                    <p className="mt-2 whitespace-pre-wrap text-xs leading-relaxed text-fg-secondary">
-                      {item.note}
-                    </p>
-                  ) : null}
-                </button>
+                <li key={item.id}>
+                  <button
+                    type="button"
+                    className="relative w-full rounded-(--radius-card) bg-surface py-3 pr-3 pl-6 text-left hover:bg-muted"
+                    onClick={() => setOpened(item)}
+                  >
+                    <span
+                      aria-hidden
+                      className="absolute top-2.5 bottom-2.5 left-2.5 w-0.75 rounded-full bg-fg-muted/50"
+                    />
+                    <span className="block text-sm font-medium leading-snug text-fg">
+                      {item.title}
+                    </span>
+                    {item.note ? (
+                      <span className="mt-0.5 block text-xs leading-relaxed text-fg-secondary line-clamp-2">
+                        {item.note}
+                      </span>
+                    ) : null}
+                  </button>
+                </li>
               ))}
-            </Masonry>
+            </ul>
           )}
         </div>
       </div>
