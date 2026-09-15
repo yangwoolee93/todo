@@ -21,6 +21,11 @@ export function toYearMonth(dateString: string): string {
   return dateString.slice(0, 7);
 }
 
+/** 연·월 숫자로 "YYYY-MM" 키를 만든다. */
+export function toYearMonthKey(year: number, month: number) {
+  return `${year}-${String(month).padStart(2, "0")}`;
+}
+
 export { countDaysInRange, enumerateDateRange, getMonthDateRange } from "@shared/utils/dateRange";
 
 /** 날짜 문자열을 화면용 짧은 라벨로 변환한다 (예: "5/24"). */

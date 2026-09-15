@@ -1,5 +1,5 @@
 import { cn } from "@renderer/utils/cn";
-import type { AgendaItem } from "./monthAgendaTempUtil";
+import type { AgendaItem } from "./agenda";
 
 export default function MonthAgendaItem({ item }: { item: AgendaItem }) {
   return (

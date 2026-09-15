@@ -1,7 +1,7 @@
 import { cn } from "@renderer/utils/cn";
 import { DAY_COL_WIDTH, WEEKDAYS } from "./constants";
 import { RefObject } from "react";
-import { dateHeadTextClass } from "./monthTimelineTempUtil";
+import { dateHeadTextClass } from "@renderer/widgets/todo/dateHeadTextClass";
 
 export default function MonthTimelineHeadCell({
   year,

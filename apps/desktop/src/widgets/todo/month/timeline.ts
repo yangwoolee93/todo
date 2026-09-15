@@ -1,4 +1,3 @@
-import { isKoreanPublicHoliday } from "@renderer/utils/koreanHolidays";
 import { BAR_EDGE, BAR_EDGE_RATIO, DAY_COL_WIDTH } from "./constants";
 import { DaySummary, DisplayTodo, TodoStatus } from "@shared/types/todo";
 import { buildTimelineRows } from "@renderer/features/month/ui/buildTimelineRows";
@@ -16,53 +15,12 @@ export type TimelineBar = {
   settled: boolean;
 };
 
-/** 날짜 헤드 텍스트 색상 정하기 */
-export function dateHeadTextClass(year: number, month: number, day: number) {
-  const weekday = new Date(year, month - 1, day).getDay();
-  if (weekday === 0 || isKoreanPublicHoliday(year, month, day))
-    return "text-danger";
-  if (weekday === 6) return "text-saturday";
-  return undefined;
-}
-
 /** 띠 칸 너비 — 막대 좌우 여백을 첫날·마지막 날에 반영한다 */
 export function dayRailWidth(index: number, count: number) {
   if (count === 1) return `calc(${DAY_COL_WIDTH} - ${BAR_EDGE} - ${BAR_EDGE})`;
   if (index === 0 || index === count - 1)
     return `calc(${DAY_COL_WIDTH} - ${BAR_EDGE})`;
   return DAY_COL_WIDTH;
-}
-
-/** 자식 요소를 뷰포트 중앙에 스크롤한다 */
-export function scrollChildIntoView(
-  root: HTMLElement | null,
-  target: HTMLElement | null,
-  axis: "x" | "y",
-  behavior: ScrollBehavior = "auto",
-) {
-  if (!root || !target) return;
-
-  const rootRect = root.getBoundingClientRect();
-  const targetRect = target.getBoundingClientRect();
-
-  if (axis === "x") {
-    const left =
-      root.scrollLeft +
-      (targetRect.left -
-        rootRect.left -
-        root.clientWidth / 2 +
-        targetRect.width / 2);
-    root.scrollTo({ left, behavior });
-    return;
-  }
-
-  const top =
-    root.scrollTop +
-    (targetRect.top -
-      rootRect.top -
-      root.clientHeight / 2 +
-      targetRect.height / 2);
-  root.scrollTo({ top, behavior });
 }
 
 /** 가운데가 비면 이어진 날만 한 조각으로 나눈다 */
@@ -99,11 +57,6 @@ export function barsFromSummaries(summaries: DaySummary[]): TimelineBar[] {
       settled: row.isSettled,
     }))
     .filter((bar) => bar.segments.length > 0);
-}
-
-/** 연월 키 생성 */
-export function toYearMonthKey(year: number, month: number) {
-  return `${year}-${String(month).padStart(2, "0")}`;
 }
 
 /** 막대 조각 가장자리 px 계산 */

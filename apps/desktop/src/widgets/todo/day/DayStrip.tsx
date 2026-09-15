@@ -1,7 +1,7 @@
 import { cn } from "@renderer/utils/cn";
 import StripArrow from "@renderer/widgets/todo/StripArrow";
 import { WEEKDAYS } from "@renderer/widgets/todo/month/constants";
-import { dateHeadTextClass } from "@renderer/widgets/todo/month/monthTimelineTempUtil";
+import { dateHeadTextClass } from "@renderer/widgets/todo/dateHeadTextClass";
 import { YEAR_END, YEAR_START } from "@renderer/widgets/todo/year/constants";
 import { useEffect, useRef } from "react";
 
@@ -42,7 +42,10 @@ export default function DayStrip({
     const rootRect = root.getBoundingClientRect();
     const targetRect = target.getBoundingClientRect();
     root.scrollLeft +=
-      targetRect.left - rootRect.left - root.clientWidth / 2 + targetRect.width / 2;
+      targetRect.left -
+      rootRect.left -
+      root.clientWidth / 2 +
+      targetRect.width / 2;
   };
 
   useEffect(() => {
@@ -67,7 +70,8 @@ export default function DayStrip({
           {Array.from({ length: dayCount }).map((_, index) => {
             const date = index + 1;
             const selected = date === day;
-            const isToday = year === thisYear && month === thisMonth && date === thisDay;
+            const isToday =
+              year === thisYear && month === thisMonth && date === thisDay;
             const headColor = dateHeadTextClass(year, month, date);
             return (
               <button
@@ -94,7 +98,11 @@ export default function DayStrip({
                     isToday && "bg-fg-secondary flex",
                   )}
                 />
-                <span className={cn("text-3xl font-bold leading-none", headColor)}>{date}</span>
+                <span
+                  className={cn("text-3xl font-bold leading-none", headColor)}
+                >
+                  {date}
+                </span>
                 <span
                   className={cn(
                     "text-[0.75rem] font-normal",

@@ -1,6 +1,6 @@
 import { cn } from "@renderer/utils/cn";
 import { BAR_EDGE, DAY_COL_WIDTH } from "./constants";
-import { dayRailWidth, TimelineBar } from "./monthTimelineTempUtil";
+import { dayRailWidth, TimelineBar } from "./timeline";
 import { RefObject } from "react";
 
 export default function MonthTimelineBar({
@@ -16,7 +16,9 @@ export default function MonthTimelineBar({
     <div key={bar.id} className="relative flex" style={{ width: trackWidth }}>
       {bar.segments.map((segment, segmentIndex) => {
         const prev = bar.segments[segmentIndex - 1];
-        const gapDays = prev ? segment.start - prev.start - prev.days.length : 0;
+        const gapDays = prev
+          ? segment.start - prev.start - prev.days.length
+          : 0;
         return (
           <div
             key={`${bar.id}-${segment.start}`}

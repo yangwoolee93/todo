@@ -1,8 +1,9 @@
 import { DaySummary } from "@shared/types/todo";
 import { useEffect, useRef, useState } from "react";
-import { EmptyHint } from "./tempMonthTimeline";
-import { agendaGroupsFromSummaries } from "./monthAgendaTempUtil";
-import { scrollChildIntoView, toYearMonthKey } from "./monthTimelineTempUtil";
+import { toYearMonthKey } from "@renderer/utils/dateUtils";
+import { scrollChildIntoView } from "@renderer/widgets/todo/scrollChildIntoView";
+import { EmptyHint } from "./EmptyHint";
+import { agendaGroupsFromSummaries } from "./agenda";
 import MonthAgendaDayGroup from "./MonthAgendaDayGroup";
 
 export default function MonthAgenda({
@@ -26,7 +27,10 @@ export default function MonthAgenda({
   const [summaries, setSummaries] = useState<DaySummary[]>([]);
   const [ready, setReady] = useState(false);
 
-  const groups = agendaGroupsFromSummaries(summaries, isCurrentMonth ? thisDay : undefined);
+  const groups = agendaGroupsFromSummaries(
+    summaries,
+    isCurrentMonth ? thisDay : undefined,
+  );
 
   /** 달 요약 데이터를 가져온다 */
   useEffect(() => {
@@ -60,7 +64,10 @@ export default function MonthAgenda({
   }, [year, month, thisDay, ready]);
 
   return (
-    <div ref={scrollRef} className="scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto">
+    <div
+      ref={scrollRef}
+      className="scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto"
+    >
       {!ready ? null : groups.length === 0 ? (
         <EmptyHint>이 달에 등록된 할 일이 없습니다.</EmptyHint>
       ) : (

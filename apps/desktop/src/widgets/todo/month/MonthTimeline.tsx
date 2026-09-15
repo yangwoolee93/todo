@@ -2,13 +2,10 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { DAY_COL_WIDTH } from "./constants";
 import { DaySummary } from "@shared/types/todo";
 
-import { EmptyHint } from "./tempMonthTimeline";
-import {
-  barsFromSummaries,
-  scrollChildIntoView,
-  toYearMonthKey,
-  updateTitlePositions,
-} from "./monthTimelineTempUtil";
+import { toYearMonthKey } from "@renderer/utils/dateUtils";
+import { scrollChildIntoView } from "@renderer/widgets/todo/scrollChildIntoView";
+import { EmptyHint } from "./EmptyHint";
+import { barsFromSummaries, updateTitlePositions } from "./timeline";
 import MonthTimelineHeadCell from "./MonthTimelineHeadCell";
 import MonthTimelineBar from "./MonthTimelineBar";
 
@@ -59,7 +56,8 @@ export default function MonthTimeline({
     const headRow = headRowRef.current;
     if (!root || !headRow) return;
 
-    const update = () => updateTitlePositions({ root, headRow, dayCount, bars, titleRefs });
+    const update = () =>
+      updateTitlePositions({ root, headRow, dayCount, bars, titleRefs });
     update();
     root.addEventListener("scroll", update, {
       passive: true,
@@ -109,7 +107,10 @@ export default function MonthTimeline({
         </div>
         {ready && bars.length > 0 && (
           <div className="relative" style={{ width: trackWidth }}>
-            <div className="pointer-events-none absolute inset-0 flex" aria-hidden>
+            <div
+              className="pointer-events-none absolute inset-0 flex"
+              aria-hidden
+            >
               {Array.from({ length: dayCount }).map((_, index) => (
                 <div
                   key={index}
