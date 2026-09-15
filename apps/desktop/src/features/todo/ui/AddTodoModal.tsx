@@ -2,19 +2,28 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import {
   countDaysInRange,
   getMonthDateRange,
+  getTodayString,
   toShortLabel,
   toYearMonth,
 } from "@renderer/utils/dateUtils";
+import { cn } from "@renderer/utils/cn";
 import { useUIStore } from "@renderer/stores/useUIStore";
 import { useTodoStore } from "@renderer/features/todo/model/useTodoStore";
-import { Modal, ModalTitle, Input, Button, Tab, CloseIcon } from "@renderer/shared/ui";
+import {
+  Modal,
+  ModalTitle,
+  Input,
+  Button,
+  CloseIcon,
+  ChevronRightIcon,
+} from "@renderer/shared/ui";
+import DateRangeCalendar from "./DateRangeCalendar";
 
-/** 추가 모달 탭 — 하루 / 기간 / 한 달 */
-type AddMode = "single" | "range" | "month";
+const presetBtnClass =
+  "rounded-(--radius-btn) px-2 py-1 text-xs whitespace-nowrap transition-colors";
 
 /**
- * 투두 추가 모달 (오늘 탭 하단 「+ 투두 추가」 / ⋮ 복제)
- * - 하루·기간·한 달 탭
+ * 할 일 추가 — 기간 필드를 누르면 달력이 열린다. 같은 날이면 하루로 저장한다.
  */
 export function AddTodoModal() {
   const addModalOpen = useUIStore((s) => s.addModalOpen);
@@ -24,62 +33,123 @@ export function AddTodoModal() {
 
   const createTodo = useTodoStore((s) => s.createTodo);
   const createTodoRange = useTodoStore((s) => s.createTodoRange);
-  const createTodoMonth = useTodoStore((s) => s.createTodoMonth);
 
-  //
-  //
-  const [mode, setMode] = useState<AddMode>("single");
+  const today = getTodayString();
+  const thisMonth = getMonthDateRange(toYearMonth(today));
+
   const [content, setContent] = useState("");
-  const [targetDate, setTargetDate] = useState(activeDate);
   const [startDate, setStartDate] = useState(activeDate);
   const [endDate, setEndDate] = useState(activeDate);
-  const [yearMonth, setYearMonth] = useState(() => toYearMonth(activeDate));
+  const [focusDate, setFocusDate] = useState(activeDate);
+  const [calendarReset, setCalendarReset] = useState(0);
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const contentInputRef = useRef<HTMLInputElement>(null);
-  /** false→true 전환 시에만 폼 초기화 (열린 채 defaultDate 변경 시 입력 유지) */
   const wasOpenRef = useRef(false);
+  const savedRangeRef = useRef({ start: activeDate, end: activeDate });
+
+  const isSingleDay = startDate === endDate;
+  const dayCount = countDaysInRange(startDate, endDate);
+  const isTodayPreset = startDate === today && endDate === today;
+  const isThisMonthPreset =
+    startDate === thisMonth.start && endDate === thisMonth.end;
 
   useEffect(() => {
     if (addModalOpen && !wasOpenRef.current) {
       setContent(duplicateContent ?? "");
-      setMode("single");
-      setTargetDate(activeDate);
       setStartDate(activeDate);
       setEndDate(activeDate);
-      setYearMonth(toYearMonth(activeDate));
+      setFocusDate(activeDate);
+      setCalendarReset((n) => n + 1);
+      setCalendarOpen(false);
       requestAnimationFrame(() => contentInputRef.current?.focus());
     }
     wasOpenRef.current = addModalOpen;
   }, [addModalOpen, activeDate, duplicateContent]);
 
-  /** 줄바꿈 제거 — 1줄 입력만 허용 */
+  useEffect(() => {
+    if (!calendarOpen) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      const { start, end } = savedRangeRef.current;
+      setStartDate(start);
+      setEndDate(end);
+      setFocusDate(start);
+      setCalendarReset((n) => n + 1);
+      setCalendarOpen(false);
+    };
+
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => document.removeEventListener("keydown", onKeyDown, true);
+  }, [calendarOpen]);
+
   const sanitize = (value: string) => value.replace(/[\r\n]+/g, "");
 
-  const handleClose = () => {
+  const bumpCalendar = (start: string, end: string, focus: string) => {
+    setStartDate(start);
+    setEndDate(end);
+    setFocusDate(focus);
+    setCalendarReset((n) => n + 1);
+  };
+
+  const resetForm = () => {
     setContent("");
-    setMode("single");
+    bumpCalendar(activeDate, activeDate, activeDate);
+    setCalendarOpen(false);
+  };
+
+  const handleClose = () => {
+    resetForm();
     closeAddModal();
   };
 
-  /** 탭별 create IPC 호출 */
+  const confirmCalendar = () => setCalendarOpen(false);
+
+  const cancelCalendar = () => {
+    const { start, end } = savedRangeRef.current;
+    bumpCalendar(start, end, start);
+    setCalendarOpen(false);
+  };
+
+  const applyReset = () => {
+    bumpCalendar(activeDate, activeDate, activeDate);
+  };
+
+  const applyToday = () => {
+    bumpCalendar(today, today, today);
+  };
+
+  const applyThisMonth = () => {
+    bumpCalendar(thisMonth.start, thisMonth.end, thisMonth.start);
+  };
+
+  const toggleCalendar = () => {
+    if (calendarOpen) {
+      cancelCalendar();
+      return;
+    }
+    savedRangeRef.current = { start: startDate, end: endDate };
+    setFocusDate(startDate);
+    setCalendarReset((n) => n + 1);
+    setCalendarOpen(true);
+  };
+
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setSubmitting(true);
 
     try {
-      let success = false;
-
-      if (mode === "single") {
-        success = await createTodo(content, targetDate);
-      } else if (mode === "range") {
-        success = await createTodoRange({
-          content,
-          start_date: startDate,
-          end_date: endDate,
-        });
-      } else {
-        success = await createTodoMonth({ content, year_month: yearMonth });
-      }
+      const text = sanitize(content).trim();
+      const success = isSingleDay
+        ? await createTodo(text, startDate)
+        : await createTodoRange({
+            content: text,
+            start_date: startDate,
+            end_date: endDate,
+          });
 
       if (success) handleClose();
     } finally {
@@ -87,34 +157,44 @@ export function AddTodoModal() {
     }
   };
 
-  const rangeDayCount =
-    startDate && endDate && startDate <= endDate ? countDaysInRange(startDate, endDate) : 0;
-
-  const monthRange = getMonthDateRange(yearMonth);
-  const monthDayCount = countDaysInRange(monthRange.start, monthRange.end);
+  const rangeLabel = isSingleDay
+    ? toShortLabel(startDate)
+    : `${toShortLabel(startDate)} ~ ${toShortLabel(endDate)}`;
 
   return (
-    <Modal open={addModalOpen} onClose={handleClose} label="할 일 추가" size="md">
-      <div className="mb-4 flex items-center justify-between">
-        <ModalTitle className="text-lg font-semibold text-fg">할 일 추가</ModalTitle>
-        <Button variant="ghost" className="p-1.5" aria-label="닫기" onClick={handleClose}>
+    <Modal
+      open={addModalOpen}
+      onClose={handleClose}
+      label="할 일 추가"
+      size="md"
+      className="overflow-visible"
+    >
+      {calendarOpen && (
+        <div
+          className="absolute inset-0 z-10 rounded-(--radius-card)"
+          aria-hidden="true"
+          onPointerDown={cancelCalendar}
+        />
+      )}
+
+      <div className="relative z-20 mb-4 flex items-center justify-between">
+        <ModalTitle className="text-lg font-semibold text-fg">
+          할 일 추가
+        </ModalTitle>
+        <Button
+          variant="ghost"
+          className="p-1.5"
+          aria-label="닫기"
+          onClick={handleClose}
+        >
           <CloseIcon />
         </Button>
       </div>
 
-      <div className="mb-4 flex gap-1 rounded-(--radius-btn) border border-border bg-muted p-1">
-        <Tab active={mode === "single"} className="flex-1" onClick={() => setMode("single")}>
-          하루
-        </Tab>
-        <Tab active={mode === "range"} className="flex-1" onClick={() => setMode("range")}>
-          기간
-        </Tab>
-        <Tab active={mode === "month"} className="flex-1" onClick={() => setMode("month")}>
-          한 달
-        </Tab>
-      </div>
-
-      <form className="flex flex-col gap-4" onSubmit={(e) => void handleSubmit(e)}>
+      <form
+        className="flex flex-col gap-4"
+        onSubmit={(e) => void handleSubmit(e)}
+      >
         <div>
           <label
             className="mb-1 block text-xs font-medium text-fg-secondary"
@@ -132,87 +212,118 @@ export function AddTodoModal() {
           />
         </div>
 
-        {mode === "single" && (
-          <div>
-            <label className="mb-1 block text-xs font-medium text-fg-secondary" htmlFor="todo-date">
-              날짜
-            </label>
-            <Input
-              id="todo-date"
-              type="date"
-              value={targetDate}
-              onChange={(e) => setTargetDate(e.target.value)}
+        <div className="relative z-20 flex flex-col gap-2">
+          <label
+            className="block text-xs font-medium text-fg-secondary"
+            htmlFor="todo-range"
+          >
+            기간
+          </label>
+          <button
+            id="todo-range"
+            type="button"
+            aria-expanded={calendarOpen}
+            aria-haspopup="dialog"
+            className={cn(
+              "flex w-full items-center justify-between rounded-(--radius-btn) border bg-surface px-3 py-2 text-sm text-fg",
+              "outline-none",
+              calendarOpen
+                ? "border-accent ring-2 ring-accent/20"
+                : "border-border hover:border-accent/60",
+            )}
+            onClick={toggleCalendar}
+          >
+            <span>{rangeLabel}</span>
+            <ChevronRightIcon
+              className={cn(
+                "text-fg-muted transition-transform",
+                calendarOpen && "rotate-90",
+              )}
             />
-          </div>
-        )}
+          </button>
 
-        {mode === "range" && (
-          <>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label
-                  className="mb-1 block text-xs font-medium text-fg-secondary"
-                  htmlFor="range-start"
-                >
-                  시작일
-                </label>
-                <Input
-                  id="range-start"
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
-              </div>
-              <div>
-                <label
-                  className="mb-1 block text-xs font-medium text-fg-secondary"
-                  htmlFor="range-end"
-                >
-                  종료일
-                </label>
-                <Input
-                  id="range-end"
-                  type="date"
-                  value={endDate}
-                  min={startDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
-              </div>
-            </div>
-            {rangeDayCount > 0 && startDate <= endDate && (
-              <p className="rounded-(--radius-btn) bg-muted px-3 py-2 text-xs text-fg-secondary">
-                <strong className="text-fg">{rangeDayCount}일</strong> 동안 매일 추가됩니다. (
-                {toShortLabel(startDate)} ~ {toShortLabel(endDate)})
-              </p>
-            )}
-            {startDate > endDate && (
-              <p className="text-xs text-danger">시작일은 종료일보다 늦을 수 없습니다.</p>
-            )}
-          </>
-        )}
-
-        {mode === "month" && (
-          <>
-            <div>
-              <label
-                className="mb-1 block text-xs font-medium text-fg-secondary"
-                htmlFor="todo-month"
-              >
-                대상 월
-              </label>
-              <Input
-                id="todo-month"
-                type="month"
-                value={yearMonth}
-                onChange={(e) => setYearMonth(e.target.value)}
+          {calendarOpen && (
+            <div className="absolute left-0 right-0 top-full z-30 mt-1.5 flex gap-2 rounded-(--radius-card) border border-border bg-surface p-2 shadow-lg">
+              <DateRangeCalendar
+                startDate={startDate}
+                endDate={endDate}
+                focusDate={focusDate}
+                resetKey={calendarReset}
+                className="min-w-0 flex-1"
+                onChange={(start, end) => {
+                  setStartDate(start);
+                  setEndDate(end);
+                }}
               />
+              <div className="flex shrink-0 flex-col self-stretch">
+                <div
+                  className="flex flex-col gap-0.5 rounded-(--radius-btn) bg-muted p-1"
+                  role="group"
+                  aria-label="기간 빠른 선택"
+                >
+                  <button
+                    type="button"
+                    className={cn(
+                      presetBtnClass,
+                      "text-fg-secondary hover:text-fg",
+                    )}
+                    onClick={applyReset}
+                  >
+                    초기화
+                  </button>
+                  <button
+                    type="button"
+                    className={cn(
+                      presetBtnClass,
+                      isTodayPreset
+                        ? "bg-surface font-medium text-fg shadow-sm"
+                        : "text-fg-secondary hover:text-fg",
+                    )}
+                    onClick={applyToday}
+                  >
+                    오늘로
+                  </button>
+                  <button
+                    type="button"
+                    className={cn(
+                      presetBtnClass,
+                      isThisMonthPreset
+                        ? "bg-surface font-medium text-fg shadow-sm"
+                        : "text-fg-secondary hover:text-fg",
+                    )}
+                    onClick={applyThisMonth}
+                  >
+                    이번 달
+                  </button>
+                </div>
+                <div className="mt-auto flex flex-col gap-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="px-2 py-1 text-xs"
+                    onClick={cancelCalendar}
+                  >
+                    취소
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="primary"
+                    className="px-2 py-1 text-xs"
+                    onClick={confirmCalendar}
+                  >
+                    적용
+                  </Button>
+                </div>
+              </div>
             </div>
-            <p className="rounded-(--radius-btn) bg-muted px-3 py-2 text-xs text-fg-secondary">
-              <strong className="text-fg">{yearMonth}</strong> — {monthDayCount}일(1일~말일) 매일
-              추가됩니다.
-            </p>
-          </>
-        )}
+          )}
+        </div>
+
+        <p className="rounded-(--radius-btn) bg-muted px-3 py-2 text-xs text-fg-secondary">
+          <strong className="text-fg">{dayCount}일</strong>{" "}
+          {dayCount > 1 ? "동안 매일 " : " "}
+          추가됩니다. ({rangeLabel})
+        </p>
 
         <div className="flex justify-end gap-2 pt-1">
           <Button type="button" variant="ghost" onClick={handleClose}>
@@ -221,7 +332,7 @@ export function AddTodoModal() {
           <Button
             type="submit"
             variant="primary"
-            disabled={submitting || !content.trim() || (mode === "range" && startDate > endDate)}
+            disabled={submitting || !content.trim()}
           >
             {submitting ? "추가 중..." : "추가"}
           </Button>
