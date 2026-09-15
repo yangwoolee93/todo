@@ -83,9 +83,13 @@ pub fn run() {
             todo::get_store_path_str,
             // Memo
             memo::list_memos,
+            memo::list_memo_categories,
             memo::create_memo,
             memo::update_memo,
             memo::delete_memo,
+            memo::create_memo_category,
+            memo::update_memo_category,
+            memo::delete_memo_category,
             // Export / Import
             export::export_json,
             export::import_json,

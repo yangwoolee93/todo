@@ -16,7 +16,12 @@ import type {
   UpdateTodoContentPayload,
   UpdateTodoPayload,
 } from "@shared/types/todo";
-import type { CreateMemoPayload, MemoItem, UpdateMemoPayload } from "@shared/types/memo";
+import type {
+  CreateMemoPayload,
+  MemoCategory,
+  MemoItem,
+  UpdateMemoPayload,
+} from "@shared/types/memo";
 
 /** invoke 래퍼 — IpcResult 형태로 통일 */
 async function call<T>(command: string, args?: Record<string, unknown>): Promise<IpcResult<T>> {
@@ -128,9 +133,13 @@ export const api = {
     return call("list_memos");
   },
 
+  listMemoCategories(): Promise<IpcResult<MemoCategory[]>> {
+    return call("list_memo_categories");
+  },
+
   createMemo(payload: CreateMemoPayload): Promise<IpcResult<MemoItem>> {
     return call("create_memo", {
-      kind: payload.kind,
+      categoryId: payload.category_id,
       title: payload.title,
       note: payload.note,
     });
@@ -141,11 +150,24 @@ export const api = {
       id: payload.id,
       title: payload.title,
       note: payload.note,
+      categoryId: payload.category_id,
     });
   },
 
   deleteMemo(id: number): Promise<IpcResult> {
     return call("delete_memo", { id });
+  },
+
+  createMemoCategory(name: string, color: string): Promise<IpcResult<MemoCategory>> {
+    return call("create_memo_category", { name, color });
+  },
+
+  updateMemoCategory(id: number, name: string, color: string): Promise<IpcResult> {
+    return call("update_memo_category", { id, name, color });
+  },
+
+  deleteMemoCategory(id: number): Promise<IpcResult> {
+    return call("delete_memo_category", { id });
   },
 };
 

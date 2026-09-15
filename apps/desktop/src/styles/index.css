@@ -31,6 +31,14 @@
   --radius-card: 0.5rem;
   --radius-btn: 0.5rem;
   --color-saturday: #2563eb;
+  --color-memo-teal: #45ada5;
+  --color-memo-blue: #2563eb;
+  --color-memo-violet: #7c3aed;
+  --color-memo-rose: #e11d48;
+  --color-memo-amber: #d97706;
+  --color-memo-green: #16885a;
+  --color-memo-orange: #ea580c;
+  --color-memo-slate: #78716c;
 }
 
 /* 스크롤바 토큰 — :root에 두어 var()가 Electron에서 확실히 해석되게 */
@@ -64,6 +72,14 @@
   --scrollbar-thumb: #c4bcb0;
   --scrollbar-thumb-hover: #a8a29e;
   --color-saturday: #2563eb;
+  --color-memo-teal: #45ada5;
+  --color-memo-blue: #2563eb;
+  --color-memo-violet: #7c3aed;
+  --color-memo-rose: #e11d48;
+  --color-memo-amber: #d97706;
+  --color-memo-green: #16885a;
+  --color-memo-orange: #ea580c;
+  --color-memo-slate: #78716c;
 }
 
 /* 어두운 모드 팔레트 — 중립 다크 그레이 */
@@ -89,6 +105,14 @@
   --scrollbar-thumb: #404040;
   --scrollbar-thumb-hover: #525252;
   --color-saturday: #3b82f6;
+  --color-memo-teal: #2dd4bf;
+  --color-memo-blue: #60a5fa;
+  --color-memo-violet: #a78bfa;
+  --color-memo-rose: #fb7185;
+  --color-memo-amber: #fbbf24;
+  --color-memo-green: #4ade80;
+  --color-memo-orange: #fb923c;
+  --color-memo-slate: #a3a3a3;
 }
 
 @layer base {

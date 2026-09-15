@@ -16,6 +16,8 @@ pub struct TodoDatabase {
     pub todos: Vec<TodoItem>,
     #[serde(default)]
     pub memos: Vec<MemoItem>,
+    #[serde(default)]
+    pub memo_categories: Vec<MemoCategory>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub last_exported_at: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -29,9 +31,18 @@ pub struct DataTransferMeta {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MemoCategory {
+    pub id: i64,
+    pub name: String,
+    pub sort_order: i64,
+    #[serde(default)]
+    pub color: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MemoItem {
     pub id: i64,
-    pub kind: String, // "routine" | "planned"
+    pub category_id: i64,
     pub title: String,
     pub note: String,
     pub created_at: i64,

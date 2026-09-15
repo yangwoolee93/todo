@@ -1,8 +1,13 @@
-export type MemoKind = "routine" | "planned";
+export interface MemoCategory {
+  id: number;
+  name: string;
+  sort_order: number;
+  color: string;
+}
 
 export interface MemoItem {
   id: number;
-  kind: MemoKind;
+  category_id: number;
   title: string;
   note: string;
   created_at: number;
@@ -10,13 +15,14 @@ export interface MemoItem {
 }
 
 export interface CreateMemoPayload {
-  kind: MemoKind;
+  category_id: number;
   title: string;
   note: string;
 }
 
 export interface UpdateMemoPayload {
   id: number;
+  category_id: number;
   title: string;
   note: string;
 }

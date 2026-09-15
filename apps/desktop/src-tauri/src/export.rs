@@ -4,7 +4,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::AppHandle;
 use tauri_plugin_dialog::{DialogExt, FilePath};
 
-use crate::models::{DataTransferMeta, MemoItem, TodoDatabase, TodoItem};
+use crate::memo::{ensure_memo_schema, migrate_memo_json};
+use crate::models::{DataTransferMeta, MemoCategory, MemoItem, TodoDatabase, TodoItem};
 use crate::storage::{read_store, write_store};
 
 // ─── JSON 내보내기 ────────────────────────────────────────────────────────────
@@ -52,6 +53,9 @@ pub async fn import_json(app: AppHandle) -> Result<Option<String>, String> {
             let parsed: serde_json::Value =
                 serde_json::from_str(&raw).map_err(|_| "유효하지 않은 JSON 형식입니다.".to_string())?;
 
+            let mut parsed = parsed;
+            migrate_memo_json(&mut parsed);
+
             let todos: Vec<TodoItem> = parsed
                 .get("todos")
                 .and_then(|v| serde_json::from_value(v.clone()).ok())
@@ -62,14 +66,21 @@ pub async fn import_json(app: AppHandle) -> Result<Option<String>, String> {
                 .and_then(|v| serde_json::from_value(v.clone()).ok())
                 .unwrap_or_default();
 
+            let memo_categories: Vec<MemoCategory> = parsed
+                .get("memo_categories")
+                .and_then(|v| serde_json::from_value(v.clone()).ok())
+                .unwrap_or_default();
+
             let last_exported_at = parsed.get("last_exported_at").and_then(|v| v.as_i64());
 
-            let new_store = TodoDatabase {
+            let mut new_store = TodoDatabase {
                 todos,
                 memos,
+                memo_categories,
                 last_exported_at,
                 last_imported_at: Some(now_ms()),
             };
+            ensure_memo_schema(&mut new_store);
             write_store(&app, &new_store);
 
             Ok(Some(path_str))

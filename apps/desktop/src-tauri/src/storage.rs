@@ -16,19 +16,20 @@ pub fn get_store_path(app: &tauri::AppHandle) -> PathBuf {
 pub fn read_store(app: &tauri::AppHandle) -> TodoDatabase {
     let path = get_store_path(app);
 
-    if !path.exists() {
-        return TodoDatabase::default();
-    }
-
-    let raw = match fs::read_to_string(&path) {
-        Ok(content) => content,
-        Err(_) => return TodoDatabase::default(),
+    let mut store = if !path.exists() {
+        TodoDatabase::default()
+    } else {
+        match fs::read_to_string(&path) {
+            Ok(raw) => crate::memo::parse_database(&raw).unwrap_or_default(),
+            Err(_) => TodoDatabase::default(),
+        }
     };
 
-    match serde_json::from_str::<TodoDatabase>(&raw) {
-        Ok(db) => db,
-        Err(_) => TodoDatabase::default(),
+    if crate::memo::ensure_memo_schema(&mut store) {
+        write_store(app, &store);
     }
+
+    store
 }
 
 pub fn write_store(app: &tauri::AppHandle, store: &TodoDatabase) {
