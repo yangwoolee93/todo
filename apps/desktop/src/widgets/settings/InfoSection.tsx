@@ -3,7 +3,7 @@ import { cn } from "@renderer/utils/cn";
 import { Button, Modal, ModalTitle } from "@renderer/shared/ui";
 import { APP_VERSION } from "@renderer/constants/appVersion";
 import { OPEN_SOURCE_LIBS } from "@renderer/features/settings";
-import { infoRowClass, rowClass } from "./rowClass";
+import { settingsInfoRowClass, settingsRowClass } from "./settingsRow";
 
 export default function InfoSection() {
   const [storePath, setStorePath] = useState<string | null>(null);
@@ -41,17 +41,17 @@ export default function InfoSection() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2">
-      <div className={infoRowClass}>
+      <div className={settingsInfoRowClass}>
         <p className="text-xs text-fg-secondary">앱</p>
         <p className="mt-0.5 text-sm text-fg">Orbit</p>
       </div>
-      <div className={infoRowClass}>
+      <div className={settingsInfoRowClass}>
         <p className="text-xs text-fg-secondary">버전</p>
         <p className="mt-0.5 text-sm text-fg">{APP_VERSION} (프리릴리즈)</p>
       </div>
       <button
         type="button"
-        className={cn(rowClass, !storePath && "cursor-default")}
+        className={cn(settingsRowClass, !storePath && "cursor-default")}
         disabled={!storePath}
         onClick={() => setOpenDirConfirm(true)}
       >

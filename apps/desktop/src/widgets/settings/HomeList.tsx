@@ -4,7 +4,7 @@ import { ChevronRightIcon } from "@renderer/shared/ui";
 import { type SettingsSection } from "@renderer/stores/useUIStore";
 import { useThemeStore } from "@renderer/stores/useThemeStore";
 import { transferTimeLabel, useDataTransfer } from "@renderer/features/settings";
-import { rowClass } from "./rowClass";
+import { settingsRowClass } from "./settingsRow";
 import { themeLabel } from "./themeOptions";
 
 function HomeNavButton({
@@ -19,7 +19,7 @@ function HomeNavButton({
   return (
     <button
       type="button"
-      className={cn(rowClass, "flex items-center gap-3")}
+      className={cn(settingsRowClass, "flex items-center gap-3")}
       onClick={onClick}
     >
       <span className="min-w-0 flex-1">

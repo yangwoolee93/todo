@@ -3,7 +3,7 @@ import {
   transferTimeLabel,
   useDataTransfer,
 } from "@renderer/features/settings";
-import { rowClass } from "./rowClass";
+import { settingsRowClass } from "./settingsRow";
 
 export default function DataSection() {
   const {
@@ -20,7 +20,7 @@ export default function DataSection() {
     <div className="flex flex-col gap-2">
       <button
         type="button"
-        className={rowClass}
+        className={settingsRowClass}
         onClick={() => void handleExportJson()}
       >
         <span className="block text-sm text-fg">JSON 내보내기</span>
@@ -30,7 +30,7 @@ export default function DataSection() {
       </button>
       <button
         type="button"
-        className={rowClass}
+        className={settingsRowClass}
         onClick={() => setImportConfirmOpen(true)}
       >
         <span className="block text-sm text-fg">JSON 불러오기</span>
