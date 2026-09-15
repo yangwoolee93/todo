@@ -13,12 +13,12 @@ const AppHeader = () => {
   const view = useUIStore((s) => s.view);
   const goTodoView = useUIStore((s) => s.goTodoView);
   const goMemoView = useUIStore((s) => s.goMemoView);
-  const goSettingsV2View = useUIStore((s) => s.goSettingsV2View);
+  const goSettingsView = useUIStore((s) => s.goSettingsView);
 
   const tabs: { id: AppView; label: string; onClick: () => void }[] = [
     { id: "todo", label: "할일", onClick: () => goTodoView() },
     { id: "memo", label: "메모", onClick: () => goMemoView() },
-    { id: "settingsV2", label: "설정", onClick: () => goSettingsV2View() },
+    { id: "settings", label: "설정", onClick: () => goSettingsView() },
   ];
 
   const isWin = window.electron?.platform === "win32";

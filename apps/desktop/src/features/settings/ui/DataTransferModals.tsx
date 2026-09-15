@@ -1,8 +1,4 @@
-import {
-  useDataTransfer,
-  transferTimeLabel,
-  type TransferResult,
-} from "../model/useDataTransfer";
+import { type TransferResult } from "../model/useDataTransfer";
 import { Modal, ModalTitle, Button } from "@renderer/shared/ui";
 
 type DataTransferModalsProps = {
@@ -59,43 +55,6 @@ export function DataTransferModals({
           </Button>
         </div>
       </Modal>
-    </>
-  );
-}
-
-/**
- * 데이터 백업·복원 패널 (F-04)
- */
-export function BackupPanel() {
-  const {
-    meta,
-    importConfirmOpen,
-    setImportConfirmOpen,
-    result,
-    setResult,
-    handleExportJson,
-    handleImportConfirm,
-  } = useDataTransfer();
-
-  return (
-    <>
-      <div className="flex flex-wrap gap-2">
-        <Button onClick={() => void handleExportJson()}>JSON 내보내기</Button>
-        <Button onClick={() => setImportConfirmOpen(true)}>JSON 불러오기</Button>
-      </div>
-      <p className="mt-3 text-xs text-fg-secondary">
-        마지막 내보내기 {transferTimeLabel(meta.last_exported_at)}
-      </p>
-      <p className="mt-1 text-xs text-fg-secondary">
-        마지막 불러오기 {transferTimeLabel(meta.last_imported_at)}
-      </p>
-      <DataTransferModals
-        importConfirmOpen={importConfirmOpen}
-        setImportConfirmOpen={setImportConfirmOpen}
-        result={result}
-        setResult={setResult}
-        handleImportConfirm={handleImportConfirm}
-      />
     </>
   );
 }

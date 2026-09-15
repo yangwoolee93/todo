@@ -22,7 +22,6 @@ type UIActions = {
   goMemoView: () => void;
   goScheduleView: () => void;
   goSettingsView: () => void;
-  goSettingsV2View: () => void;
   setSettingsSection: (section: SettingsSection) => void;
   // activeDate Actions
   setActiveDate: (activeDate: string) => void;
@@ -58,13 +57,12 @@ const createActions = (
   goTodoView: () => set(() => ({ view: "todo" })),
   goMemoView: () => set(() => ({ view: "memo" })),
   goScheduleView: () => set(() => ({ view: "schedule" })),
-  goSettingsView: () => set(() => ({ view: "settings" })),
-  goSettingsV2View: () => {
+  goSettingsView: () => {
     const { view, settingsSection } = get();
-    if (view === "settingsV2" && settingsSection !== "home") {
+    if (view === "settings" && settingsSection !== "home") {
       history.back();
     }
-    set(() => ({ view: "settingsV2", settingsSection: "home" }));
+    set(() => ({ view: "settings", settingsSection: "home" }));
   },
   setSettingsSection: (settingsSection) => set(() => ({ settingsSection })),
   //
