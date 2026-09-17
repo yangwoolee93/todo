@@ -15,7 +15,7 @@ pub fn setup_tray<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
         .item(&quit_item)
         .build()?;
 
-    let _tray = TrayIconBuilder::with_id("main")
+    let tray = TrayIconBuilder::with_id("main")
         .icon(app.default_window_icon().cloned().unwrap())
         .tooltip("Orbit")
         .menu(&menu)
@@ -39,6 +39,10 @@ pub fn setup_tray<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
             _ => {}
         })
         .build(app)?;
+
+    if let Some(icon) = crate::dev_icon::load() {
+        tray.set_icon(Some(icon))?;
+    }
 
     Ok(())
 }

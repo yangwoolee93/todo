@@ -1,3 +1,4 @@
+mod dev_icon;
 mod export;
 mod memo;
 mod models;
@@ -103,6 +104,21 @@ pub fn run() {
                 #[cfg(target_os = "macos")]
                 position_macos_traffic_lights(&window);
             }
+            dev_icon::apply_all(&app.handle());
+
+            // 숨긴 상태에서 동적 크기·위치를 먼저 맞춘다. 표시는 페이지 로드 후.
+            if let Some(window) = app.get_webview_window("main") {
+                if let Ok(Some(monitor)) = window.primary_monitor() {
+                    let (width, height) = calc_window_size(&monitor);
+                    let _ = window.set_size(tauri::Size::Physical(tauri::PhysicalSize {
+                        width,
+                        height,
+                    }));
+                    let _ = window.center();
+                }
+                #[cfg(target_os = "macos")]
+                position_macos_traffic_lights(&window);
+            }
 
             Ok(())
         })
@@ -116,6 +132,7 @@ pub fn run() {
                 {
                     position_macos_traffic_lights(&window);
                 }
+                dev_icon::apply_all(webview.app_handle());
             }
         })
         .on_window_event(|window, event| {

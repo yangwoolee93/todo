@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+    <defs>
+        <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#16a34a" />
+            <stop offset="50%" stop-color="#2563eb" />
+            <stop offset="100%" stop-color="#ea580c" />
+        </linearGradient>
+        <linearGradient id="gradDark" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#149442" />
+            <stop offset="50%" stop-color="#2360e0" />
+            <stop offset="100%" stop-color="#df550b" />
+        </linearGradient>
+        <linearGradient id="gradLight" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#1ac55a" />
+            <stop offset="50%" stop-color="#4e7ef0" />
+            <stop offset="100%" stop-color="#ff8533" />
+        </linearGradient>
+    </defs>
+    <circle cx="512" cy="512" r="512" fill="#ffffff" />
+    <g transform="translate(512 512)">
+        <path d="M 0 -213 L -75 -75 L -213 0 L -75 75 L 0 213 L 75 75 L 213 0 L 75 -75 Z" fill="url(#gradDark)" />
+        <path d="M 0 -213 L 75 -75 L 0 0 Z M 213 0 L 75 75 L 0 0 Z M 0 213 L -75 75 L 0 0 Z M -213 0 L -75 -75 L 0 0 Z" fill="url(#gradLight)" />
+    </g>
+    <circle cx="512" cy="512" r="341" fill="none" stroke="url(#grad)" stroke-width="213" stroke-linecap="round" />
+    <polygon points="724,0 1024,0 1024,300" fill="#eab308" />
+    <polygon points="1024,0 1024,140 884,0" fill="#ca8a04" />
+</svg>
