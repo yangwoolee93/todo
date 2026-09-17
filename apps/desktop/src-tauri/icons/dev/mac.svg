@@ -16,18 +16,20 @@
             <stop offset="50%" stop-color="#4e7ef0" />
             <stop offset="100%" stop-color="#ff8533" />
         </linearGradient>
-        <clipPath id="plate">
-            <rect x="100" y="100" width="824" height="824" rx="185.4" ry="185.4" />
-        </clipPath>
     </defs>
-    <rect x="100" y="100" width="824" height="824" rx="185.4" ry="185.4" fill="#ffffff" />
+    <rect x="100" y="100" width="824" height="824" rx="185.4" ry="185.4" fill="#2a2a2a" />
     <g transform="translate(512 512) scale(0.858333)">
         <path d="M 0 -200 L -70 -70 L -200 0 L -70 70 L 0 200 L 70 70 L 200 0 L 70 -70 Z" fill="url(#gradDark)" />
-        <path d="M 0 -200 L 70 -70 L 0 0 Z M 200 0 L 70 70 L 0 0 Z M 0 200 L -70 70 L 0 0 Z M -200 0 L -70 -70 L 0 0 Z" fill="url(#gradLight)" />
+        <path d="M 0 -200 L 70 -70 L 0 0 Z M 200 0 L 70 70 L 0 0 Z M 0 200 L -70 70 L 0 0 Z M -200 0 L -70 -70 L 0 0 Z"
+            fill="url(#gradLight)" />
     </g>
-    <circle cx="512" cy="512" r="274.667" fill="none" stroke="url(#grad)" stroke-width="171.667" stroke-linecap="round" />
-    <g clip-path="url(#plate)">
-        <polygon points="640,100 924,100 924,384" fill="#eab308" />
-        <polygon points="924,100 924,220 804,100" fill="#ca8a04" />
+    <circle cx="512" cy="512" r="274.667" fill="none" stroke="url(#grad)" stroke-width="171.667"
+        stroke-linecap="round" />
+    <g transform="translate(512 780)">
+        <rect x="-267.5" y="-111.25" width="535" height="222.5" rx="47.5" fill="rgba(0,0,0,0.5)" stroke="#00ffd0"
+            stroke-width="25" />
+        <text x="0" y="77.5" text-anchor="middle"
+            font-family="Arial Rounded MT Bold, Avenir Next Rounded, Hiragino Maru Gothic ProN, Avenir Next, sans-serif"
+            font-size="225" font-weight="700" letter-spacing="7" fill="#00ffd0">DEV</text>
     </g>
 </svg>
