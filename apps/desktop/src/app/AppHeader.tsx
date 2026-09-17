@@ -21,7 +21,9 @@ const AppHeader = () => {
     { id: "settings", label: "설정", onClick: () => goSettingsView() },
   ];
 
-  const isWin = window.electron?.platform === "win32";
+  const platform = window.electron?.platform;
+  const isWin = platform === "win32";
+  const isMac = platform === "darwin";
 
   const WinHeader = () => {
     const appWindow = getCurrentWindow();
@@ -203,7 +205,7 @@ const AppHeader = () => {
     return (
       <header
         className={cn(
-          "relative flex shrink-0 items-center justify-between h-11",
+          "relative flex h-11 shrink-0 items-center justify-between border-b border-border select-none",
         )}
         onMouseDown={handleHeaderMouseDown}
       >
@@ -224,7 +226,13 @@ const AppHeader = () => {
     );
   };
 
-  return isWin ? <WinHeader /> : <MacHeader />;
+  if (isWin) {
+    return <WinHeader />;
+  }
+  if (isMac) {
+    return <MacHeader />;
+  }
+  return <MacHeader />;
 };
 
 export default AppHeader;

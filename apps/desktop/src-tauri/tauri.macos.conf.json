@@ -1,0 +1,23 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "app": {
+    "windows": [
+      {
+        "title": "Orbit",
+        "width": 480,
+        "height": 900,
+        "minWidth": 480,
+        "minHeight": 720,
+        "decorations": true,
+        "hiddenTitle": true,
+        "titleBarStyle": "Overlay",
+        "trafficLightPosition": {
+          "x": 12,
+          "y": 16
+        },
+        "center": true,
+        "visible": false
+      }
+    ]
+  }
+}
