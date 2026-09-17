@@ -205,23 +205,20 @@ const AppHeader = () => {
     return (
       <header
         className={cn(
-          "relative flex h-11 shrink-0 items-center justify-between border-b border-border select-none",
+          "relative flex h-11 shrink-0 items-center justify-between gap-4 border-b border-border select-none",
         )}
         onMouseDown={handleHeaderMouseDown}
       >
-        <div className="flex flex-1 h-full items-center gap-1.5 pl-20">
-          <img src={IconMac} className="w-6 h-6 pointer-events-none" />
-          <span className="truncate text-md font-bold tracking-[-0.8px] text-fg">
-            할 일
-          </span>
-        </div>
-        <nav className="flex gap-1 pr-2">
+        <nav className="flex gap-1 pr-2 pl-21">
           {tabs.map((tab) => (
             <Tab key={tab.id} active={view === tab.id} onClick={tab.onClick}>
               {tab.label}
             </Tab>
           ))}
         </nav>
+        <div className="flex h-full items-center gap-1.5 pr-3">
+          <img src={IconMac} className="w-6 h-6 pointer-events-none" />
+        </div>
       </header>
     );
   };
