@@ -1,6 +1,12 @@
 import { cn } from "@renderer/utils/cn";
 import IconWin from "@renderer/assets/icon_win.png";
 import IconMac from "@renderer/assets/icon_mac.png";
+import IconWinDev from "@renderer/assets/icon_win_dev.png";
+import IconMacDev from "@renderer/assets/icon_mac_dev.png";
+
+const isDev = import.meta.env.DEV;
+const headerIconWin = isDev ? IconWinDev : IconWin;
+const headerIconMac = isDev ? IconMacDev : IconMac;
 import { AppView } from "@renderer/types/views";
 import { useUIStore } from "@renderer/stores/useUIStore";
 import { Tab } from "@renderer/shared/ui";
@@ -85,7 +91,7 @@ const AppHeader = () => {
       >
         {/* 아이콘 */}
         <div className="flex items-center pl-3 h-full gap-1.5">
-          <img src={IconWin} className="w-4 h-4 pointer-events-none" />
+          <img src={headerIconWin} className="w-4 h-4 pointer-events-none" />
         </div>
 
         {/* 탭 네비게이션 — 클릭은 탭 전환, 드래그는 창 이동 */}
@@ -217,7 +223,7 @@ const AppHeader = () => {
           ))}
         </nav>
         <div className="flex h-full items-center gap-1.5 pr-3">
-          <img src={IconMac} className="w-6 h-6 pointer-events-none" />
+          <img src={headerIconMac} className="w-6 h-6 pointer-events-none" />
         </div>
       </header>
     );
