@@ -26,10 +26,11 @@ export default function DataSection() {
 
   return (
     <div className="flex flex-col gap-2">
+      <p className="px-1 text-xs text-fg-secondary">Google Drive</p>
       {status.connected ? (
         <>
           <div className={settingsInfoRowClass}>
-            <span className="block text-sm text-fg">구글 연결됨</span>
+            <span className="block text-sm text-fg">연결됨</span>
             <span className="mt-0.5 block text-xs text-fg-secondary">
               {status.email ?? "연결되었습니다."}
             </span>
@@ -44,32 +45,30 @@ export default function DataSection() {
           </button>
         </>
       ) : (
-        <div className="flex flex-col gap-2">
-          <button
-            type="button"
-            className={cn(
-              "flex h-10 w-full items-center justify-center gap-3",
-              "rounded-(--radius-btn) border text-sm font-medium",
-              "bg-white text-[#1F1F1F] border-[#747775]",
-              "dark:bg-[#131314] dark:text-[#E3E3E3] dark:border-[#8E918F]",
-              "hover:bg-[#F8F8F8] dark:hover:bg-[#1F1F1F]",
-              busy && "cursor-wait opacity-[0.38]",
-            )}
-            disabled={busy}
-            onClick={() => void login()}
-          >
-            <GoogleGIcon />
-            Google 계정으로 로그인
-          </button>
-          {busy ? (
-            <p className="px-1 text-xs text-fg-secondary">브라우저에서 로그인 중…</p>
-          ) : !status.configured ? (
-            <p className="px-1 text-xs text-fg-secondary">
-              apps/desktop/.env 에 클라이언트 값을 넣고 다시 실행하세요.
-            </p>
-          ) : null}
-        </div>
+        <button
+          type="button"
+          className={cn(
+            "flex h-10 w-full items-center justify-center gap-3",
+            "rounded-(--radius-btn) border text-sm font-medium",
+            "bg-white text-[#1F1F1F] border-[#747775]",
+            "dark:bg-[#131314] dark:text-[#E3E3E3] dark:border-[#8E918F]",
+            "hover:bg-[#F8F8F8] dark:hover:bg-[#1F1F1F]",
+            busy && "cursor-wait opacity-[0.38]",
+          )}
+          disabled={busy}
+          onClick={() => void login()}
+        >
+          <GoogleGIcon />
+          Google 계정으로 로그인
+        </button>
       )}
+      <p className="px-1 text-xs text-fg-secondary">
+        {busy
+          ? "브라우저에서 로그인 중…"
+          : !status.configured
+            ? "apps/desktop/.env 에 클라이언트 값을 넣고 다시 실행하세요."
+            : "로그인한 계정의 드라이브를 이용해 동기화할 수 있습니다."}
+      </p>
 
       <p className="px-1 pt-3 text-xs text-fg-secondary">이 기기 파일</p>
       <button
@@ -107,7 +106,11 @@ export default function DataSection() {
         handleImportConfirm={handleImportConfirm}
         handleImportMerge={handleImportMerge}
       />
-      <Modal open={logoutOpen} onClose={() => setLogoutOpen(false)} label="구글 연결 해제">
+      <Modal
+        open={logoutOpen}
+        onClose={() => setLogoutOpen(false)}
+        label="구글 연결 해제"
+      >
         <ModalTitle className="mb-2 text-base font-semibold text-fg">
           구글 연결 해제
         </ModalTitle>

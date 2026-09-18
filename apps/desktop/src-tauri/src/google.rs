@@ -207,11 +207,12 @@ fn parse_code(req: &str, expected_state: &str) -> Result<String, String> {
 fn reply(stream: &mut std::net::TcpStream, ok: bool, message: &str) {
     let title = if ok { "연결됨" } else { "연결 실패" };
     let hint = if ok {
-        "이 창을 닫고 Orbit으로 돌아오세요."
+        "이 창을 닫고 앱으로 돌아가세요."
     } else {
         "이 창을 닫고 앱에서 다시 시도하세요."
     };
     let accent = if ok { "#45ada5" } else { "#dc2626" };
+    let accent_dark = if ok { "#2dd4bf" } else { "#f87171" };
     let safe = html_escape(message);
     let body = format!(
         "<!doctype html><html lang=ko><head><meta charset=utf-8><meta name=viewport content=\"width=device-width,initial-scale=1\"><title>Orbit</title>\
@@ -222,6 +223,12 @@ main{{min-height:100vh;display:flex;align-items:center;justify-content:center;pa
 .mark{{width:10px;height:10px;border-radius:99px;background:{accent};margin:0 auto 16px}}\
 h1{{margin:0 0 8px;font-size:1.125rem;font-weight:600}}\
 p{{margin:0;font-size:.875rem;color:#57534e;line-height:1.5}}\
+@media (prefers-color-scheme:dark){{\
+html,body{{background:#121212;color:#ececec}}\
+.card{{background:#1a1a1a}}\
+.mark{{background:{accent_dark}}}\
+p{{color:#a3a3a3}}\
+}}\
 </style></head><body><main><div class=card><div class=mark></div><h1>{title}</h1><p>{safe}</p><p style=margin-top:8px>{hint}</p></div></main>\
 <script>setTimeout(function(){{window.close()}},1500)</script></body></html>"
     );
