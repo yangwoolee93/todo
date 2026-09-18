@@ -10,9 +10,10 @@ export type TodoStatus = "pending" | "completed" | "failed";
 
 /**
  * 투두 항목 원본 데이터 모델
+ * id는 기기 간 병합을 위한 전역 고유 문자열(UUID)이다.
  */
 export interface TodoItem {
-  id: number;
+  id: string;
   content: string;
   target_date: string;
   status: TodoStatus;
@@ -35,8 +36,16 @@ export interface DataTransferMeta {
   last_imported_at: number | null;
 }
 
+/** 병합 불러오기 결과 — 추가·갱신·삭제된 항목 수 */
+export interface ImportMergeResult {
+  file_path: string;
+  added: number;
+  updated: number;
+  deleted: number;
+}
+
 export interface DisplayTodo {
-  id: number;
+  id: string;
   content: string;
   status: TodoStatus;
   sort_order: number;
@@ -68,12 +77,12 @@ export interface CreateBatchResult {
 export type DeleteTodoScope = "day" | "batch";
 
 export interface DeleteTodoPayload {
-  id: number;
+  id: string;
   scope: DeleteTodoScope;
 }
 
 export interface UpdateTodoContentPayload {
-  id: number;
+  id: string;
   content: string;
 }
 
@@ -83,21 +92,21 @@ export interface TodoSpan {
 }
 
 export interface UpdateTodoPayload {
-  id: number;
+  id: string;
   content: string;
   start_date: string;
   end_date: string;
 }
 
 export interface SetTodoStatusPayload {
-  id: number;
+  id: string;
   status: TodoStatus;
 }
 
 export interface ReorderTodoPayload {
   target_date: string;
-  id: number;
-  over_id: number;
+  id: string;
+  over_id: string;
 }
 
 export interface DaySummary {

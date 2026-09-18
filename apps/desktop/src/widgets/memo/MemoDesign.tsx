@@ -21,7 +21,7 @@ export default function MemoDesign() {
   const updateMemo = useMemoStore((s) => s.updateMemo);
   const deleteMemo = useMemoStore((s) => s.deleteMemo);
 
-  const [filterId, setFilterId] = useState<number | null>(null);
+  const [filterId, setFilterId] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [manageOpen, setManageOpen] = useState(false);
   const [opened, setOpened] = useState<MemoItem | null>(null);
@@ -38,9 +38,9 @@ export default function MemoDesign() {
 
   const items =
     filterId === null ? memos : memos.filter((item) => item.category_id === filterId);
-  const defaultCategoryId = filterId ?? categories[0]?.id ?? 0;
+  const defaultCategoryId = filterId ?? categories[0]?.id ?? "";
 
-  const handleAdd = async (categoryId: number, title: string, note: string) => {
+  const handleAdd = async (categoryId: string, title: string, note: string) => {
     const success = await createMemo({
       category_id: categoryId,
       title,
@@ -49,7 +49,7 @@ export default function MemoDesign() {
     if (success) setAddOpen(false);
   };
 
-  const handleSaveOpened = async (categoryId: number, title: string, note: string) => {
+  const handleSaveOpened = async (categoryId: string, title: string, note: string) => {
     if (!opened) return;
     const success = await updateMemo({
       id: opened.id,
@@ -181,7 +181,7 @@ export default function MemoDesign() {
   );
 }
 
-function categoryName(categories: MemoCategory[], id: number) {
+function categoryName(categories: MemoCategory[], id: string) {
   return categories.find((category) => category.id === id)?.name ?? "미분류";
 }
 
@@ -192,9 +192,9 @@ function CategorySelect({
   onChange,
 }: {
   id: string;
-  value: number;
+  value: string;
   categories: MemoCategory[];
-  onChange: (id: number) => void;
+  onChange: (id: string) => void;
 }) {
   return (
     <div className="flex items-center gap-2">
@@ -211,7 +211,7 @@ function CategorySelect({
         id={id}
         className={fieldClass}
         value={value}
-        onChange={(event) => onChange(Number(event.target.value))}
+        onChange={(event) => onChange(event.target.value)}
       >
         {categories.map((category) => (
           <option key={category.id} value={category.id}>
@@ -232,9 +232,9 @@ function MemoAddModal({
 }: {
   open: boolean;
   categories: MemoCategory[];
-  defaultCategoryId: number;
+  defaultCategoryId: string;
   onClose: () => void;
-  onAdd: (categoryId: number, title: string, note: string) => void;
+  onAdd: (categoryId: string, title: string, note: string) => void;
 }) {
   const [title, setTitle] = useState("");
   const [note, setNote] = useState("");
@@ -330,13 +330,13 @@ function MemoDetailModal({
   categories: MemoCategory[];
   item: MemoItem | null;
   onClose: () => void;
-  onSave: (categoryId: number, title: string, note: string) => void;
+  onSave: (categoryId: string, title: string, note: string) => void;
   onRemove: () => void;
   onPutOnSchedule: (title: string) => void;
 }) {
   const [title, setTitle] = useState("");
   const [note, setNote] = useState("");
-  const [categoryId, setCategoryId] = useState(0);
+  const [categoryId, setCategoryId] = useState("");
   const [editing, setEditing] = useState(false);
   const titleRef = useRef<HTMLInputElement>(null);
   const wasOpenRef = useRef(false);

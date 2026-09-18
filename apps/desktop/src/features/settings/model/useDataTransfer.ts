@@ -29,6 +29,7 @@ export function useDataTransfer() {
   const loadMemos = useMemoStore((s) => s.loadMemos);
 
   const [meta, setMeta] = useState<DataTransferMeta>(EMPTY_META);
+  const [importModeOpen, setImportModeOpen] = useState(false);
   const [importConfirmOpen, setImportConfirmOpen] = useState(false);
   const [result, setResult] = useState<TransferResult | null>(null);
 
@@ -72,13 +73,35 @@ export function useDataTransfer() {
     }
   };
 
+  /** 병합 — 현재 데이터를 유지한 채 파일 내용을 더한다(덮어쓰기 아님). */
+  const handleImportMerge = async () => {
+    setImportModeOpen(false);
+    const res = await window.api.importJsonMerge();
+    if (res.success && res.data) {
+      const { added, updated, deleted } = res.data;
+      setResult({
+        title: "JSON 병합 완료",
+        message: `추가 ${added} · 갱신 ${updated} · 삭제 ${deleted}`,
+      });
+      await refreshAppData();
+      await loadMeta();
+    } else if (res.success && !res.data) {
+      // 취소 — 아무것도 하지 않음
+    } else if (!res.success && res.error) {
+      setResult({ title: "병합 실패", message: res.error, isError: true });
+    }
+  };
+
   return {
     meta,
+    importModeOpen,
+    setImportModeOpen,
     importConfirmOpen,
     setImportConfirmOpen,
     result,
     setResult,
     handleExportJson,
     handleImportConfirm,
+    handleImportMerge,
   };
 }

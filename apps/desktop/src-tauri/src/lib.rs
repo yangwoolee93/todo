@@ -1,6 +1,8 @@
 mod dev_icon;
 mod export;
+mod ids;
 mod memo;
+mod merge;
 mod models;
 mod storage;
 mod todo;
@@ -175,6 +177,7 @@ pub fn run() {
             // Export / Import
             export::export_json,
             export::import_json,
+            export::import_json_merge,
             export::get_data_transfer_meta,
         ])
         .run(tauri::generate_context!())

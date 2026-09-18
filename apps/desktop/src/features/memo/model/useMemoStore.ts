@@ -17,10 +17,10 @@ type MemoActions = {
   loadMemos: () => Promise<void>;
   createMemo: (payload: CreateMemoPayload) => Promise<boolean>;
   updateMemo: (payload: UpdateMemoPayload) => Promise<boolean>;
-  deleteMemo: (id: number) => Promise<boolean>;
+  deleteMemo: (id: string) => Promise<boolean>;
   createCategory: (name: string, color: string) => Promise<boolean>;
-  updateCategory: (id: number, name: string, color: string) => Promise<boolean>;
-  deleteCategory: (id: number) => Promise<boolean>;
+  updateCategory: (id: string, name: string, color: string) => Promise<boolean>;
+  deleteCategory: (id: string) => Promise<boolean>;
   clearError: () => void;
 };
 

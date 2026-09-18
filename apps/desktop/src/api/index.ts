@@ -8,6 +8,7 @@ import type {
   DaySummary,
   DeleteTodoPayload,
   DisplayTodo,
+  ImportMergeResult,
   IpcResult,
   ReorderTodoPayload,
   SetTodoStatusPayload,
@@ -72,7 +73,7 @@ export const api = {
     });
   },
 
-  toggleCompletion(todoId: number): Promise<IpcResult> {
+  toggleCompletion(todoId: string): Promise<IpcResult> {
     return call("toggle_completion", { todoId });
   },
 
@@ -88,7 +89,7 @@ export const api = {
     return call("update_todo_content", { id: payload.id, content: payload.content });
   },
 
-  getTodoSpan(id: number): Promise<IpcResult<TodoSpan>> {
+  getTodoSpan(id: string): Promise<IpcResult<TodoSpan>> {
     return call("get_todo_span", { id });
   },
 
@@ -119,6 +120,10 @@ export const api = {
     const res = await call<string | null>("import_json");
     if (!res.success) return { success: false, error: res.error };
     return { success: true, data: { filePath: res.data ?? undefined } };
+  },
+
+  importJsonMerge(): Promise<IpcResult<ImportMergeResult | null>> {
+    return call("import_json_merge");
   },
 
   getDataTransferMeta(): Promise<IpcResult<DataTransferMeta>> {
@@ -154,7 +159,7 @@ export const api = {
     });
   },
 
-  deleteMemo(id: number): Promise<IpcResult> {
+  deleteMemo(id: string): Promise<IpcResult> {
     return call("delete_memo", { id });
   },
 
@@ -162,11 +167,11 @@ export const api = {
     return call("create_memo_category", { name, color });
   },
 
-  updateMemoCategory(id: number, name: string, color: string): Promise<IpcResult> {
+  updateMemoCategory(id: string, name: string, color: string): Promise<IpcResult> {
     return call("update_memo_category", { id, name, color });
   },
 
-  deleteMemoCategory(id: number): Promise<IpcResult> {
+  deleteMemoCategory(id: string): Promise<IpcResult> {
     return call("delete_memo_category", { id });
   },
 };

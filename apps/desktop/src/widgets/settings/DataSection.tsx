@@ -8,12 +8,15 @@ import { settingsRowClass } from "./settingsRow";
 export default function DataSection() {
   const {
     meta,
+    importModeOpen,
+    setImportModeOpen,
     importConfirmOpen,
     setImportConfirmOpen,
     result,
     setResult,
     handleExportJson,
     handleImportConfirm,
+    handleImportMerge,
   } = useDataTransfer();
 
   return (
@@ -31,7 +34,7 @@ export default function DataSection() {
       <button
         type="button"
         className={settingsRowClass}
-        onClick={() => setImportConfirmOpen(true)}
+        onClick={() => setImportModeOpen(true)}
       >
         <span className="block text-sm text-fg">JSON 불러오기</span>
         <span className="mt-0.5 block text-xs text-fg-secondary">
@@ -39,14 +42,19 @@ export default function DataSection() {
         </span>
       </button>
       <p className="px-1 pt-1 text-xs text-fg-secondary">
-        불러오면 할 일과 메모가 파일 내용으로 바뀝니다. 되돌릴 수 없습니다.
+        병합은 겹치는 항목만 최신 것으로 정리하고, 덮어쓰기는 현재 데이터를 파일
+        내용으로 완전히 바꿉니다. 두 방식 모두 불러오기 전 상태를 자동으로
+        백업해 둡니다.
       </p>
       <DataTransferModals
+        importModeOpen={importModeOpen}
+        setImportModeOpen={setImportModeOpen}
         importConfirmOpen={importConfirmOpen}
         setImportConfirmOpen={setImportConfirmOpen}
         result={result}
         setResult={setResult}
         handleImportConfirm={handleImportConfirm}
+        handleImportMerge={handleImportMerge}
       />
     </div>
   );

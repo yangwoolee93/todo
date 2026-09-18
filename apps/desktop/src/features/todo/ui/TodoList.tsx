@@ -140,7 +140,7 @@ export default function TodoList() {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
-    void moveTodo(Number(active.id), Number(over.id));
+    void moveTodo(String(active.id), String(over.id));
   };
 
   if (loading && todos.length === 0) {

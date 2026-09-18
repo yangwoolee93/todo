@@ -36,15 +36,15 @@ type TodoState = {
 
 type TodoActions = {
   loadTodosByDate: (date: string) => Promise<void>;
-  moveTodo: (activeId: number, overId: number) => Promise<boolean>;
+  moveTodo: (activeId: string, overId: string) => Promise<boolean>;
   clearError: () => void;
-  toggleCompletion: (todoId: number) => Promise<boolean>;
-  setTodoStatus: (todoId: number, status: TodoStatus) => Promise<boolean>;
-  deleteTodo: (todoId: number, scope: "day" | "batch") => Promise<boolean>;
-  updateTodoContent: (todoId: number, content: string) => Promise<boolean>;
-  getTodoSpan: (todoId: number) => Promise<TodoSpan | null>;
+  toggleCompletion: (todoId: string) => Promise<boolean>;
+  setTodoStatus: (todoId: string, status: TodoStatus) => Promise<boolean>;
+  deleteTodo: (todoId: string, scope: "day" | "batch") => Promise<boolean>;
+  updateTodoContent: (todoId: string, content: string) => Promise<boolean>;
+  getTodoSpan: (todoId: string) => Promise<TodoSpan | null>;
   updateTodo: (
-    todoId: number,
+    todoId: string,
     content: string,
     startDate: string,
     endDate: string,

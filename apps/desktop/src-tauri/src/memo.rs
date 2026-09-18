@@ -2,6 +2,7 @@ use std::collections::HashSet;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::AppHandle;
 
+use crate::ids::new_id;
 use crate::models::{MemoCategory, MemoItem, TodoDatabase};
 use crate::storage::{mutate_store, read_store};
 
@@ -12,15 +13,7 @@ fn now_ms() -> i64 {
         .as_millis() as i64
 }
 
-fn next_memo_id(memos: &[MemoItem]) -> i64 {
-    memos.iter().map(|m| m.id).max().unwrap_or(0) + 1
-}
-
-fn next_category_id(categories: &[MemoCategory]) -> i64 {
-    categories.iter().map(|c| c.id).max().unwrap_or(0) + 1
-}
-
-fn next_memo_sort_order(memos: &[MemoItem], category_id: i64) -> i64 {
+fn next_memo_sort_order(memos: &[MemoItem], category_id: &str) -> i64 {
     memos
         .iter()
         .filter(|m| m.category_id == category_id)
@@ -71,30 +64,46 @@ fn sort_categories(items: Vec<MemoCategory>) -> Vec<MemoCategory> {
     sorted
 }
 
+/// 기본 분류(루틴/예정)는 두 기기가 각자 처음 실행해도 같은 항목으로
+/// 인식되도록 id를 고정 문자열로 둔다. 사용자가 만드는 분류는 `new_id()`로
+/// 전역 고유 id를 받는다.
 fn default_memo_categories() -> Vec<MemoCategory> {
+    let now = now_ms();
     vec![
         MemoCategory {
-            id: 1,
+            id: "default-routine".into(),
             name: "루틴".into(),
             sort_order: 0,
             color: "teal".into(),
+            updated_at: now,
+            deleted_at: None,
         },
         MemoCategory {
-            id: 2,
+            id: "default-planned".into(),
             name: "예정".into(),
             sort_order: 1,
             color: "amber".into(),
+            updated_at: now,
+            deleted_at: None,
         },
     ]
 }
 
-fn category_id_for_kind(categories: &[serde_json::Value], kind: &str) -> i64 {
+fn category_id_value_to_string(v: &serde_json::Value) -> Option<String> {
+    match v {
+        serde_json::Value::String(s) => Some(s.clone()),
+        serde_json::Value::Number(n) => Some(n.to_string()),
+        _ => None,
+    }
+}
+
+fn category_id_for_kind(categories: &[serde_json::Value], kind: &str) -> String {
     let name = if kind == "planned" { "예정" } else { "루틴" };
     categories
         .iter()
         .find_map(|category| {
             if category.get("name").and_then(|v| v.as_str()) == Some(name) {
-                category.get("id").and_then(|v| v.as_i64())
+                category.get("id").and_then(category_id_value_to_string)
             } else {
                 None
             }
@@ -102,9 +111,9 @@ fn category_id_for_kind(categories: &[serde_json::Value], kind: &str) -> i64 {
         .or_else(|| {
             categories
                 .first()
-                .and_then(|category| category.get("id").and_then(|v| v.as_i64()))
+                .and_then(|category| category.get("id").and_then(category_id_value_to_string))
         })
-        .unwrap_or(1)
+        .unwrap_or_else(|| "default-routine".to_string())
 }
 
 /// 옛 `kind` 필드를 `category_id`로 바꾸고, 기본 분류를 채운다.
@@ -131,7 +140,7 @@ pub fn migrate_memo_json(value: &mut serde_json::Value) {
         let Some(obj) = memo.as_object_mut() else {
             continue;
         };
-        if obj.get("category_id").and_then(|v| v.as_i64()).is_some() {
+        if obj.get("category_id").is_some() {
             obj.remove("kind");
             continue;
         }
@@ -148,10 +157,66 @@ pub fn migrate_memo_json(value: &mut serde_json::Value) {
     }
 }
 
+fn json_id_to_string(v: &serde_json::Value) -> Option<String> {
+    match v {
+        serde_json::Value::String(s) => Some(s.clone()),
+        serde_json::Value::Number(n) => Some(n.to_string()),
+        _ => None,
+    }
+}
+
+/// 옛 데이터의 숫자 id를 문자열 고유 키로 바꾸고, 없는 `updated_at`을 채운다.
+/// 기기 간 병합을 하려면 id가 전역에서 겹치지 않는 문자열이어야 하는데,
+/// 예전에는 기기 안에서만 유효한 숫자(생성 시각·순차 증가값)를 썼다.
+/// 이 함수는 그 값을 그대로 문자열로 바꿔 참조 관계(예: 메모 → 분류)를
+/// 깨지 않으면서 새 스키마로 옮긴다. 이미 문자열이면 그대로 둔다(멱등).
+pub fn migrate_ids(value: &mut serde_json::Value) {
+    let now = now_ms();
+
+    if let Some(categories) = value.get_mut("memo_categories").and_then(|v| v.as_array_mut()) {
+        for category in categories.iter_mut() {
+            if let Some(obj) = category.as_object_mut() {
+                if let Some(id_str) = obj.get("id").and_then(json_id_to_string) {
+                    obj.insert("id".into(), serde_json::Value::String(id_str));
+                }
+                obj.entry("updated_at").or_insert(serde_json::json!(now));
+            }
+        }
+    }
+
+    if let Some(memos) = value.get_mut("memos").and_then(|v| v.as_array_mut()) {
+        for memo in memos.iter_mut() {
+            if let Some(obj) = memo.as_object_mut() {
+                if let Some(id_str) = obj.get("id").and_then(json_id_to_string) {
+                    obj.insert("id".into(), serde_json::Value::String(id_str));
+                }
+                if let Some(cat_id_str) = obj.get("category_id").and_then(json_id_to_string) {
+                    obj.insert("category_id".into(), serde_json::Value::String(cat_id_str));
+                }
+                let created_at = obj.get("created_at").and_then(|v| v.as_i64()).unwrap_or(now);
+                obj.entry("updated_at").or_insert(serde_json::json!(created_at));
+            }
+        }
+    }
+
+    if let Some(todos) = value.get_mut("todos").and_then(|v| v.as_array_mut()) {
+        for todo in todos.iter_mut() {
+            if let Some(obj) = todo.as_object_mut() {
+                if let Some(id_str) = obj.get("id").and_then(json_id_to_string) {
+                    obj.insert("id".into(), serde_json::Value::String(id_str));
+                }
+                let created_at = obj.get("created_at").and_then(|v| v.as_i64()).unwrap_or(now);
+                obj.entry("updated_at").or_insert(serde_json::json!(created_at));
+            }
+        }
+    }
+}
+
 pub fn parse_database(raw: &str) -> Result<TodoDatabase, String> {
     let mut value: serde_json::Value =
         serde_json::from_str(raw).map_err(|e| e.to_string())?;
     migrate_memo_json(&mut value);
+    migrate_ids(&mut value);
     serde_json::from_value(value).map_err(|e| e.to_string())
 }
 
@@ -165,8 +230,18 @@ pub fn ensure_memo_schema(store: &mut TodoDatabase) -> bool {
     }
 
     store.memo_categories.sort_by_key(|c| c.sort_order);
-    let fallback = store.memo_categories[0].id;
-    let valid: HashSet<i64> = store.memo_categories.iter().map(|c| c.id).collect();
+    let fallback = store
+        .memo_categories
+        .iter()
+        .find(|c| c.deleted_at.is_none())
+        .map(|c| c.id.clone())
+        .unwrap_or_else(|| store.memo_categories[0].id.clone());
+    let valid: HashSet<String> = store
+        .memo_categories
+        .iter()
+        .filter(|c| c.deleted_at.is_none())
+        .map(|c| c.id.clone())
+        .collect();
 
     for (index, category) in store.memo_categories.iter_mut().enumerate() {
         if !is_memo_color(&category.color) {
@@ -178,7 +253,8 @@ pub fn ensure_memo_schema(store: &mut TodoDatabase) -> bool {
 
     for memo in &mut store.memos {
         if !valid.contains(&memo.category_id) {
-            memo.category_id = fallback;
+            memo.category_id = fallback.clone();
+            memo.updated_at = now_ms();
             changed = true;
         }
     }
@@ -186,8 +262,11 @@ pub fn ensure_memo_schema(store: &mut TodoDatabase) -> bool {
     changed
 }
 
-fn category_exists(store: &TodoDatabase, category_id: i64) -> bool {
-    store.memo_categories.iter().any(|c| c.id == category_id)
+fn category_exists(store: &TodoDatabase, category_id: &str) -> bool {
+    store
+        .memo_categories
+        .iter()
+        .any(|c| c.id == category_id && c.deleted_at.is_none())
 }
 
 fn normalize_name(name: &str) -> Result<String, String> {
@@ -203,19 +282,29 @@ fn normalize_name(name: &str) -> Result<String, String> {
 #[tauri::command]
 pub fn list_memos(app: AppHandle) -> Result<Vec<MemoItem>, String> {
     let store = read_store(&app);
-    Ok(sort_memos(store.memos))
+    let active: Vec<MemoItem> = store
+        .memos
+        .into_iter()
+        .filter(|m| m.deleted_at.is_none())
+        .collect();
+    Ok(sort_memos(active))
 }
 
 #[tauri::command]
 pub fn list_memo_categories(app: AppHandle) -> Result<Vec<MemoCategory>, String> {
     let store = read_store(&app);
-    Ok(sort_categories(store.memo_categories))
+    let active: Vec<MemoCategory> = store
+        .memo_categories
+        .into_iter()
+        .filter(|c| c.deleted_at.is_none())
+        .collect();
+    Ok(sort_categories(active))
 }
 
 #[tauri::command]
 pub fn create_memo(
     app: AppHandle,
-    category_id: i64,
+    category_id: String,
     title: String,
     note: String,
 ) -> Result<MemoItem, String> {
@@ -228,18 +317,20 @@ pub fn create_memo(
     let mut created: Option<MemoItem> = None;
 
     mutate_store(&app, |store| {
-        if !category_exists(store, category_id) {
+        if !category_exists(store, &category_id) {
             return;
         }
-        let id = next_memo_id(&store.memos);
-        let sort_order = next_memo_sort_order(&store.memos, category_id);
+        let now = now_ms();
+        let sort_order = next_memo_sort_order(&store.memos, &category_id);
         let item = MemoItem {
-            id,
-            category_id,
+            id: new_id(),
+            category_id: category_id.clone(),
             title: title.clone(),
             note: note.clone(),
-            created_at: now_ms(),
+            created_at: now,
             sort_order,
+            updated_at: now,
+            deleted_at: None,
         };
         store.memos.push(item.clone());
         created = Some(item);
@@ -251,10 +342,10 @@ pub fn create_memo(
 #[tauri::command]
 pub fn update_memo(
     app: AppHandle,
-    id: i64,
+    id: String,
     title: String,
     note: String,
-    category_id: i64,
+    category_id: String,
 ) -> Result<bool, String> {
     let title = title.trim().to_string();
     if title.is_empty() {
@@ -264,25 +355,30 @@ pub fn update_memo(
 
     let mut changed = false;
     mutate_store(&app, |store| {
-        if !category_exists(store, category_id) {
+        if !category_exists(store, &category_id) {
             return;
         }
         let moving = store
             .memos
             .iter()
-            .any(|m| m.id == id && m.category_id != category_id);
+            .any(|m| m.id == id && m.deleted_at.is_none() && m.category_id != category_id);
         let next_order = if moving {
-            Some(next_memo_sort_order(&store.memos, category_id))
+            Some(next_memo_sort_order(&store.memos, &category_id))
         } else {
             None
         };
-        if let Some(item) = store.memos.iter_mut().find(|m| m.id == id) {
+        if let Some(item) = store
+            .memos
+            .iter_mut()
+            .find(|m| m.id == id && m.deleted_at.is_none())
+        {
             if let Some(order) = next_order {
                 item.sort_order = order;
             }
             item.title = title.clone();
             item.note = note.clone();
-            item.category_id = category_id;
+            item.category_id = category_id.clone();
+            item.updated_at = now_ms();
             changed = true;
         }
     });
@@ -291,12 +387,19 @@ pub fn update_memo(
 }
 
 #[tauri::command]
-pub fn delete_memo(app: AppHandle, id: i64) -> Result<bool, String> {
+pub fn delete_memo(app: AppHandle, id: String) -> Result<bool, String> {
     let mut changed = false;
     mutate_store(&app, |store| {
-        let before = store.memos.len();
-        store.memos.retain(|m| m.id != id);
-        changed = store.memos.len() < before;
+        if let Some(item) = store
+            .memos
+            .iter_mut()
+            .find(|m| m.id == id && m.deleted_at.is_none())
+        {
+            let now = now_ms();
+            item.deleted_at = Some(now);
+            item.updated_at = now;
+            changed = true;
+        }
     });
     Ok(changed)
 }
@@ -317,15 +420,18 @@ pub fn create_memo_category(
         if store
             .memo_categories
             .iter()
-            .any(|c| c.name == name)
+            .any(|c| c.deleted_at.is_none() && c.name == name)
         {
             return;
         }
+        let now = now_ms();
         let category = MemoCategory {
-            id: next_category_id(&store.memo_categories),
+            id: new_id(),
             name: name.clone(),
             sort_order: next_category_sort_order(&store.memo_categories),
             color: color.clone(),
+            updated_at: now,
+            deleted_at: None,
         };
         store.memo_categories.push(category.clone());
         created = Some(category);
@@ -337,7 +443,7 @@ pub fn create_memo_category(
 #[tauri::command]
 pub fn update_memo_category(
     app: AppHandle,
-    id: i64,
+    id: String,
     name: String,
     color: String,
 ) -> Result<bool, String> {
@@ -352,14 +458,19 @@ pub fn update_memo_category(
         if store
             .memo_categories
             .iter()
-            .any(|c| c.id != id && c.name == name)
+            .any(|c| c.id != id && c.deleted_at.is_none() && c.name == name)
         {
             duplicate = true;
             return;
         }
-        if let Some(category) = store.memo_categories.iter_mut().find(|c| c.id == id) {
+        if let Some(category) = store
+            .memo_categories
+            .iter_mut()
+            .find(|c| c.id == id && c.deleted_at.is_none())
+        {
             category.name = name.clone();
             category.color = color.clone();
+            category.updated_at = now_ms();
             changed = true;
         }
     });
@@ -371,31 +482,48 @@ pub fn update_memo_category(
 }
 
 #[tauri::command]
-pub fn delete_memo_category(app: AppHandle, id: i64) -> Result<bool, String> {
+pub fn delete_memo_category(app: AppHandle, id: String) -> Result<bool, String> {
     let mut changed = false;
     let mut last_one = false;
 
     mutate_store(&app, |store| {
-        if store.memo_categories.len() <= 1 {
+        let active_count = store
+            .memo_categories
+            .iter()
+            .filter(|c| c.deleted_at.is_none())
+            .count();
+        if active_count <= 1 {
             last_one = true;
             return;
         }
-        let Some(index) = store.memo_categories.iter().position(|c| c.id == id) else {
-            return;
-        };
-        store.memo_categories.remove(index);
-        let fallback = store
+        let Some(idx) = store
             .memo_categories
             .iter()
+            .position(|c| c.id == id && c.deleted_at.is_none())
+        else {
+            return;
+        };
+
+        let now = now_ms();
+        store.memo_categories[idx].deleted_at = Some(now);
+        store.memo_categories[idx].updated_at = now;
+        changed = true;
+
+        let fallback_id = store
+            .memo_categories
+            .iter()
+            .filter(|c| c.id != id && c.deleted_at.is_none())
             .min_by_key(|c| c.sort_order)
-            .map(|c| c.id)
-            .unwrap_or(id);
-        for memo in &mut store.memos {
-            if memo.category_id == id {
-                memo.category_id = fallback;
+            .map(|c| c.id.clone());
+
+        if let Some(fallback_id) = fallback_id {
+            for memo in &mut store.memos {
+                if memo.category_id == id {
+                    memo.category_id = fallback_id.clone();
+                    memo.updated_at = now;
+                }
             }
         }
-        changed = true;
     });
 
     if last_one {

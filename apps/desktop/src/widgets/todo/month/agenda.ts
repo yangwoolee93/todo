@@ -2,7 +2,7 @@ import type { DaySummary, TodoStatus } from "@shared/types/todo";
 import { WEEKDAYS } from "./constants";
 
 export type AgendaItem = {
-  id: number;
+  id: string;
   title: string;
   status: TodoStatus;
 };

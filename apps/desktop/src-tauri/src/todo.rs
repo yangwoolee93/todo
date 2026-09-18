@@ -2,6 +2,7 @@ use std::collections::HashSet;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::AppHandle;
 
+use crate::ids::new_id;
 use crate::models::{DaySummary, DisplayTodo, TodoDatabase, TodoItem, TodoSpan};
 use crate::storage::{mutate_store, read_store};
 
@@ -15,7 +16,7 @@ fn now_ms() -> i64 {
 }
 
 fn new_batch_id() -> String {
-    format!("batch-{}", now_ms())
+    format!("batch-{}", new_id())
 }
 
 fn is_valid_date(s: &str) -> bool {
@@ -37,7 +38,7 @@ fn sanitize_content(content: &str) -> Option<String> {
 
 fn to_display(item: &TodoItem) -> DisplayTodo {
     DisplayTodo {
-        id: item.id,
+        id: item.id.clone(),
         content: item.content.clone(),
         status: item.status.clone(),
         sort_order: item.sort_order,
@@ -57,11 +58,21 @@ fn sort_display(items: Vec<DisplayTodo>) -> Vec<DisplayTodo> {
 }
 
 fn next_sort_order(store: &TodoDatabase) -> i64 {
-    store.todos.iter().map(|t| t.sort_order).max().unwrap_or(-1) + 1
+    store
+        .todos
+        .iter()
+        .filter(|t| t.deleted_at.is_none())
+        .map(|t| t.sort_order)
+        .max()
+        .unwrap_or(-1)
+        + 1
 }
 
-fn find_by_id(store: &TodoDatabase, id: i64) -> Option<&TodoItem> {
-    store.todos.iter().find(|t| t.id == id)
+fn find_by_id<'a>(store: &'a TodoDatabase, id: &str) -> Option<&'a TodoItem> {
+    store
+        .todos
+        .iter()
+        .find(|t| t.id == id && t.deleted_at.is_none())
 }
 
 fn enumerate_date_range(start: &str, end: &str) -> Vec<String> {
@@ -138,7 +149,7 @@ pub fn get_todos_by_date(app: AppHandle, target_date: String) -> Result<Vec<Disp
     let items: Vec<DisplayTodo> = store
         .todos
         .iter()
-        .filter(|t| t.target_date == target_date)
+        .filter(|t| t.target_date == target_date && t.deleted_at.is_none())
         .map(to_display)
         .collect();
     Ok(sort_display(items))
@@ -156,7 +167,7 @@ pub fn get_month_summary(app: AppHandle, year_month: String) -> Result<Vec<DaySu
             let items: Vec<DisplayTodo> = store
                 .todos
                 .iter()
-                .filter(|t| &t.target_date == date)
+                .filter(|t| &t.target_date == date && t.deleted_at.is_none())
                 .map(to_display)
                 .collect();
             let day = date[8..10].parse::<u32>().unwrap_or(0);
@@ -184,13 +195,15 @@ pub fn create_todo(
 
     let now = now_ms();
     let mut new_item = TodoItem {
-        id: now,
+        id: new_id(),
         content,
         target_date,
         status: "pending".into(),
         created_at: now,
+        updated_at: now,
         sort_order: 0,
         batch_id: None,
+        deleted_at: None,
     };
 
     mutate_store(&app, |store| {
@@ -222,16 +235,18 @@ pub fn create_todo_range(
 
     mutate_store(&app, |store| {
         let base_order = next_sort_order(store);
+        let now = now_ms();
         for (i, date) in dates.iter().enumerate() {
-            let ts = now_ms() + i as i64;
             store.todos.push(TodoItem {
-                id: ts,
+                id: new_id(),
                 content: content.clone(),
                 target_date: date.clone(),
                 status: "pending".into(),
-                created_at: ts,
+                created_at: now,
+                updated_at: now,
                 sort_order: base_order + i as i64,
                 batch_id: Some(batch_id.clone()),
+                deleted_at: None,
             });
         }
     });
@@ -250,17 +265,23 @@ pub fn create_todo_month(
 }
 
 #[tauri::command]
-pub fn toggle_completion(app: AppHandle, todo_id: i64) -> Result<bool, String> {
+pub fn toggle_completion(app: AppHandle, todo_id: String) -> Result<bool, String> {
     let mut changed = false;
     mutate_store(&app, |store| {
-        if let Some(item) = store.todos.iter_mut().find(|t| t.id == todo_id) {
+        if let Some(item) = store
+            .todos
+            .iter_mut()
+            .find(|t| t.id == todo_id && t.deleted_at.is_none())
+        {
             match item.status.as_str() {
                 "pending" => {
                     item.status = "completed".into();
+                    item.updated_at = now_ms();
                     changed = true;
                 }
                 "completed" => {
                     item.status = "pending".into();
+                    item.updated_at = now_ms();
                     changed = true;
                 }
                 _ => {}
@@ -271,12 +292,17 @@ pub fn toggle_completion(app: AppHandle, todo_id: i64) -> Result<bool, String> {
 }
 
 #[tauri::command]
-pub fn set_todo_status(app: AppHandle, id: i64, status: String) -> Result<bool, String> {
+pub fn set_todo_status(app: AppHandle, id: String, status: String) -> Result<bool, String> {
     let mut changed = false;
     mutate_store(&app, |store| {
-        if let Some(item) = store.todos.iter_mut().find(|t| t.id == id) {
+        if let Some(item) = store
+            .todos
+            .iter_mut()
+            .find(|t| t.id == id && t.deleted_at.is_none())
+        {
             if item.status != status {
                 item.status = status.clone();
+                item.updated_at = now_ms();
                 changed = true;
             }
         }
@@ -285,44 +311,65 @@ pub fn set_todo_status(app: AppHandle, id: i64, status: String) -> Result<bool, 
 }
 
 #[tauri::command]
-pub fn delete_todo(app: AppHandle, id: i64, scope: String) -> Result<bool, String> {
+pub fn delete_todo(app: AppHandle, id: String, scope: String) -> Result<bool, String> {
     let mut changed = false;
     mutate_store(&app, |store| {
-        if let Some(item) = find_by_id(store, id).cloned() {
-            if scope == "batch" {
-                if let Some(bid) = &item.batch_id {
-                    let bid = bid.clone();
-                    let before = store.todos.len();
-                    store.todos.retain(|t| t.batch_id.as_deref() != Some(&bid));
-                    changed = store.todos.len() < before;
-                    return;
+        let Some(item) = find_by_id(store, &id).cloned() else {
+            return;
+        };
+        let now = now_ms();
+
+        if scope == "batch" {
+            if let Some(bid) = &item.batch_id {
+                let bid = bid.clone();
+                for t in store.todos.iter_mut() {
+                    if t.batch_id.as_deref() == Some(bid.as_str()) && t.deleted_at.is_none() {
+                        t.deleted_at = Some(now);
+                        t.updated_at = now;
+                        changed = true;
+                    }
                 }
+                return;
             }
-            let before = store.todos.len();
-            store.todos.retain(|t| t.id != id);
-            changed = store.todos.len() < before;
+        }
+
+        if let Some(t) = store
+            .todos
+            .iter_mut()
+            .find(|t| t.id == id && t.deleted_at.is_none())
+        {
+            t.deleted_at = Some(now);
+            t.updated_at = now;
+            changed = true;
         }
     });
     Ok(changed)
 }
 
 #[tauri::command]
-pub fn update_todo_content(app: AppHandle, id: i64, content: String) -> Result<bool, String> {
+pub fn update_todo_content(app: AppHandle, id: String, content: String) -> Result<bool, String> {
     let content = sanitize_content(&content).ok_or("내용이 비어있습니다")?;
     let mut changed = false;
 
     mutate_store(&app, |store| {
-        let batch_id = find_by_id(store, id).and_then(|t| t.batch_id.clone());
+        let batch_id = find_by_id(store, &id).and_then(|t| t.batch_id.clone());
+        let now = now_ms();
 
         if let Some(bid) = batch_id {
             for t in store.todos.iter_mut() {
-                if t.batch_id.as_deref() == Some(&bid) {
+                if t.batch_id.as_deref() == Some(&bid) && t.deleted_at.is_none() {
                     t.content = content.clone();
+                    t.updated_at = now;
                 }
             }
             changed = true;
-        } else if let Some(item) = store.todos.iter_mut().find(|t| t.id == id) {
+        } else if let Some(item) = store
+            .todos
+            .iter_mut()
+            .find(|t| t.id == id && t.deleted_at.is_none())
+        {
             item.content = content.clone();
+            item.updated_at = now;
             changed = true;
         }
     });
@@ -330,18 +377,18 @@ pub fn update_todo_content(app: AppHandle, id: i64, content: String) -> Result<b
     Ok(changed)
 }
 
-fn sibling_ids(store: &TodoDatabase, id: i64) -> Vec<i64> {
+fn sibling_ids(store: &TodoDatabase, id: &str) -> Vec<String> {
     match find_by_id(store, id) {
         Some(item) => {
             if let Some(bid) = &item.batch_id {
                 store
                     .todos
                     .iter()
-                    .filter(|t| t.batch_id.as_deref() == Some(bid.as_str()))
-                    .map(|t| t.id)
+                    .filter(|t| t.batch_id.as_deref() == Some(bid.as_str()) && t.deleted_at.is_none())
+                    .map(|t| t.id.clone())
                     .collect()
             } else {
-                vec![item.id]
+                vec![item.id.clone()]
             }
         }
         None => Vec::new(),
@@ -349,14 +396,14 @@ fn sibling_ids(store: &TodoDatabase, id: i64) -> Vec<i64> {
 }
 
 #[tauri::command]
-pub fn get_todo_span(app: AppHandle, id: i64) -> Result<TodoSpan, String> {
+pub fn get_todo_span(app: AppHandle, id: String) -> Result<TodoSpan, String> {
     let store = read_store(&app);
-    let item = find_by_id(&store, id).ok_or("할 일을 찾을 수 없습니다")?;
+    let item = find_by_id(&store, &id).ok_or("할 일을 찾을 수 없습니다")?;
     if let Some(bid) = &item.batch_id {
         let mut dates: Vec<String> = store
             .todos
             .iter()
-            .filter(|t| t.batch_id.as_deref() == Some(bid.as_str()))
+            .filter(|t| t.batch_id.as_deref() == Some(bid.as_str()) && t.deleted_at.is_none())
             .map(|t| t.target_date.clone())
             .collect();
         dates.sort();
@@ -383,7 +430,7 @@ pub fn get_todo_span(app: AppHandle, id: i64) -> Result<TodoSpan, String> {
 #[tauri::command]
 pub fn update_todo(
     app: AppHandle,
-    id: i64,
+    id: String,
     content: String,
     start_date: String,
     end_date: String,
@@ -397,7 +444,7 @@ pub fn update_todo(
     }
 
     let store = read_store(&app);
-    if find_by_id(&store, id).is_none() {
+    if find_by_id(&store, &id).is_none() {
         return Err("할 일을 찾을 수 없습니다".into());
     }
 
@@ -405,42 +452,53 @@ pub fn update_todo(
     let mut changed = false;
 
     mutate_store(&app, |store| {
-        let ids = sibling_ids(store, id);
+        let ids = sibling_ids(store, &id);
         if ids.is_empty() {
             return;
         }
-        let id_set: HashSet<i64> = ids.iter().copied().collect();
+        let id_set: HashSet<String> = ids.into_iter().collect();
+        let now = now_ms();
 
         if new_dates.len() == 1 {
             let only = new_dates[0].clone();
-            store.todos.retain(|t| !id_set.contains(&t.id) || t.id == id);
+            // 여러 날 중 남긴 하루만 빼고 나머지는 tombstone으로 표시한다.
+            // (그냥 지우면 다른 기기에서 그 사이 고친 내용이 병합 때 되살아난다)
+            for t in store.todos.iter_mut() {
+                if id_set.contains(&t.id) && t.id != id {
+                    t.deleted_at = Some(now);
+                    t.updated_at = now;
+                }
+            }
             if let Some(item) = store.todos.iter_mut().find(|t| t.id == id) {
                 item.content = content.clone();
                 item.target_date = only;
                 item.batch_id = None;
+                item.updated_at = now;
                 changed = true;
             }
             return;
         }
 
-        let batch_id = find_by_id(store, id)
+        let batch_id = find_by_id(store, &id)
             .and_then(|t| t.batch_id.clone())
             .unwrap_or_else(new_batch_id);
 
         let keep: HashSet<String> = new_dates.iter().cloned().collect();
-        store.todos.retain(|t| {
-            if id_set.contains(&t.id) {
-                keep.contains(&t.target_date)
-            } else {
-                true
+
+        // 범위에서 빠진 날짜는 tombstone으로 표시(하드 삭제 대신).
+        for t in store.todos.iter_mut() {
+            if id_set.contains(&t.id) && !keep.contains(&t.target_date) {
+                t.deleted_at = Some(now);
+                t.updated_at = now;
             }
-        });
+        }
 
         let mut have: HashSet<String> = HashSet::new();
         for t in store.todos.iter_mut() {
-            if id_set.contains(&t.id) {
+            if id_set.contains(&t.id) && t.deleted_at.is_none() {
                 t.content = content.clone();
                 t.batch_id = Some(batch_id.clone());
+                t.updated_at = now;
                 have.insert(t.target_date.clone());
             }
         }
@@ -451,15 +509,16 @@ pub fn update_todo(
             if have.contains(date) {
                 continue;
             }
-            let ts = now_ms() + add_i;
             store.todos.push(TodoItem {
-                id: ts,
+                id: new_id(),
                 content: content.clone(),
                 target_date: date.clone(),
                 status: "pending".into(),
-                created_at: ts,
+                created_at: now,
+                updated_at: now,
                 sort_order: base_order + add_i,
                 batch_id: Some(batch_id.clone()),
+                deleted_at: None,
             });
             add_i += 1;
         }
@@ -473,15 +532,15 @@ pub fn update_todo(
 pub fn reorder_todo(
     app: AppHandle,
     target_date: String,
-    id: i64,
-    over_id: i64,
+    id: String,
+    over_id: String,
 ) -> Result<bool, String> {
     let store = read_store(&app);
     let display_list = {
         let items: Vec<DisplayTodo> = store
             .todos
             .iter()
-            .filter(|t| t.target_date == target_date)
+            .filter(|t| t.target_date == target_date && t.deleted_at.is_none())
             .map(to_display)
             .collect();
         sort_display(items)
