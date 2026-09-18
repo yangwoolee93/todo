@@ -33,20 +33,42 @@ export default function DataSection() {
           aria-hidden
         />
       ) : status.connected ? (
-        <div className={cn(settingsInfoRowClass, "flex items-center gap-3 py-2.5")}>
-          <GoogleGIcon />
-          <span className="min-w-0 flex-1 truncate text-sm text-fg">
-            {status.email ?? "Google 계정"}
-          </span>
+        <>
+          <div
+            className={cn(
+              settingsInfoRowClass,
+              "flex items-center gap-3 py-2.5",
+            )}
+          >
+            <GoogleGIcon />
+            <span className="min-w-0 flex-1 truncate text-sm text-fg">
+              {status.email ?? "Google 계정"}
+            </span>
+            <button
+              type="button"
+              className="shrink-0 text-sm text-fg-secondary hover:text-fg"
+              disabled={busy}
+              onClick={() => setLogoutOpen(true)}
+            >
+              로그아웃
+            </button>
+          </div>
           <button
             type="button"
-            className="shrink-0 text-sm text-fg-secondary hover:text-fg"
-            disabled={busy}
-            onClick={() => setLogoutOpen(true)}
+            className={settingsRowClass}
+            onClick={() =>
+              setResult({
+                title: "동기화",
+                message: "아직 준비 중입니다.",
+              })
+            }
           >
-            로그아웃
+            <span className="block text-sm text-fg">데이터 동기화</span>
+            <span className="mt-0.5 block text-xs text-fg-secondary">
+              마지막 {transferTimeLabel(null)}
+            </span>
           </button>
-        </div>
+        </>
       ) : (
         <button
           type="button"
