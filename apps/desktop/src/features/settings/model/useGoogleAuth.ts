@@ -6,6 +6,7 @@ const EMPTY: GoogleAuthStatus = { configured: false, connected: false, email: nu
 
 export function useGoogleAuth(setResult: (result: TransferResult | null) => void) {
   const [status, setStatus] = useState<GoogleAuthStatus>(EMPTY);
+  const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
 
@@ -14,6 +15,7 @@ export function useGoogleAuth(setResult: (result: TransferResult | null) => void
     if (res.success && res.data) {
       setStatus({ ...res.data, email: res.data.email ?? null });
     }
+    setReady(true);
   }, []);
 
   useEffect(() => {
@@ -43,13 +45,13 @@ export function useGoogleAuth(setResult: (result: TransferResult | null) => void
     setBusy(false);
     if (res.success && res.data) {
       setStatus({ ...res.data, email: res.data.email ?? null });
-      setResult({ title: "구글 연결 해제", message: "이 기기에서 연결을 해제했습니다." });
+      setResult({ title: "로그아웃", message: "이 기기에서 로그아웃했습니다." });
       return;
     }
     if (res.error) {
-      setResult({ title: "연결 해제 실패", message: res.error, isError: true });
+      setResult({ title: "로그아웃 실패", message: res.error, isError: true });
     }
   };
 
-  return { status, busy, logoutOpen, setLogoutOpen, login, logout };
+  return { status, ready, busy, logoutOpen, setLogoutOpen, login, logout };
 }

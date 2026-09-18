@@ -21,29 +21,32 @@ export default function DataSection() {
     handleImportConfirm,
     handleImportMerge,
   } = useDataTransfer();
-  const { status, busy, logoutOpen, setLogoutOpen, login, logout } =
+  const { status, ready, busy, logoutOpen, setLogoutOpen, login, logout } =
     useGoogleAuth(setResult);
 
   return (
     <div className="flex flex-col gap-2">
       <p className="px-1 text-xs text-fg-secondary">Google Drive</p>
-      {status.connected ? (
-        <>
-          <div className={settingsInfoRowClass}>
-            <span className="block text-sm text-fg">연결됨</span>
-            <span className="mt-0.5 block text-xs text-fg-secondary">
-              {status.email ?? "연결되었습니다."}
-            </span>
-          </div>
+      {!ready ? (
+        <div
+          className="h-10 w-full animate-pulse rounded-(--radius-card) bg-surface"
+          aria-hidden
+        />
+      ) : status.connected ? (
+        <div className={cn(settingsInfoRowClass, "flex items-center gap-3 py-2.5")}>
+          <GoogleGIcon />
+          <span className="min-w-0 flex-1 truncate text-sm text-fg">
+            {status.email ?? "Google 계정"}
+          </span>
           <button
             type="button"
-            className={settingsRowClass}
+            className="shrink-0 text-sm text-fg-secondary hover:text-fg"
             disabled={busy}
             onClick={() => setLogoutOpen(true)}
           >
-            <span className="block text-sm text-fg">연결 해제</span>
+            로그아웃
           </button>
-        </>
+        </div>
       ) : (
         <button
           type="button"
@@ -63,11 +66,13 @@ export default function DataSection() {
         </button>
       )}
       <p className="px-1 text-xs text-fg-secondary">
-        {busy
-          ? "브라우저에서 로그인 중…"
-          : !status.configured
-            ? "apps/desktop/.env 에 클라이언트 값을 넣고 다시 실행하세요."
-            : "로그인한 계정의 드라이브를 이용해 동기화할 수 있습니다."}
+        {!ready
+          ? "\u00a0"
+          : busy
+            ? "브라우저에서 로그인 중…"
+            : !status.configured
+              ? "apps/desktop/.env 에 클라이언트 값을 넣고 다시 실행하세요."
+              : "로그인한 계정의 드라이브를 이용해 동기화할 수 있습니다."}
       </p>
 
       <p className="px-1 pt-3 text-xs text-fg-secondary">이 기기 파일</p>
@@ -109,20 +114,20 @@ export default function DataSection() {
       <Modal
         open={logoutOpen}
         onClose={() => setLogoutOpen(false)}
-        label="구글 연결 해제"
+        label="로그아웃"
       >
         <ModalTitle className="mb-2 text-base font-semibold text-fg">
-          구글 연결 해제
+          로그아웃
         </ModalTitle>
         <p className="text-sm text-fg-secondary">
-          이 기기에서 구글 연결을 해제할까요? 할 일 데이터는 그대로 둡니다.
+          이 기기에서 로그아웃할까요? 할 일 데이터는 그대로 둡니다.
         </p>
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="ghost" onClick={() => setLogoutOpen(false)}>
             취소
           </Button>
           <Button variant="danger" onClick={() => void logout()}>
-            해제
+            로그아웃
           </Button>
         </div>
       </Modal>
