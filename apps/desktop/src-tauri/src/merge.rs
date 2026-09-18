@@ -99,8 +99,11 @@ pub fn merge_database(local: TodoDatabase, incoming: TodoDatabase) -> (TodoDatab
 
     let todos = merge_entities(local.todos, incoming.todos, &mut summary);
     let memos = merge_entities(local.memos, incoming.memos, &mut summary);
-    let memo_categories =
-        merge_entities(local.memo_categories, incoming.memo_categories, &mut summary);
+    let memo_categories = merge_entities(
+        local.memo_categories,
+        incoming.memo_categories,
+        &mut summary,
+    );
 
     let merged = TodoDatabase {
         todos,

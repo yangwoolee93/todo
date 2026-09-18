@@ -2,8 +2,11 @@ import {
   DataTransferModals,
   transferTimeLabel,
   useDataTransfer,
+  useGoogleAuth,
 } from "@renderer/features/settings";
-import { settingsRowClass } from "./settingsRow";
+import { Button, Modal, ModalTitle } from "@renderer/shared/ui";
+import { cn } from "@renderer/utils/cn";
+import { settingsInfoRowClass, settingsRowClass } from "./settingsRow";
 
 export default function DataSection() {
   const {
@@ -18,9 +21,47 @@ export default function DataSection() {
     handleImportConfirm,
     handleImportMerge,
   } = useDataTransfer();
+  const { status, busy, logoutOpen, setLogoutOpen, login, logout } =
+    useGoogleAuth(setResult);
 
   return (
     <div className="flex flex-col gap-2">
+      {status.connected ? (
+        <>
+          <div className={settingsInfoRowClass}>
+            <span className="block text-sm text-fg">구글 연결됨</span>
+            <span className="mt-0.5 block text-xs text-fg-secondary">
+              {status.email ?? "연결되었습니다."}
+            </span>
+          </div>
+          <button
+            type="button"
+            className={settingsRowClass}
+            disabled={busy}
+            onClick={() => setLogoutOpen(true)}
+          >
+            <span className="block text-sm text-fg">연결 해제</span>
+          </button>
+        </>
+      ) : (
+        <button
+          type="button"
+          className={cn(settingsRowClass, busy && "cursor-wait opacity-70")}
+          disabled={busy}
+          onClick={() => void login()}
+        >
+          <span className="block text-sm text-fg">구글로 로그인</span>
+          <span className="mt-0.5 block text-xs text-fg-secondary">
+            {busy
+              ? "브라우저에서 로그인 중…"
+              : status.configured
+                ? "브라우저에서 Google 계정으로 연결합니다."
+                : "apps/desktop/.env 에 클라이언트 값을 넣고 다시 실행하세요."}
+          </span>
+        </button>
+      )}
+
+      <p className="px-1 pt-3 text-xs text-fg-secondary">이 기기 파일</p>
       <button
         type="button"
         className={settingsRowClass}
@@ -56,6 +97,22 @@ export default function DataSection() {
         handleImportConfirm={handleImportConfirm}
         handleImportMerge={handleImportMerge}
       />
+      <Modal open={logoutOpen} onClose={() => setLogoutOpen(false)} label="구글 연결 해제">
+        <ModalTitle className="mb-2 text-base font-semibold text-fg">
+          구글 연결 해제
+        </ModalTitle>
+        <p className="text-sm text-fg-secondary">
+          이 기기에서 구글 연결을 해제할까요? 할 일 데이터는 그대로 둡니다.
+        </p>
+        <div className="mt-4 flex justify-end gap-2">
+          <Button variant="ghost" onClick={() => setLogoutOpen(false)}>
+            취소
+          </Button>
+          <Button variant="danger" onClick={() => void logout()}>
+            해제
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }

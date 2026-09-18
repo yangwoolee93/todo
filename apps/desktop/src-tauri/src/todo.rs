@@ -24,16 +24,19 @@ fn is_valid_date(s: &str) -> bool {
     if parts.len() != 3 {
         return false;
     }
-    parts[0].len() == 4 && parts[1].len() == 2 && parts[2].len() == 2
+    parts[0].len() == 4
+        && parts[1].len() == 2
+        && parts[2].len() == 2
         && parts.iter().all(|p| p.chars().all(|c| c.is_ascii_digit()))
 }
 
 fn sanitize_content(content: &str) -> Option<String> {
-    let trimmed = content
-        .replace(['\r', '\n'], " ")
-        .trim()
-        .to_string();
-    if trimmed.is_empty() { None } else { Some(trimmed) }
+    let trimmed = content.replace(['\r', '\n'], " ").trim().to_string();
+    if trimmed.is_empty() {
+        None
+    } else {
+        Some(trimmed)
+    }
 }
 
 fn to_display(item: &TodoItem) -> DisplayTodo {
@@ -125,7 +128,10 @@ fn epoch_days_to_date(days: i64) -> String {
 }
 
 fn get_month_date_range(year_month: &str) -> (String, String) {
-    let parts: Vec<i32> = year_month.split('-').map(|p| p.parse().unwrap_or(0)).collect();
+    let parts: Vec<i32> = year_month
+        .split('-')
+        .map(|p| p.parse().unwrap_or(0))
+        .collect();
     let year = parts.first().copied().unwrap_or(2024);
     let month = parts.get(1).copied().unwrap_or(1);
     let last_day = {
@@ -384,7 +390,9 @@ fn sibling_ids(store: &TodoDatabase, id: &str) -> Vec<String> {
                 store
                     .todos
                     .iter()
-                    .filter(|t| t.batch_id.as_deref() == Some(bid.as_str()) && t.deleted_at.is_none())
+                    .filter(|t| {
+                        t.batch_id.as_deref() == Some(bid.as_str()) && t.deleted_at.is_none()
+                    })
                     .map(|t| t.id.clone())
                     .collect()
             } else {

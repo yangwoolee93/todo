@@ -24,12 +24,7 @@ fn next_memo_sort_order(memos: &[MemoItem], category_id: &str) -> i64 {
 }
 
 fn next_category_sort_order(categories: &[MemoCategory]) -> i64 {
-    categories
-        .iter()
-        .map(|c| c.sort_order)
-        .max()
-        .unwrap_or(-1)
-        + 1
+    categories.iter().map(|c| c.sort_order).max().unwrap_or(-1) + 1
 }
 
 const MEMO_COLORS: [&str; 8] = [
@@ -98,7 +93,11 @@ fn category_id_value_to_string(v: &serde_json::Value) -> Option<String> {
 }
 
 fn category_id_for_kind(categories: &[serde_json::Value], kind: &str) -> String {
-    let name = if kind == "planned" { "예정" } else { "루틴" };
+    let name = if kind == "planned" {
+        "예정"
+    } else {
+        "루틴"
+    };
     categories
         .iter()
         .find_map(|category| {
@@ -173,7 +172,10 @@ fn json_id_to_string(v: &serde_json::Value) -> Option<String> {
 pub fn migrate_ids(value: &mut serde_json::Value) {
     let now = now_ms();
 
-    if let Some(categories) = value.get_mut("memo_categories").and_then(|v| v.as_array_mut()) {
+    if let Some(categories) = value
+        .get_mut("memo_categories")
+        .and_then(|v| v.as_array_mut())
+    {
         for category in categories.iter_mut() {
             if let Some(obj) = category.as_object_mut() {
                 if let Some(id_str) = obj.get("id").and_then(json_id_to_string) {
@@ -193,8 +195,12 @@ pub fn migrate_ids(value: &mut serde_json::Value) {
                 if let Some(cat_id_str) = obj.get("category_id").and_then(json_id_to_string) {
                     obj.insert("category_id".into(), serde_json::Value::String(cat_id_str));
                 }
-                let created_at = obj.get("created_at").and_then(|v| v.as_i64()).unwrap_or(now);
-                obj.entry("updated_at").or_insert(serde_json::json!(created_at));
+                let created_at = obj
+                    .get("created_at")
+                    .and_then(|v| v.as_i64())
+                    .unwrap_or(now);
+                obj.entry("updated_at")
+                    .or_insert(serde_json::json!(created_at));
             }
         }
     }
@@ -205,16 +211,19 @@ pub fn migrate_ids(value: &mut serde_json::Value) {
                 if let Some(id_str) = obj.get("id").and_then(json_id_to_string) {
                     obj.insert("id".into(), serde_json::Value::String(id_str));
                 }
-                let created_at = obj.get("created_at").and_then(|v| v.as_i64()).unwrap_or(now);
-                obj.entry("updated_at").or_insert(serde_json::json!(created_at));
+                let created_at = obj
+                    .get("created_at")
+                    .and_then(|v| v.as_i64())
+                    .unwrap_or(now);
+                obj.entry("updated_at")
+                    .or_insert(serde_json::json!(created_at));
             }
         }
     }
 }
 
 pub fn parse_database(raw: &str) -> Result<TodoDatabase, String> {
-    let mut value: serde_json::Value =
-        serde_json::from_str(raw).map_err(|e| e.to_string())?;
+    let mut value: serde_json::Value = serde_json::from_str(raw).map_err(|e| e.to_string())?;
     migrate_memo_json(&mut value);
     migrate_ids(&mut value);
     serde_json::from_value(value).map_err(|e| e.to_string())

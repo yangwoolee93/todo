@@ -1,5 +1,6 @@
 mod dev_icon;
 mod export;
+mod google;
 mod ids;
 mod memo;
 mod merge;
@@ -97,10 +98,8 @@ pub fn run() {
             if let Some(window) = app.get_webview_window("main") {
                 if let Ok(Some(monitor)) = window.primary_monitor() {
                     let (width, height) = calc_window_size(&monitor);
-                    let _ = window.set_size(tauri::Size::Physical(tauri::PhysicalSize {
-                        width,
-                        height,
-                    }));
+                    let _ = window
+                        .set_size(tauri::Size::Physical(tauri::PhysicalSize { width, height }));
                     let _ = window.center();
                 }
                 #[cfg(target_os = "macos")]
@@ -112,10 +111,8 @@ pub fn run() {
             if let Some(window) = app.get_webview_window("main") {
                 if let Ok(Some(monitor)) = window.primary_monitor() {
                     let (width, height) = calc_window_size(&monitor);
-                    let _ = window.set_size(tauri::Size::Physical(tauri::PhysicalSize {
-                        width,
-                        height,
-                    }));
+                    let _ = window
+                        .set_size(tauri::Size::Physical(tauri::PhysicalSize { width, height }));
                     let _ = window.center();
                 }
                 #[cfg(target_os = "macos")]
@@ -179,6 +176,9 @@ pub fn run() {
             export::import_json,
             export::import_json_merge,
             export::get_data_transfer_meta,
+            google::get_google_auth_status,
+            google::google_login,
+            google::google_logout,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

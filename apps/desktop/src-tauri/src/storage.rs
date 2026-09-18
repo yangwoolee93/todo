@@ -17,7 +17,9 @@ pub fn get_store_path(app: &tauri::AppHandle) -> PathBuf {
 }
 
 fn get_backup_dir(app: &tauri::AppHandle) -> Option<PathBuf> {
-    get_store_path(app).parent().map(|p| p.join(BACKUP_DIR_NAME))
+    get_store_path(app)
+        .parent()
+        .map(|p| p.join(BACKUP_DIR_NAME))
 }
 
 pub fn read_store(app: &tauri::AppHandle) -> TodoDatabase {
