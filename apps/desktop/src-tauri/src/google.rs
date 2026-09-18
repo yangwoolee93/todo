@@ -153,15 +153,12 @@ fn wait_code(listener: &TcpListener, expected_state: &str) -> Result<String, Str
                 let req = String::from_utf8_lossy(&buf[..n]);
                 match parse_code(&req, expected_state) {
                     Ok(code) => {
-                        reply(
-                            &mut stream,
-                            "연결되었습니다. 이 창을 닫고 앱으로 돌아오세요.",
-                        );
+                        reply(&mut stream, true, "Google 계정이 연결되었습니다.");
                         return Ok(code);
                     }
-                    Err(_) if is_noise(&req) => reply(&mut stream, ""),
+                    Err(_) if is_noise(&req) => {}
                     Err(err) => {
-                        reply(&mut stream, &err);
+                        reply(&mut stream, false, &err);
                         return Err(err);
                     }
                 }
@@ -207,10 +204,26 @@ fn parse_code(req: &str, expected_state: &str) -> Result<String, String> {
         .ok_or_else(|| "인가 코드를 받지 못했습니다.".into())
 }
 
-fn reply(stream: &mut std::net::TcpStream, message: &str) {
+fn reply(stream: &mut std::net::TcpStream, ok: bool, message: &str) {
+    let title = if ok { "연결됨" } else { "연결 실패" };
+    let hint = if ok {
+        "이 창을 닫고 Orbit으로 돌아오세요."
+    } else {
+        "이 창을 닫고 앱에서 다시 시도하세요."
+    };
+    let accent = if ok { "#45ada5" } else { "#dc2626" };
+    let safe = html_escape(message);
     let body = format!(
-        "<!doctype html><meta charset=utf-8><title>Orbit</title><body style=font-family:sans-serif;padding:2rem><p>{}</p>",
-        message.replace('<', "&lt;")
+        "<!doctype html><html lang=ko><head><meta charset=utf-8><meta name=viewport content=\"width=device-width,initial-scale=1\"><title>Orbit</title>\
+<style>\
+html,body{{margin:0;min-height:100%;background:#ebe8e1;color:#1c1917;font-family:Segoe UI,system-ui,sans-serif}}\
+main{{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}}\
+.card{{width:min(22rem,100%);background:#f5f2ec;border-radius:8px;padding:28px 24px;text-align:center}}\
+.mark{{width:10px;height:10px;border-radius:99px;background:{accent};margin:0 auto 16px}}\
+h1{{margin:0 0 8px;font-size:1.125rem;font-weight:600}}\
+p{{margin:0;font-size:.875rem;color:#57534e;line-height:1.5}}\
+</style></head><body><main><div class=card><div class=mark></div><h1>{title}</h1><p>{safe}</p><p style=margin-top:8px>{hint}</p></div></main>\
+<script>setTimeout(function(){{window.close()}},1500)</script></body></html>"
     );
     let _ = stream.write_all(
         format!(
@@ -219,6 +232,13 @@ fn reply(stream: &mut std::net::TcpStream, message: &str) {
         )
         .as_bytes(),
     );
+}
+
+fn html_escape(value: &str) -> String {
+    value
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
 }
 
 fn exchange(code: &str, verifier: &str, redirect: &str) -> Result<TokenResponse, String> {

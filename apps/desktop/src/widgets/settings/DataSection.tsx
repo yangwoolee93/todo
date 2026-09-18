@@ -4,7 +4,7 @@ import {
   useDataTransfer,
   useGoogleAuth,
 } from "@renderer/features/settings";
-import { Button, Modal, ModalTitle } from "@renderer/shared/ui";
+import { Button, Modal, ModalTitle, GoogleGIcon } from "@renderer/shared/ui";
 import { cn } from "@renderer/utils/cn";
 import { settingsInfoRowClass, settingsRowClass } from "./settingsRow";
 
@@ -44,21 +44,31 @@ export default function DataSection() {
           </button>
         </>
       ) : (
-        <button
-          type="button"
-          className={cn(settingsRowClass, busy && "cursor-wait opacity-70")}
-          disabled={busy}
-          onClick={() => void login()}
-        >
-          <span className="block text-sm text-fg">구글로 로그인</span>
-          <span className="mt-0.5 block text-xs text-fg-secondary">
-            {busy
-              ? "브라우저에서 로그인 중…"
-              : status.configured
-                ? "브라우저에서 Google 계정으로 연결합니다."
-                : "apps/desktop/.env 에 클라이언트 값을 넣고 다시 실행하세요."}
-          </span>
-        </button>
+        <div className="flex flex-col gap-2">
+          <button
+            type="button"
+            className={cn(
+              "flex h-10 w-full items-center justify-center gap-3",
+              "rounded-(--radius-btn) border text-sm font-medium",
+              "bg-white text-[#1F1F1F] border-[#747775]",
+              "dark:bg-[#131314] dark:text-[#E3E3E3] dark:border-[#8E918F]",
+              "hover:bg-[#F8F8F8] dark:hover:bg-[#1F1F1F]",
+              busy && "cursor-wait opacity-[0.38]",
+            )}
+            disabled={busy}
+            onClick={() => void login()}
+          >
+            <GoogleGIcon />
+            Google 계정으로 로그인
+          </button>
+          {busy ? (
+            <p className="px-1 text-xs text-fg-secondary">브라우저에서 로그인 중…</p>
+          ) : !status.configured ? (
+            <p className="px-1 text-xs text-fg-secondary">
+              apps/desktop/.env 에 클라이언트 값을 넣고 다시 실행하세요.
+            </p>
+          ) : null}
+        </div>
       )}
 
       <p className="px-1 pt-3 text-xs text-fg-secondary">이 기기 파일</p>

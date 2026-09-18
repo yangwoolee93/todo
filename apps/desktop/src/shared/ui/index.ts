@@ -13,4 +13,5 @@ export {
   SunIcon,
   MoonIcon,
   MonitorIcon,
+  GoogleGIcon,
 } from "./icons";
