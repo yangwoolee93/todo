@@ -4,7 +4,7 @@ use std::io::{Read, Write};
 use std::net::TcpListener;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::time::{Duration, Instant};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use base64::Engine;
@@ -23,7 +23,24 @@ fn client_secret() -> &'static str {
     option_env!("ORBIT_GOOGLE_CLIENT_SECRET").unwrap_or("")
 }
 const AUTH_FILE: &str = "google_auth.json";
-const SCOPE: &str = "openid email";
+const DRIVE_FOLDER_NAME: &str = "Orbit";
+const DRIVE_FILE_NAME: &str = "orbit-todos.json";
+const DRIVE_BACKUP_NAME: &str = "orbit-todos.backup.json";
+const DRIVE_README_NAME: &str = "README.md";
+const DRIVE_README: &str = "\
+# Orbit
+
+이 폴더는 Orbit 앱이 만든 동기화 폴더입니다.
+할 일과 메모를 이 Google 계정 드라이브에 맞춰 두기 위해 사용합니다.
+
+- orbit-todos.json : 현재 동기화 데이터
+- orbit-todos.backup.json : 직전 동기화본 (1개만 유지합니다)
+- README.md : 이 안내 파일
+
+이 폴더나 안의 파일을 지우거나 이름을 바꾸면 동기화가 끊기거나 데이터가 맞지 않을 수 있습니다.
+앱에서 로그아웃해도 이 폴더는 그대로 남습니다.
+";
+const SCOPE: &str = "openid email https://www.googleapis.com/auth/drive.file";
 const TIMEOUT: Duration = Duration::from_secs(180);
 
 static LOGIN_BUSY: AtomicBool = AtomicBool::new(false);
@@ -39,7 +56,17 @@ impl Drop for BusyGuard {
 struct StoredAuth {
     refresh_token: Option<String>,
     access_token: Option<String>,
+    #[serde(default)]
+    expires_at: Option<i64>,
     email: Option<String>,
+    #[serde(default)]
+    drive_folder_id: Option<String>,
+    #[serde(default)]
+    drive_file_id: Option<String>,
+    #[serde(default)]
+    drive_backup_id: Option<String>,
+    #[serde(default)]
+    last_synced_at: Option<i64>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -47,14 +74,24 @@ pub struct GoogleAuthStatus {
     pub configured: bool,
     pub connected: bool,
     pub email: Option<String>,
+    pub last_synced_at: Option<i64>,
 }
 
 #[derive(Debug, Deserialize)]
 struct TokenResponse {
     access_token: Option<String>,
     refresh_token: Option<String>,
+    expires_in: Option<i64>,
     error: Option<String>,
     error_description: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct GoogleSyncResult {
+    pub added: usize,
+    pub updated: usize,
+    pub deleted: usize,
+    pub last_synced_at: i64,
 }
 
 #[tauri::command]
@@ -91,6 +128,17 @@ pub async fn google_logout(app: tauri::AppHandle) -> Result<GoogleAuthStatus, St
     })
     .await
     .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+pub async fn google_sync(app: tauri::AppHandle) -> Result<GoogleSyncResult, String> {
+    if LOGIN_BUSY.swap(true, Ordering::SeqCst) {
+        return Err("이미 진행 중입니다.".into());
+    }
+    let _busy = BusyGuard;
+    tauri::async_runtime::spawn_blocking(move || sync_drive(&app))
+        .await
+        .map_err(|e| e.to_string())?
 }
 
 fn login(app: &tauri::AppHandle) -> Result<GoogleAuthStatus, String> {
@@ -132,7 +180,12 @@ fn login(app: &tauri::AppHandle) -> Result<GoogleAuthStatus, String> {
         &StoredAuth {
             refresh_token: tokens.refresh_token,
             access_token: tokens.access_token,
+            expires_at: tokens.expires_in.map(|secs| now_ms() + secs * 1000),
             email,
+            drive_folder_id: None,
+            drive_file_id: None,
+            drive_backup_id: None,
+            last_synced_at: None,
         },
     )?;
     Ok(status(app))
@@ -313,6 +366,7 @@ fn status(app: &tauri::AppHandle) -> GoogleAuthStatus {
         configured: !client_id().is_empty(),
         connected: stored.refresh_token.is_some() || stored.access_token.is_some(),
         email: stored.email,
+        last_synced_at: stored.last_synced_at,
     }
 }
 
@@ -345,4 +399,414 @@ fn random_urlsafe(len: usize) -> String {
 
 fn pkce(verifier: &str) -> String {
     URL_SAFE_NO_PAD.encode(Sha256::digest(verifier.as_bytes()))
+}
+
+fn now_ms() -> i64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis() as i64
+}
+
+fn sync_drive(app: &tauri::AppHandle) -> Result<GoogleSyncResult, String> {
+    let mut stored = read_auth(app);
+    if stored.refresh_token.is_none() && stored.access_token.is_none() {
+        return Err("먼저 Google 계정으로 로그인해 주세요.".into());
+    }
+
+    let token = access_token(app, &mut stored)?;
+    let folder_id = ensure_folder(&token, stored.drive_folder_id.as_deref())?;
+    ensure_readme(&token, &folder_id)?;
+    let file_id = resolve_data_file(&token, &folder_id, stored.drive_file_id.as_deref())?;
+    let (incoming, previous_raw) = match &file_id {
+        Some(id) => {
+            let raw = download_drive_text(&token, id)?;
+            let incoming = if raw.trim().is_empty() {
+                crate::models::TodoDatabase::default()
+            } else {
+                crate::memo::parse_database(&raw)
+                    .map_err(|_| "드라이브 파일이 올바르지 않습니다.".to_string())?
+            };
+            (incoming, Some(raw))
+        }
+        None => (crate::models::TodoDatabase::default(), None),
+    };
+
+    crate::storage::backup_store_file(app);
+    let local = crate::storage::read_store(app);
+    let (mut merged, summary) = crate::merge::merge_database(local, incoming);
+    crate::memo::ensure_memo_schema(&mut merged);
+    crate::storage::write_store(app, &merged);
+
+    if let Some(raw) = previous_raw.filter(|raw| !raw.trim().is_empty()) {
+        stored.drive_backup_id = Some(upsert_file(
+            &token,
+            &folder_id,
+            stored.drive_backup_id.as_deref(),
+            DRIVE_BACKUP_NAME,
+            "application/json",
+            &raw,
+        )?);
+    }
+
+    let json = serde_json::to_string_pretty(&merged).map_err(|e| e.to_string())?;
+    let file_id = upsert_file(
+        &token,
+        &folder_id,
+        file_id.as_deref(),
+        DRIVE_FILE_NAME,
+        "application/json",
+        &json,
+    )?;
+
+    let last_synced_at = now_ms();
+    stored.drive_folder_id = Some(folder_id);
+    stored.drive_file_id = Some(file_id);
+    stored.last_synced_at = Some(last_synced_at);
+    write_auth(app, &stored)?;
+
+    Ok(GoogleSyncResult {
+        added: summary.added,
+        updated: summary.updated,
+        deleted: summary.deleted,
+        last_synced_at,
+    })
+}
+
+fn access_token(app: &tauri::AppHandle, stored: &mut StoredAuth) -> Result<String, String> {
+    let fresh = stored.expires_at.map(|at| at > now_ms() + 60_000).unwrap_or(false);
+    if fresh {
+        if let Some(token) = stored.access_token.clone() {
+            return Ok(token);
+        }
+    }
+
+    let refresh = stored
+        .refresh_token
+        .as_deref()
+        .ok_or("로그인이 만료되었습니다. 다시 로그인해 주세요.")?;
+    let tokens = refresh_tokens(refresh)?;
+    stored.access_token = tokens.access_token.clone();
+    stored.expires_at = tokens.expires_in.map(|secs| now_ms() + secs * 1000);
+    if let Some(next) = tokens.refresh_token {
+        stored.refresh_token = Some(next);
+    }
+    write_auth(app, stored)?;
+    stored
+        .access_token
+        .clone()
+        .ok_or_else(|| "액세스 토큰을 받지 못했습니다.".into())
+}
+
+fn refresh_tokens(refresh_token: &str) -> Result<TokenResponse, String> {
+    let mut form = vec![
+        ("client_id", client_id().to_string()),
+        ("grant_type", "refresh_token".into()),
+        ("refresh_token", refresh_token.to_string()),
+    ];
+    if !client_secret().is_empty() {
+        form.push(("client_secret", client_secret().into()));
+    }
+    let tokens: TokenResponse = http()?
+        .post("https://oauth2.googleapis.com/token")
+        .form(&form)
+        .send()
+        .map_err(|e| format!("토큰을 갱신하지 못했습니다. ({e})"))?
+        .json()
+        .map_err(|_| "토큰 응답을 읽지 못했습니다.".to_string())?;
+    if let Some(err) = tokens.error.as_deref() {
+        let detail = tokens.error_description.as_deref().unwrap_or(err);
+        return Err(if err == "invalid_grant" {
+            "로그인이 만료되었습니다. 다시 로그인해 주세요.".into()
+        } else {
+            format!("토큰 갱신에 실패했습니다. ({detail})")
+        });
+    }
+    if tokens.access_token.is_none() {
+        return Err("액세스 토큰을 받지 못했습니다.".into());
+    }
+    Ok(tokens)
+}
+
+#[derive(Debug, Deserialize)]
+struct DriveFileList {
+    files: Option<Vec<DriveFile>>,
+}
+
+#[derive(Debug, Deserialize)]
+struct DriveFile {
+    id: Option<String>,
+    #[serde(default)]
+    trashed: Option<bool>,
+    #[serde(default)]
+    parents: Option<Vec<String>>,
+}
+
+fn ensure_folder(token: &str, known_id: Option<&str>) -> Result<String, String> {
+    if let Some(id) = alive_id(token, known_id)? {
+        return Ok(id);
+    }
+    if let Some(id) = find_file(
+        token,
+        "mimeType = 'application/vnd.google-apps.folder' and name = 'Orbit' and trashed = false and appProperties has { key='orbit' and value='1' }",
+    )? {
+        return Ok(id);
+    }
+
+    let res = http()?
+        .post("https://www.googleapis.com/drive/v3/files")
+        .bearer_auth(token)
+        .json(&serde_json::json!({
+            "name": DRIVE_FOLDER_NAME,
+            "mimeType": "application/vnd.google-apps.folder",
+            "description": "Orbit 앱 동기화 폴더입니다. 지우지 마세요.",
+            "appProperties": { "orbit": "1" }
+        }))
+        .send()
+        .map_err(|e| format!("드라이브 폴더를 만들지 못했습니다. ({e})"))?;
+    if !res.status().is_success() {
+        return Err(drive_error(res));
+    }
+    let file: DriveFile = res
+        .json()
+        .map_err(|_| "드라이브 폴더 정보를 읽지 못했습니다.".to_string())?;
+    file.id
+        .ok_or_else(|| "드라이브 폴더 ID를 받지 못했습니다.".into())
+}
+
+fn ensure_readme(token: &str, folder_id: &str) -> Result<(), String> {
+    if find_in_folder(token, folder_id, DRIVE_README_NAME)?.is_some() {
+        return Ok(());
+    }
+    create_media_file(
+        token,
+        folder_id,
+        DRIVE_README_NAME,
+        "text/markdown",
+        DRIVE_README,
+    )?;
+    Ok(())
+}
+
+fn resolve_data_file(
+    token: &str,
+    folder_id: &str,
+    known_id: Option<&str>,
+) -> Result<Option<String>, String> {
+    if let Some(id) = alive_id(token, known_id)? {
+        move_into_folder(token, &id, folder_id)?;
+        return Ok(Some(id));
+    }
+    if let Some(id) = find_in_folder(token, folder_id, DRIVE_FILE_NAME)? {
+        return Ok(Some(id));
+    }
+    if let Some(id) = find_file(
+        token,
+        "name = 'orbit-todos.json' and trashed = false and appProperties has { key='orbit' and value='1' }",
+    )? {
+        move_into_folder(token, &id, folder_id)?;
+        return Ok(Some(id));
+    }
+    Ok(None)
+}
+
+fn upsert_file(
+    token: &str,
+    folder_id: &str,
+    known_id: Option<&str>,
+    name: &str,
+    mime: &str,
+    body: &str,
+) -> Result<String, String> {
+    if let Some(id) = alive_id(token, known_id)? {
+        move_into_folder(token, &id, folder_id)?;
+        upload_drive_file(token, &id, mime, body)?;
+        return Ok(id);
+    }
+    if let Some(id) = find_in_folder(token, folder_id, name)? {
+        upload_drive_file(token, &id, mime, body)?;
+        return Ok(id);
+    }
+    create_media_file(token, folder_id, name, mime, body)
+}
+
+fn alive_id(token: &str, known_id: Option<&str>) -> Result<Option<String>, String> {
+    let Some(id) = known_id.filter(|id| !id.is_empty()) else {
+        return Ok(None);
+    };
+    let res = http()?
+        .get(format!("https://www.googleapis.com/drive/v3/files/{id}"))
+        .query(&[("fields", "id,trashed,parents")])
+        .bearer_auth(token)
+        .send()
+        .map_err(|e| format!("드라이브 파일을 찾지 못했습니다. ({e})"))?;
+    if res.status().as_u16() == 404 {
+        return Ok(None);
+    }
+    if !res.status().is_success() {
+        return Err(drive_error(res));
+    }
+    let file: DriveFile = res
+        .json()
+        .map_err(|_| "드라이브 파일 정보를 읽지 못했습니다.".to_string())?;
+    if file.trashed == Some(true) {
+        return Ok(None);
+    }
+    Ok(file.id.or_else(|| Some(id.to_string())))
+}
+
+fn find_in_folder(token: &str, folder_id: &str, name: &str) -> Result<Option<String>, String> {
+    let folder_id = escape_query(folder_id);
+    let name = escape_query(name);
+    find_file(
+        token,
+        &format!("'{folder_id}' in parents and name = '{name}' and trashed = false"),
+    )
+}
+
+fn find_file(token: &str, query: &str) -> Result<Option<String>, String> {
+    let res = http()?
+        .get("https://www.googleapis.com/drive/v3/files")
+        .query(&[
+            ("q", query),
+            ("spaces", "drive"),
+            ("fields", "files(id,name)"),
+            ("pageSize", "10"),
+        ])
+        .bearer_auth(token)
+        .send()
+        .map_err(|e| format!("드라이브 파일을 찾지 못했습니다. ({e})"))?;
+    if !res.status().is_success() {
+        return Err(drive_error(res));
+    }
+    let list: DriveFileList = res
+        .json()
+        .map_err(|_| "드라이브 파일 목록을 읽지 못했습니다.".to_string())?;
+    Ok(list
+        .files
+        .unwrap_or_default()
+        .into_iter()
+        .find_map(|file| file.id))
+}
+
+fn move_into_folder(token: &str, file_id: &str, folder_id: &str) -> Result<(), String> {
+    let res = http()?
+        .get(format!("https://www.googleapis.com/drive/v3/files/{file_id}"))
+        .query(&[("fields", "parents")])
+        .bearer_auth(token)
+        .send()
+        .map_err(|e| format!("드라이브 파일을 찾지 못했습니다. ({e})"))?;
+    if !res.status().is_success() {
+        return Err(drive_error(res));
+    }
+    let file: DriveFile = res
+        .json()
+        .map_err(|_| "드라이브 파일 정보를 읽지 못했습니다.".to_string())?;
+    let parents = file.parents.unwrap_or_default();
+    if parents.iter().any(|parent| parent == folder_id) {
+        return Ok(());
+    }
+    let remove = parents.join(",");
+    let mut req = http()?
+        .patch(format!("https://www.googleapis.com/drive/v3/files/{file_id}"))
+        .query(&[("addParents", folder_id), ("fields", "id,parents")])
+        .bearer_auth(token)
+        .json(&serde_json::json!({}));
+    if !remove.is_empty() {
+        req = req.query(&[("removeParents", remove.as_str())]);
+    }
+    let res = req
+        .send()
+        .map_err(|e| format!("드라이브 폴더로 옮기지 못했습니다. ({e})"))?;
+    if !res.status().is_success() {
+        return Err(drive_error(res));
+    }
+    Ok(())
+}
+
+fn download_drive_text(token: &str, file_id: &str) -> Result<String, String> {
+    let res = http()?
+        .get(format!("https://www.googleapis.com/drive/v3/files/{file_id}"))
+        .query(&[("alt", "media")])
+        .bearer_auth(token)
+        .send()
+        .map_err(|e| format!("드라이브 파일을 받지 못했습니다. ({e})"))?;
+    if !res.status().is_success() {
+        return Err(drive_error(res));
+    }
+    res.text()
+        .map_err(|_| "드라이브 파일을 읽지 못했습니다.".to_string())
+}
+
+fn create_media_file(
+    token: &str,
+    folder_id: &str,
+    name: &str,
+    mime: &str,
+    body: &str,
+) -> Result<String, String> {
+    let boundary = "orbit_sync_boundary";
+    let metadata = serde_json::json!({
+        "name": name,
+        "mimeType": mime,
+        "parents": [folder_id],
+        "appProperties": { "orbit": "1" }
+    });
+    let payload = format!(
+        "--{boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n{metadata}\r\n--{boundary}\r\nContent-Type: {mime}\r\n\r\n{body}\r\n--{boundary}--\r\n"
+    );
+    let res = http()?
+        .post("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart")
+        .bearer_auth(token)
+        .header(
+            "Content-Type",
+            format!("multipart/related; boundary={boundary}"),
+        )
+        .body(payload)
+        .send()
+        .map_err(|e| format!("드라이브에 올리지 못했습니다. ({e})"))?;
+    if !res.status().is_success() {
+        return Err(drive_error(res));
+    }
+    let file: DriveFile = res
+        .json()
+        .map_err(|_| "드라이브 파일 정보를 읽지 못했습니다.".to_string())?;
+    file.id
+        .ok_or_else(|| "드라이브 파일 ID를 받지 못했습니다.".into())
+}
+
+fn upload_drive_file(token: &str, file_id: &str, mime: &str, body: &str) -> Result<(), String> {
+    let res = http()?
+        .patch(format!(
+            "https://www.googleapis.com/upload/drive/v3/files/{file_id}?uploadType=media"
+        ))
+        .bearer_auth(token)
+        .header("Content-Type", mime)
+        .body(body.to_string())
+        .send()
+        .map_err(|e| format!("드라이브에 올리지 못했습니다. ({e})"))?;
+    if !res.status().is_success() {
+        return Err(drive_error(res));
+    }
+    Ok(())
+}
+
+fn escape_query(value: &str) -> String {
+    value.replace('\\', "\\\\").replace('\'', "\\'")
+}
+
+fn drive_error(res: reqwest::blocking::Response) -> String {
+    let status = res.status();
+    let body = res.text().unwrap_or_default();
+    if status.as_u16() == 401 {
+        return "로그인이 만료되었습니다. 다시 로그인해 주세요.".into();
+    }
+    if status.as_u16() == 403
+        && (body.contains("insufficient")
+            || body.contains("ACCESS_TOKEN_SCOPE")
+            || body.contains("insufficientPermissions"))
+    {
+        return "드라이브 권한이 없습니다. 로그아웃 후 다시 로그인해 주세요.".into();
+    }
+    format!("드라이브 요청에 실패했습니다. ({status})")
 }

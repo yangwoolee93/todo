@@ -21,7 +21,7 @@ export default function DataSection() {
     handleImportConfirm,
     handleImportMerge,
   } = useDataTransfer();
-  const { status, ready, busy, logoutOpen, setLogoutOpen, login, logout } =
+  const { status, ready, busy, logoutOpen, setLogoutOpen, login, logout, sync } =
     useGoogleAuth(setResult);
 
   return (
@@ -55,17 +55,13 @@ export default function DataSection() {
           </div>
           <button
             type="button"
-            className={settingsRowClass}
-            onClick={() =>
-              setResult({
-                title: "동기화",
-                message: "아직 준비 중입니다.",
-              })
-            }
+            className={cn(settingsRowClass, busy && "cursor-wait opacity-[0.38]")}
+            disabled={busy}
+            onClick={() => void sync()}
           >
             <span className="block text-sm text-fg">데이터 동기화</span>
             <span className="mt-0.5 block text-xs text-fg-secondary">
-              마지막 {transferTimeLabel(null)}
+              마지막 {transferTimeLabel(status.last_synced_at)}
             </span>
           </button>
         </>
@@ -91,10 +87,12 @@ export default function DataSection() {
         {!ready
           ? "\u00a0"
           : busy
-            ? "브라우저에서 로그인 중…"
+            ? status.connected
+              ? "드라이브와 동기화 중…"
+              : "브라우저에서 로그인 중…"
             : !status.configured
               ? "apps/desktop/.env 에 클라이언트 값을 넣고 다시 실행하세요."
-              : "로그인한 계정의 드라이브를 이용해 동기화할 수 있습니다."}
+              : "동기화하면 Drive에 Orbit 폴더를 만들고, 그 안에 데이터 파일·안내 파일·백업 1개를 둡니다. 이 폴더를 지우면 동기화가 끊깁니다."}
       </p>
 
       <p className="px-1 pt-3 text-xs text-fg-secondary">이 기기 파일</p>

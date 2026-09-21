@@ -23,7 +23,7 @@ import type {
   MemoItem,
   UpdateMemoPayload,
 } from "@shared/types/memo";
-import type { GoogleAuthStatus } from "@shared/types/google";
+import type { GoogleAuthStatus, GoogleSyncResult } from "@shared/types/google";
 
 /** invoke 래퍼 — IpcResult 형태로 통일 */
 async function call<T>(command: string, args?: Record<string, unknown>): Promise<IpcResult<T>> {
@@ -141,6 +141,10 @@ export const api = {
 
   googleLogout(): Promise<IpcResult<GoogleAuthStatus>> {
     return call("google_logout");
+  },
+
+  googleSync(): Promise<IpcResult<GoogleSyncResult>> {
+    return call("google_sync");
   },
 
   getStorePath(): Promise<IpcResult<string>> {

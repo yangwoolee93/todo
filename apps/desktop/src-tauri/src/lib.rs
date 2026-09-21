@@ -179,6 +179,7 @@ pub fn run() {
             google::get_google_auth_status,
             google::google_login,
             google::google_logout,
+            google::google_sync,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
