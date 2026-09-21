@@ -11,7 +11,7 @@ use base64::Engine;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 use tauri_plugin_opener::OpenerExt;
 use url::Url;
 
@@ -44,15 +44,17 @@ const SCOPE: &str = "openid email https://www.googleapis.com/auth/drive.file";
 const TIMEOUT: Duration = Duration::from_secs(180);
 
 static LOGIN_BUSY: AtomicBool = AtomicBool::new(false);
+static SYNC_BUSY: AtomicBool = AtomicBool::new(false);
+static LOGIN_CANCEL: AtomicBool = AtomicBool::new(false);
 
-struct BusyGuard;
-impl Drop for BusyGuard {
+struct FlagGuard(&'static AtomicBool);
+impl Drop for FlagGuard {
     fn drop(&mut self) {
-        LOGIN_BUSY.store(false, Ordering::SeqCst);
+        self.0.store(false, Ordering::SeqCst);
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct StoredAuth {
     refresh_token: Option<String>,
     access_token: Option<String>,
@@ -67,6 +69,28 @@ struct StoredAuth {
     drive_backup_id: Option<String>,
     #[serde(default)]
     last_synced_at: Option<i64>,
+    #[serde(default = "default_true")]
+    drive_granted: bool,
+}
+
+fn default_true() -> bool {
+    true
+}
+
+impl Default for StoredAuth {
+    fn default() -> Self {
+        Self {
+            refresh_token: None,
+            access_token: None,
+            expires_at: None,
+            email: None,
+            drive_folder_id: None,
+            drive_file_id: None,
+            drive_backup_id: None,
+            last_synced_at: None,
+            drive_granted: true,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -75,6 +99,9 @@ pub struct GoogleAuthStatus {
     pub connected: bool,
     pub email: Option<String>,
     pub last_synced_at: Option<i64>,
+    pub logging_in: bool,
+    pub syncing: bool,
+    pub drive_granted: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -82,6 +109,8 @@ struct TokenResponse {
     access_token: Option<String>,
     refresh_token: Option<String>,
     expires_in: Option<i64>,
+    #[serde(default)]
+    scope: Option<String>,
     error: Option<String>,
     error_description: Option<String>,
 }
@@ -101,18 +130,34 @@ pub fn get_google_auth_status(app: tauri::AppHandle) -> GoogleAuthStatus {
 
 #[tauri::command]
 pub async fn google_login(app: tauri::AppHandle) -> Result<GoogleAuthStatus, String> {
+    if SYNC_BUSY.load(Ordering::SeqCst) {
+        return Err("동기화가 끝나길 기다려 주세요.".into());
+    }
     if LOGIN_BUSY.swap(true, Ordering::SeqCst) {
         return Err("이미 로그인을 진행 중입니다.".into());
     }
-    let _busy = BusyGuard;
-    tauri::async_runtime::spawn_blocking(move || login(&app))
-        .await
-        .map_err(|e| e.to_string())?
+    LOGIN_CANCEL.store(false, Ordering::SeqCst);
+    let emit_app = app.clone();
+    let result = async {
+        let _busy = FlagGuard(&LOGIN_BUSY);
+        tauri::async_runtime::spawn_blocking(move || login(&app))
+            .await
+            .map_err(|e| e.to_string())?
+    }
+    .await;
+    emit_status(&emit_app);
+    result
+}
+
+#[tauri::command]
+pub fn google_cancel_login() {
+    LOGIN_CANCEL.store(true, Ordering::SeqCst);
 }
 
 #[tauri::command]
 pub async fn google_logout(app: tauri::AppHandle) -> Result<GoogleAuthStatus, String> {
-    tauri::async_runtime::spawn_blocking(move || {
+    let emit_app = app.clone();
+    let result = tauri::async_runtime::spawn_blocking(move || {
         let stored = read_auth(&app);
         if let Some(token) = stored.refresh_token.or(stored.access_token) {
             let _ = http()?
@@ -127,18 +172,29 @@ pub async fn google_logout(app: tauri::AppHandle) -> Result<GoogleAuthStatus, St
         Ok(status(&app))
     })
     .await
-    .map_err(|e| e.to_string())?
+    .map_err(|e| e.to_string())?;
+    emit_status(&emit_app);
+    result
 }
 
 #[tauri::command]
 pub async fn google_sync(app: tauri::AppHandle) -> Result<GoogleSyncResult, String> {
-    if LOGIN_BUSY.swap(true, Ordering::SeqCst) {
+    if LOGIN_BUSY.load(Ordering::SeqCst) {
+        return Err("로그인이 끝나길 기다려 주세요.".into());
+    }
+    if SYNC_BUSY.swap(true, Ordering::SeqCst) {
         return Err("이미 진행 중입니다.".into());
     }
-    let _busy = BusyGuard;
-    tauri::async_runtime::spawn_blocking(move || sync_drive(&app))
-        .await
-        .map_err(|e| e.to_string())?
+    let emit_app = app.clone();
+    let result = async {
+        let _busy = FlagGuard(&SYNC_BUSY);
+        tauri::async_runtime::spawn_blocking(move || sync_drive(&app))
+            .await
+            .map_err(|e| e.to_string())?
+    }
+    .await;
+    emit_status(&emit_app);
+    result
 }
 
 fn login(app: &tauri::AppHandle) -> Result<GoogleAuthStatus, String> {
@@ -175,6 +231,8 @@ fn login(app: &tauri::AppHandle) -> Result<GoogleAuthStatus, String> {
     let code = wait_code(&listener, &state)?;
     let tokens = exchange(&code, &verifier, &redirect)?;
     let email = user_email(tokens.access_token.as_deref());
+    let prev = read_auth(app);
+    let drive_granted = scope_has_drive(tokens.scope.as_deref());
     write_auth(
         app,
         &StoredAuth {
@@ -182,10 +240,11 @@ fn login(app: &tauri::AppHandle) -> Result<GoogleAuthStatus, String> {
             access_token: tokens.access_token,
             expires_at: tokens.expires_in.map(|secs| now_ms() + secs * 1000),
             email,
-            drive_folder_id: None,
-            drive_file_id: None,
-            drive_backup_id: None,
-            last_synced_at: None,
+            drive_folder_id: prev.drive_folder_id,
+            drive_file_id: prev.drive_file_id,
+            drive_backup_id: prev.drive_backup_id,
+            last_synced_at: prev.last_synced_at,
+            drive_granted,
         },
     )?;
     Ok(status(app))
@@ -194,6 +253,9 @@ fn login(app: &tauri::AppHandle) -> Result<GoogleAuthStatus, String> {
 fn wait_code(listener: &TcpListener, expected_state: &str) -> Result<String, String> {
     let started = Instant::now();
     loop {
+        if LOGIN_CANCEL.load(Ordering::SeqCst) {
+            return Err("로그인이 취소되었습니다.".into());
+        }
         if started.elapsed() > TIMEOUT {
             return Err("로그인 시간이 초과되었습니다.".into());
         }
@@ -367,6 +429,20 @@ fn status(app: &tauri::AppHandle) -> GoogleAuthStatus {
         connected: stored.refresh_token.is_some() || stored.access_token.is_some(),
         email: stored.email,
         last_synced_at: stored.last_synced_at,
+        logging_in: LOGIN_BUSY.load(Ordering::SeqCst),
+        syncing: SYNC_BUSY.load(Ordering::SeqCst),
+        drive_granted: stored.drive_granted,
+    }
+}
+
+fn emit_status(app: &tauri::AppHandle) {
+    let _ = app.emit("google-auth", status(app));
+}
+
+fn scope_has_drive(scope: Option<&str>) -> bool {
+    match scope {
+        Some(scope) => scope.split_whitespace().any(|item| item.contains("drive.file")),
+        None => true,
     }
 }
 
@@ -415,7 +491,25 @@ fn sync_drive(app: &tauri::AppHandle) -> Result<GoogleSyncResult, String> {
     }
 
     let token = access_token(app, &mut stored)?;
-    let folder_id = ensure_folder(&token, stored.drive_folder_id.as_deref())?;
+    if !stored.drive_granted {
+        return Err("드라이브 권한이 없습니다. Drive 권한을 다시 허용해 주세요.".into());
+    }
+    let result = sync_drive_inner(app, &token, &mut stored);
+    if let Err(err) = &result {
+        if err.contains("드라이브 권한이 없습니다") {
+            stored.drive_granted = false;
+            write_auth(app, &stored)?;
+        }
+    }
+    result
+}
+
+fn sync_drive_inner(
+    app: &tauri::AppHandle,
+    token: &str,
+    stored: &mut StoredAuth,
+) -> Result<GoogleSyncResult, String> {
+    let folder_id = ensure_folder(token, stored.drive_folder_id.as_deref())?;
     ensure_readme(&token, &folder_id)?;
     let file_id = resolve_data_file(&token, &folder_id, stored.drive_file_id.as_deref())?;
     let (incoming, previous_raw) = match &file_id {

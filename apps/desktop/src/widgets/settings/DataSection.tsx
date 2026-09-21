@@ -8,6 +8,13 @@ import { Button, Modal, ModalTitle, GoogleGIcon } from "@renderer/shared/ui";
 import { cn } from "@renderer/utils/cn";
 import { settingsInfoRowClass, settingsRowClass } from "./settingsRow";
 
+const googleBtnClass = cn(
+  "flex h-10 w-full items-center justify-center gap-3",
+  "rounded-(--radius-btn) border text-sm font-medium",
+  "bg-white text-[#1F1F1F] border-[#747775]",
+  "dark:bg-[#131314] dark:text-[#E3E3E3] dark:border-[#8E918F]",
+);
+
 export default function DataSection() {
   const {
     meta,
@@ -21,8 +28,19 @@ export default function DataSection() {
     handleImportConfirm,
     handleImportMerge,
   } = useDataTransfer();
-  const { status, ready, busy, logoutOpen, setLogoutOpen, login, logout, sync } =
-    useGoogleAuth(setResult);
+  const {
+    status,
+    ready,
+    loggingIn,
+    syncing,
+    logoutOpen,
+    setLogoutOpen,
+    login,
+    cancelLogin,
+    logout,
+    sync,
+  } = useGoogleAuth(setResult);
+  const pending = loggingIn || syncing;
 
   return (
     <div className="flex flex-col gap-2">
@@ -46,37 +64,55 @@ export default function DataSection() {
             </span>
             <button
               type="button"
-              className="shrink-0 text-sm text-fg-secondary hover:text-fg"
-              disabled={busy}
+              className="shrink-0 text-sm text-fg-secondary hover:text-fg disabled:opacity-[0.38]"
+              disabled={pending}
               onClick={() => setLogoutOpen(true)}
             >
               로그아웃
             </button>
           </div>
-          <button
-            type="button"
-            className={cn(settingsRowClass, busy && "cursor-wait opacity-[0.38]")}
-            disabled={busy}
-            onClick={() => void sync()}
-          >
-            <span className="block text-sm text-fg">데이터 동기화</span>
-            <span className="mt-0.5 block text-xs text-fg-secondary">
-              마지막 {transferTimeLabel(status.last_synced_at)}
-            </span>
-          </button>
+          {loggingIn ? (
+            <LoginPending onCancel={() => void cancelLogin()} />
+          ) : (
+            <>
+              <button
+                type="button"
+                className={cn(
+                  settingsRowClass,
+                  (syncing || !status.drive_granted) && "opacity-[0.38]",
+                  syncing && "cursor-wait",
+                  !status.drive_granted && "cursor-not-allowed",
+                )}
+                disabled={syncing || !status.drive_granted}
+                onClick={() => void sync()}
+              >
+                <span className="block text-sm text-fg">데이터 동기화</span>
+                <span className="mt-0.5 block text-xs text-fg-secondary">
+                  마지막 {transferTimeLabel(status.last_synced_at)}
+                </span>
+              </button>
+              {!status.drive_granted && (
+                <button
+                  type="button"
+                  className={cn(googleBtnClass, "hover:bg-[#F8F8F8] dark:hover:bg-[#1F1F1F]")}
+                  onClick={() => void login()}
+                >
+                  <GoogleGIcon />
+                  Drive 권한 허용
+                </button>
+              )}
+            </>
+          )}
         </>
+      ) : loggingIn ? (
+        <LoginPending onCancel={() => void cancelLogin()} />
       ) : (
         <button
           type="button"
           className={cn(
-            "flex h-10 w-full items-center justify-center gap-3",
-            "rounded-(--radius-btn) border text-sm font-medium",
-            "bg-white text-[#1F1F1F] border-[#747775]",
-            "dark:bg-[#131314] dark:text-[#E3E3E3] dark:border-[#8E918F]",
+            googleBtnClass,
             "hover:bg-[#F8F8F8] dark:hover:bg-[#1F1F1F]",
-            busy && "cursor-wait opacity-[0.38]",
           )}
-          disabled={busy}
           onClick={() => void login()}
         >
           <GoogleGIcon />
@@ -86,13 +122,15 @@ export default function DataSection() {
       <p className="px-1 text-xs text-fg-secondary">
         {!ready
           ? "\u00a0"
-          : busy
-            ? status.connected
+          : loggingIn
+            ? "브라우저에서 로그인 중…"
+            : syncing
               ? "드라이브와 동기화 중…"
-              : "브라우저에서 로그인 중…"
-            : !status.configured
-              ? "apps/desktop/.env 에 클라이언트 값을 넣고 다시 실행하세요."
-              : "동기화하면 Drive에 Orbit 폴더를 만들고, 그 안에 데이터 파일·안내 파일·백업 1개를 둡니다. 이 폴더를 지우면 동기화가 끊깁니다."}
+              : !status.configured
+                ? "apps/desktop/.env 에 클라이언트 값을 넣고 다시 실행하세요."
+                : status.connected && !status.drive_granted
+                  ? "동기화하려면 Drive 권한을 허용해 주세요. 허용 버튼을 누르면 동의 화면이 다시 열립니다."
+                  : "동기화하면 Drive에 Orbit 폴더를 만들고, 그 안에 데이터 파일·안내 파일·백업 1개를 둡니다. 이 폴더를 지우면 동기화가 끊깁니다."}
       </p>
 
       <p className="px-1 pt-3 text-xs text-fg-secondary">이 기기 파일</p>
@@ -151,6 +189,28 @@ export default function DataSection() {
           </Button>
         </div>
       </Modal>
+    </div>
+  );
+}
+
+function LoginPending({ onCancel }: { onCancel: () => void }) {
+  return (
+    <div className="flex flex-col gap-2">
+      <button
+        type="button"
+        className={cn(googleBtnClass, "cursor-wait opacity-[0.38]")}
+        disabled
+      >
+        <GoogleGIcon />
+        로그인 중입니다
+      </button>
+      <button
+        type="button"
+        className="self-end px-1 text-sm text-fg-secondary hover:text-fg"
+        onClick={onCancel}
+      >
+        취소
+      </button>
     </div>
   );
 }

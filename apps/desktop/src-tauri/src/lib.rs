@@ -178,6 +178,7 @@ pub fn run() {
             export::get_data_transfer_meta,
             google::get_google_auth_status,
             google::google_login,
+            google::google_cancel_login,
             google::google_logout,
             google::google_sync,
         ])

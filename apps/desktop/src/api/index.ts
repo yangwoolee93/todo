@@ -139,6 +139,10 @@ export const api = {
     return call("google_login");
   },
 
+  googleCancelLogin(): Promise<IpcResult<void>> {
+    return call("google_cancel_login");
+  },
+
   googleLogout(): Promise<IpcResult<GoogleAuthStatus>> {
     return call("google_logout");
   },
