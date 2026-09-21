@@ -40,7 +40,7 @@ body {
 main {
   width: min(40rem, calc(100% - 2rem));
   margin: 0 auto;
-  padding: 3rem 0 4rem;
+  padding: 2.5rem 0 4rem;
   flex: 1;
 }
 
@@ -53,34 +53,24 @@ footer {
 
 header {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 1rem;
 }
 
-.mark {
-  display: inline-block;
-  width: 0.625rem;
-  height: 0.625rem;
-  border-radius: 99px;
-  background: var(--accent);
-  margin-right: 0.5rem;
-  vertical-align: middle;
-}
-
-a {
-  color: var(--accent);
-  text-decoration: none;
-}
-
-a:hover {
-  text-decoration: underline;
-}
-
 .brand {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
   color: var(--fg);
   font-weight: 600;
   text-decoration: none;
+}
+
+.brand img {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
 }
 
 .brand:hover {
@@ -92,22 +82,37 @@ nav a {
   font-size: 0.875rem;
 }
 
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
 h1 {
   margin: 0 0 0.75rem;
   font-size: 1.75rem;
   font-weight: 600;
+  color: var(--fg);
 }
 
 h2 {
   margin: 2rem 0 0.5rem;
   font-size: 1.05rem;
   font-weight: 600;
+  color: var(--fg);
 }
 
 p,
 li {
   color: var(--muted);
   font-size: 0.95rem;
+}
+
+.lead {
+  margin-bottom: 1.5rem;
 }
 
 ul {
@@ -118,10 +123,25 @@ ul {
   background: var(--surface);
   border-radius: 8px;
   padding: 1.25rem 1.35rem;
-  margin: 1.5rem 0;
+  margin: 1.25rem 0;
+}
+
+.card h2 {
+  margin: 0 0 0.65rem;
+}
+
+.card p:last-child,
+.card ul:last-child {
+  margin-bottom: 0;
+}
+
+.meta {
+  margin: 0 0 1.25rem;
+  font-size: 0.8rem;
 }
 
 footer {
   color: var(--muted);
   font-size: 0.8rem;
+  border-top: 1px solid var(--border);
 }

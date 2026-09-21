@@ -8,32 +8,54 @@
       name="description"
       content="Orbit는 할 일과 메모를 이 기기에 두고, 원할 때 Google Drive로 동기화하는 데스크톱 앱입니다."
     />
+    <link rel="icon" href="./icon.png" type="image/png" />
+    <link rel="apple-touch-icon" href="./icon.png" />
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
     <header>
-      <a class="brand" href="./"><span class="mark"></span>Orbit</a>
+      <a class="brand" href="./"><img src="./icon.png" alt="" width="28" height="28" />Orbit</a>
       <nav><a href="./privacy.html">개인정보 처리방침</a></nav>
     </header>
     <main>
-      <h1>할 일과 메모를 한곳에서</h1>
-      <p>
-        Orbit는 데스크톱에서 쓰는 할 일·메모 앱입니다. 데이터는 기본적으로 이
-        기기에 저장되고, Google 계정으로 로그인하면 그 계정의 Drive로 동기화할
-        수 있습니다. 별도의 서버는 두지 않습니다.
+      <h1>할 일과 메모를 이 기기에</h1>
+      <p class="lead">
+        Orbit는 Windows와 macOS에서 쓰는 데스크톱 앱입니다. 할 일과 메모는
+        기본적으로 이 기기에만 저장됩니다. Google 계정으로 로그인하면 그 계정의
+        Drive로 동기화할 수 있고, 별도의 서버는 두지 않습니다.
       </p>
+
       <div class="card">
+        <h2>로컬이 기본입니다</h2>
         <p>
-          동기화하면 Drive에 <strong>Orbit</strong> 폴더를 만들고, 그 안에 데이터
-          파일·안내 파일·백업 1개를 둡니다. 앱이 만든 파일만 다루며, Drive의
-          다른 파일은 읽지 않습니다.
+          앱을 쓰는 동안 데이터는 이 기기 앱 폴더에 남습니다. Google 로그인은
+          동기화가 필요할 때만 하면 됩니다. 로그인하지 않아도 할 일과 메모는
+          그대로 쓸 수 있습니다.
         </p>
       </div>
+
+      <div class="card">
+        <h2>Drive 동기화</h2>
+        <p>
+          설정에서 로그인한 뒤 데이터 동기화를 누르면, Drive에
+          <strong>Orbit</strong> 폴더를 만들고 그 안에만 파일을 둡니다.
+        </p>
+        <ul>
+          <li>현재 데이터 파일</li>
+          <li>폴더 안내 파일</li>
+          <li>직전 동기화 백업 1개</li>
+        </ul>
+        <p>
+          이 앱이 만든 파일만 다루며 Drive의 다른 파일은 읽지 않습니다. 이
+          폴더를 지우면 동기화가 끊길 수 있습니다.
+        </p>
+      </div>
+
       <p>
-        Google 로그인과 Drive 접근 방식은
+        Google 계정과 Drive를 어떻게 쓰는지는
         <a href="./privacy.html">개인정보 처리방침</a>에서 확인할 수 있습니다.
       </p>
     </main>
-    <footer>Orbit</footer>
+    <footer>Orbit · 데스크톱 할 일·메모 앱</footer>
   </body>
 </html>

@@ -8,53 +8,94 @@
       name="description"
       content="Orbit가 Google 계정과 Drive 데이터를 어떻게 다루는지에 대한 개인정보 처리방침입니다."
     />
+    <link rel="icon" href="./icon.png" type="image/png" />
+    <link rel="apple-touch-icon" href="./icon.png" />
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
     <header>
-      <a class="brand" href="./"><span class="mark"></span>Orbit</a>
+      <a class="brand" href="./"><img src="./icon.png" alt="" width="28" height="28" />Orbit</a>
       <nav><a href="./privacy.html">개인정보 처리방침</a></nav>
     </header>
     <main>
       <h1>개인정보 처리방침</h1>
-      <p>이 방침은 데스크톱 앱 Orbit에 적용됩니다.</p>
-
-      <h2>수집하는 정보</h2>
+      <p class="meta">적용 대상: 데스크톱 앱 Orbit · 최종 수정일: 2026년 9월 21일</p>
       <p>
-        Google 로그인 시 이메일 주소와, 앱이 Drive에 접근하기 위한 토큰을
-        받습니다. 할 일·메모 내용은 이 기기와, 동기화를 켠 경우 로그인한 계정의
-        Google Drive에만 둡니다.
+        Orbit는 개인이 개발하는 데스크톱 앱입니다. 이 방침은 앱이 Google 계정과
+        Drive 데이터를 어떻게 다루는지 설명합니다.
       </p>
 
-      <h2>Google 데이터를 쓰는 방식</h2>
+      <h2>수집하는 정보</h2>
+      <p>Google 로그인 과정에서 아래 정보를 받습니다.</p>
       <ul>
-        <li>이메일은 연결된 계정을 표시하는 데 사용합니다.</li>
+        <li>이메일 주소 — 연결된 계정을 앱에 표시하기 위해 사용합니다.</li>
         <li>
-          Drive에서는 이 앱이 만든 <strong>Orbit</strong> 폴더와 그 안의 파일만
-          만들고 읽고 수정합니다. 다른 Drive 파일에는 접근하지 않습니다.
+          액세스·리프레시 토큰 — Drive 동기화와 로그인 유지를 위해 이 기기에만
+          저장합니다.
         </li>
+      </ul>
+      <p>
+        할 일·메모 내용은 Google이 제공하는 계정 정보가 아닙니다. 이 기기와,
+        동기화를 한 경우에만 로그인한 계정의 Drive에 둡니다.
+      </p>
+
+      <h2>요청하는 Google 권한</h2>
+      <ul>
+        <li>로그인: OpenID, 이메일</li>
         <li>
-          폴더 안에는 현재 데이터, 안내 파일, 직전 동기화 백업 1개를 둡니다.
+          Drive: 이 앱이 만들거나 연 파일만 보고 수정합니다. Drive 전체를
+          열람하지 않습니다.
         </li>
       </ul>
 
-      <h2>보관</h2>
+      <h2>Drive 데이터를 쓰는 방식</h2>
       <p>
-        Google 토큰은 이 기기의 앱 데이터 폴더에만 저장합니다. Orbit 전용 서버로
-        보내거나, 제3자와 공유하지 않습니다. Drive에 올라간 파일은 해당 Google
-        계정에 남습니다.
+        동기화하면 Drive에 <strong>Orbit</strong> 폴더를 만들고, 그 안에 현재
+        데이터 파일, 안내 파일, 직전 동기화 백업 1개를 둡니다. 앱이 만들지 않은
+        파일은 읽거나 바꾸지 않습니다.
       </p>
 
-      <h2>로그아웃과 삭제</h2>
+      <h2>보관과 제3자</h2>
       <p>
-        앱에서 로그아웃하면 이 기기의 로그인 정보만 지웁니다. 할 일 데이터와
-        Drive의 Orbit 폴더는 그대로 둡니다. Drive 폴더를 지우면 이후 동기화가
-        실패할 수 있습니다.
+        Google 토큰은 이 기기의 앱 데이터 폴더에만 저장합니다. Orbit 전용 서버는
+        없으며, 받은 Google 데이터를 광고에 쓰거나 다른 서비스로 보내지
+        않습니다. Drive에 올린 파일은 해당 Google 계정에 남습니다. 로그인과
+        Drive 요청은 Google의 서비스로 처리됩니다.
       </p>
+
+      <h2>하지 않는 일</h2>
+      <ul>
+        <li>할 일·메모를 Orbit 서버로 보내지 않습니다.</li>
+        <li>Drive의 다른 폴더나 파일을 검색·열람하지 않습니다.</li>
+        <li>이메일을 마케팅에 사용하지 않습니다.</li>
+      </ul>
+
+      <h2>로그아웃, 삭제, 권한 해제</h2>
+      <ul>
+        <li>
+          앱에서 로그아웃하면 이 기기의 로그인 정보만 지웁니다. 할 일 데이터와
+          Drive의 Orbit 폴더는 그대로 둡니다.
+        </li>
+        <li>
+          Drive에서 Orbit 폴더를 지우면 이후 동기화가 실패할 수 있습니다. 폴더
+          안의 백업 파일은 직전 동기화본 1개입니다.
+        </li>
+        <li>
+          Google 계정에서 앱 액세스를 끄려면
+          <a href="https://myaccount.google.com/permissions" rel="noopener noreferrer"
+            >Google 계정 권한</a
+          >에서 Orbit 접근을 해제하면 됩니다.
+        </li>
+      </ul>
 
       <h2>문의</h2>
-      <p>이 사이트가 호스팅된 GitHub 저장소에서 문의할 수 있습니다.</p>
+      <p>
+        이 방침이나 데이터 처리에 대한 문의는
+        <a href="https://github.com/yangwoolee93/todo/issues" rel="noopener noreferrer"
+          >GitHub 이슈</a
+        >로 남겨 주세요.
+      </p>
     </main>
-    <footer>Orbit</footer>
+    <footer>Orbit · 최종 수정일 2026년 9월 21일</footer>
   </body>
 </html>
