@@ -1,0 +1,127 @@
+:root {
+  --base: #ebe8e1;
+  --surface: #f5f2ec;
+  --fg: #1c1917;
+  --muted: #57534e;
+  --accent: #45ada5;
+  --border: #d6d0c6;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --base: #121212;
+    --surface: #1a1a1a;
+    --fg: #ececec;
+    --muted: #a3a3a3;
+    --accent: #2dd4bf;
+    --border: #2a2a2a;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--base);
+  color: var(--fg);
+  font-family: "Segoe UI", system-ui, sans-serif;
+  line-height: 1.6;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  width: min(40rem, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 3rem 0 4rem;
+  flex: 1;
+}
+
+header,
+footer {
+  width: min(40rem, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 1.25rem 0;
+}
+
+header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.mark {
+  display: inline-block;
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 99px;
+  background: var(--accent);
+  margin-right: 0.5rem;
+  vertical-align: middle;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+.brand {
+  color: var(--fg);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.brand:hover {
+  text-decoration: none;
+}
+
+nav a {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+h1 {
+  margin: 0 0 0.75rem;
+  font-size: 1.75rem;
+  font-weight: 600;
+}
+
+h2 {
+  margin: 2rem 0 0.5rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+p,
+li {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+ul {
+  padding-left: 1.2rem;
+}
+
+.card {
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 1.25rem 1.35rem;
+  margin: 1.5rem 0;
+}
+
+footer {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
