@@ -6,7 +6,7 @@
     <title>Orbit</title>
     <meta
       name="description"
-      content="Orbit는 할 일과 메모를 이 기기에 두고, 원할 때 Google Drive로 동기화하는 데스크톱 앱입니다."
+      content="Orbit는 할 일과 메모를 이 기기에 두는 데스크톱 앱입니다. 필요할 때만 Google Drive로 동기화합니다."
     />
     <link rel="icon" href="./icon.png" type="image/png" />
     <link rel="apple-touch-icon" href="./icon.png" />
@@ -18,44 +18,47 @@
       <nav><a href="./privacy.html">개인정보 처리방침</a></nav>
     </header>
     <main>
-      <h1>할 일과 메모를 이 기기에</h1>
-      <p class="lead">
-        Orbit는 Windows와 macOS에서 쓰는 데스크톱 앱입니다. 할 일과 메모는
-        기본적으로 이 기기에만 저장됩니다. Google 계정으로 로그인하면 그 계정의
-        Drive로 동기화할 수 있고, 별도의 서버는 두지 않습니다.
-      </p>
-
-      <div class="card">
-        <h2>로컬이 기본입니다</h2>
-        <p>
-          앱을 쓰는 동안 데이터는 이 기기 앱 폴더에 남습니다. Google 로그인은
-          동기화가 필요할 때만 하면 됩니다. 로그인하지 않아도 할 일과 메모는
-          그대로 쓸 수 있습니다.
+      <section class="hero">
+        <img class="hero-icon" src="./icon.png" alt="" width="72" height="72" />
+        <h1>할 일과 메모를 이 기기에</h1>
+        <p class="lead">
+          Orbit는 Windows와 macOS용 데스크톱 앱입니다. 일정과 메모는 기본적으로
+          이 기기에만 남고, 서버는 없습니다. Google 계정은 기기 간에 맞출 때만
+          연결하면 됩니다.
         </p>
-      </div>
+      </section>
 
-      <div class="card">
-        <h2>Drive 동기화</h2>
-        <p>
-          설정에서 로그인한 뒤 데이터 동기화를 누르면, Drive에
-          <strong>Orbit</strong> 폴더를 만들고 그 안에만 파일을 둡니다.
-        </p>
-        <ul>
-          <li>현재 데이터 파일</li>
-          <li>폴더 안내 파일</li>
-          <li>직전 동기화 백업 1개</li>
-        </ul>
-        <p>
-          이 앱이 만든 파일만 다루며 Drive의 다른 파일은 읽지 않습니다. 이
-          폴더를 지우면 동기화가 끊길 수 있습니다.
-        </p>
-      </div>
-
-      <p>
-        Google 계정과 Drive를 어떻게 쓰는지는
-        <a href="./privacy.html">개인정보 처리방침</a>에서 확인할 수 있습니다.
-      </p>
+      <section class="features">
+        <div class="card">
+          <h2>할 일</h2>
+          <p>하루·월·연 단위로 보고, 기간이 있는 일도 한곳에서 다룹니다.</p>
+        </div>
+        <div class="card">
+          <h2>메모</h2>
+          <p>분류를 나눠 두고, 할 일과 같은 앱에서 바로 적어 둡니다.</p>
+        </div>
+        <div class="card">
+          <h2>로컬이 기본</h2>
+          <p>
+            로그인 없이도 씁니다. 데이터는 이 기기 앱 폴더에 저장됩니다.
+          </p>
+        </div>
+        <div class="card">
+          <h2>선택적 동기화</h2>
+          <p>
+            같은 Google 계정의 Drive로 맞출 수 있습니다. 앱이 만든 폴더만
+            사용합니다.
+          </p>
+        </div>
+      </section>
     </main>
-    <footer>Orbit · 데스크톱 할 일·메모 앱</footer>
+    <footer>
+      <span>Orbit · Windows, macOS</span>
+      <span>
+        <a href="./privacy.html">개인정보 처리방침</a>
+        ·
+        <a href="https://github.com/yangwoolee93/todo" rel="noopener noreferrer">GitHub</a>
+      </span>
+    </footer>
   </body>
 </html>
