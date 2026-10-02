@@ -7,6 +7,9 @@ interface TodoItemMenuProps {
   onEdit: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
+  onDeleteChildren?: () => void;
+  onAddChild?: () => void;
+  showAddChild?: boolean;
   onSetStatus: (status: TodoStatus) => void;
 }
 
@@ -19,6 +22,9 @@ export function TodoItemMenu({
   onEdit,
   onDuplicate,
   onDelete,
+  onDeleteChildren,
+  onAddChild,
+  showAddChild,
   onSetStatus,
 }: TodoItemMenuProps) {
   const [open, setOpen] = useState(false);
@@ -78,6 +84,17 @@ export function TodoItemMenu({
             복제
           </button>
 
+          {showAddChild && onAddChild && (
+            <button
+              type="button"
+              className="block w-full px-3 py-1.5 text-left text-sm text-fg hover:bg-muted"
+              role="menuitem"
+              onClick={() => run(onAddChild)}
+            >
+              하위 추가
+            </button>
+          )}
+
           {todo.status !== "failed" && (
             <button
               type="button"
@@ -102,14 +119,25 @@ export function TodoItemMenu({
 
           <div className="my-1 border-t border-border" />
 
-          <button
-            type="button"
-            className="block w-full px-3 py-1.5 text-left text-sm text-danger hover:bg-danger-soft"
-            role="menuitem"
-            onClick={() => run(onDelete)}
-          >
-            삭제
-          </button>
+          {todo.has_children && onDeleteChildren ? (
+            <button
+              type="button"
+              className="block w-full px-3 py-1.5 text-left text-sm text-danger hover:bg-danger-soft"
+              role="menuitem"
+              onClick={() => run(onDeleteChildren)}
+            >
+              하위항목 전체 삭제
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="block w-full px-3 py-1.5 text-left text-sm text-danger hover:bg-danger-soft"
+              role="menuitem"
+              onClick={() => run(onDelete)}
+            >
+              삭제
+            </button>
+          )}
         </div>
       )}
     </div>

@@ -18,6 +18,7 @@ export default function TodoPeriodField({
   resetStart,
   resetEnd,
   inputId = "todo-range",
+  limit,
   onChange,
 }: {
   startDate: string;
@@ -25,6 +26,7 @@ export default function TodoPeriodField({
   resetStart: string;
   resetEnd: string;
   inputId?: string;
+  limit?: { start: string; end: string } | null;
   onChange: (start: string, end: string) => void;
 }) {
   const today = getTodayString();
@@ -130,6 +132,8 @@ export default function TodoPeriodField({
             endDate={endDate}
             focusDate={focusDate}
             resetKey={calendarReset}
+            minDate={limit?.start}
+            maxDate={limit?.end}
             className="min-w-0 flex-1"
             onChange={(start, end) => onChange(start, end)}
           />
@@ -146,6 +150,8 @@ export default function TodoPeriodField({
               >
                 초기화
               </button>
+              {!limit && (
+                <>
               <button
                 type="button"
                 className={cn(
@@ -172,6 +178,8 @@ export default function TodoPeriodField({
               >
                 이번 달
               </button>
+                </>
+              )}
             </div>
             <div className="mt-auto flex flex-col gap-1">
               <Button

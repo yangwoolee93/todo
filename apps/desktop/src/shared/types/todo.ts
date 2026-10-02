@@ -20,6 +20,8 @@ export interface TodoItem {
   created_at: number;
   sort_order: number;
   batch_id: string | null;
+  parent_id?: string | null;
+  end_date?: string | null;
 }
 
 /** 디스크에 저장되는 JSON 파일 전체 스키마 */
@@ -51,6 +53,9 @@ export interface DisplayTodo {
   sort_order: number;
   created_at: number;
   batch_id: string | null;
+  parent_id: string | null;
+  group_key: string;
+  has_children: boolean;
 }
 
 export interface CreateTodoPayload {
@@ -59,6 +64,13 @@ export interface CreateTodoPayload {
 }
 
 export interface CreateTodoRangePayload {
+  content: string;
+  start_date: string;
+  end_date: string;
+}
+
+export interface CreateChildPayload {
+  parent_id: string;
   content: string;
   start_date: string;
   end_date: string;
@@ -89,6 +101,8 @@ export interface UpdateTodoContentPayload {
 export interface TodoSpan {
   start_date: string;
   end_date: string;
+  limit_start?: string | null;
+  limit_end?: string | null;
 }
 
 export interface UpdateTodoPayload {

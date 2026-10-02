@@ -39,7 +39,39 @@ fn sanitize_content(content: &str) -> Option<String> {
     }
 }
 
-fn to_display(item: &TodoItem) -> DisplayTodo {
+fn group_key_of(item: &TodoItem) -> String {
+    if let Some(parent) = &item.parent_id {
+        return parent.clone();
+    }
+    item.batch_id
+        .clone()
+        .unwrap_or_else(|| item.id.clone())
+}
+
+fn span_end(item: &TodoItem) -> &str {
+    item.end_date.as_deref().unwrap_or(&item.target_date)
+}
+
+fn covers_date(item: &TodoItem, date: &str) -> bool {
+    item.target_date.as_str() <= date && date <= span_end(item)
+}
+
+fn is_top_level(item: &TodoItem) -> bool {
+    item.parent_id.is_none()
+}
+
+fn parent_anchor(item: &TodoItem) -> String {
+    item.batch_id
+        .clone()
+        .unwrap_or_else(|| item.id.clone())
+}
+
+fn to_display(store: &TodoDatabase, item: &TodoItem) -> DisplayTodo {
+    let group_key = group_key_of(item);
+    let has_children = is_top_level(item)
+        && store.todos.iter().any(|t| {
+            t.deleted_at.is_none() && t.parent_id.as_deref() == Some(group_key.as_str())
+        });
     DisplayTodo {
         id: item.id.clone(),
         content: item.content.clone(),
@@ -47,7 +79,42 @@ fn to_display(item: &TodoItem) -> DisplayTodo {
         sort_order: item.sort_order,
         created_at: item.created_at,
         batch_id: item.batch_id.clone(),
+        parent_id: item.parent_id.clone(),
+        group_key,
+        has_children,
     }
+}
+
+fn parent_covers(store: &TodoDatabase, anchor: &str, date: &str) -> bool {
+    store.todos.iter().any(|t| {
+        t.deleted_at.is_none()
+            && is_top_level(t)
+            && t.target_date == date
+            && (t.id == anchor || t.batch_id.as_deref() == Some(anchor))
+    })
+}
+
+fn parent_span(store: &TodoDatabase, anchor: &str) -> Option<(String, String)> {
+    let mut dates: Vec<String> = store
+        .todos
+        .iter()
+        .filter(|t| {
+            t.deleted_at.is_none()
+                && is_top_level(t)
+                && (t.id == anchor || t.batch_id.as_deref() == Some(anchor))
+        })
+        .map(|t| t.target_date.clone())
+        .collect();
+    dates.sort();
+    let start = dates.first().cloned()?;
+    let end = dates.last().cloned()?;
+    Some((start, end))
+}
+
+fn has_live_children(store: &TodoDatabase, anchor: &str) -> bool {
+    store.todos.iter().any(|t| {
+        t.deleted_at.is_none() && t.parent_id.as_deref() == Some(anchor)
+    })
 }
 
 fn sort_display(items: Vec<DisplayTodo>) -> Vec<DisplayTodo> {
@@ -152,12 +219,32 @@ fn get_month_date_range(year_month: &str) -> (String, String) {
 #[tauri::command]
 pub fn get_todos_by_date(app: AppHandle, target_date: String) -> Result<Vec<DisplayTodo>, String> {
     let store = read_store(&app);
-    let items: Vec<DisplayTodo> = store
+    let mut items: Vec<DisplayTodo> = store
         .todos
         .iter()
-        .filter(|t| t.target_date == target_date && t.deleted_at.is_none())
-        .map(to_display)
+        .filter(|t| {
+            t.deleted_at.is_none()
+                && is_top_level(t)
+                && t.target_date == target_date
+        })
+        .map(|t| to_display(&store, t))
         .collect();
+    let children: Vec<DisplayTodo> = store
+        .todos
+        .iter()
+        .filter(|t| {
+            t.deleted_at.is_none()
+                && t.parent_id.is_some()
+                && covers_date(t, &target_date)
+                && parent_covers(
+                    &store,
+                    t.parent_id.as_deref().unwrap_or(""),
+                    &target_date,
+                )
+        })
+        .map(|t| to_display(&store, t))
+        .collect();
+    items.extend(children);
     Ok(sort_display(items))
 }
 
@@ -173,8 +260,10 @@ pub fn get_month_summary(app: AppHandle, year_month: String) -> Result<Vec<DaySu
             let items: Vec<DisplayTodo> = store
                 .todos
                 .iter()
-                .filter(|t| &t.target_date == date && t.deleted_at.is_none())
-                .map(to_display)
+                .filter(|t| {
+                    &t.target_date == date && t.deleted_at.is_none() && is_top_level(t)
+                })
+                .map(|t| to_display(&store, t))
                 .collect();
             let day = date[8..10].parse::<u32>().unwrap_or(0);
             DaySummary {
@@ -209,6 +298,8 @@ pub fn create_todo(
         updated_at: now,
         sort_order: 0,
         batch_id: None,
+        parent_id: None,
+        end_date: None,
         deleted_at: None,
     };
 
@@ -252,6 +343,8 @@ pub fn create_todo_range(
                 updated_at: now,
                 sort_order: base_order + i as i64,
                 batch_id: Some(batch_id.clone()),
+                parent_id: None,
+                end_date: None,
                 deleted_at: None,
             });
         }
@@ -261,8 +354,67 @@ pub fn create_todo_range(
 }
 
 #[tauri::command]
-pub fn create_todo_month(
+pub fn create_child(
     app: AppHandle,
+    parent_id: String,
+    content: String,
+    start_date: String,
+    end_date: String,
+) -> Result<TodoItem, String> {
+    let content = sanitize_content(&content).ok_or("내용이 비어있습니다")?;
+    if !is_valid_date(&start_date) || !is_valid_date(&end_date) {
+        return Err("날짜 형식이 올바르지 않습니다".into());
+    }
+    if start_date > end_date {
+        return Err("시작일은 종료일보다 늦을 수 없습니다".into());
+    }
+
+    let store = read_store(&app);
+    let parent = find_by_id(&store, &parent_id).ok_or("할 일을 찾을 수 없습니다")?;
+    if parent.parent_id.is_some() {
+        return Err("하위항목 아래에는 더 만들 수 없습니다".into());
+    }
+    let anchor = parent_anchor(parent);
+    let (limit_start, limit_end) =
+        parent_span(&store, &anchor).ok_or("할 일을 찾을 수 없습니다")?;
+    if start_date < limit_start || end_date > limit_end {
+        return Err("부모 기간 안에서만 정할 수 있습니다".into());
+    }
+
+    let same_day = start_date == end_date;
+    let now = now_ms();
+    let mut child = TodoItem {
+        id: new_id(),
+        content,
+        target_date: start_date,
+        status: "pending".into(),
+        created_at: now,
+        updated_at: now,
+        sort_order: 0,
+        batch_id: None,
+        parent_id: Some(anchor),
+        end_date: if same_day { None } else { Some(end_date) },
+        deleted_at: None,
+    };
+
+    mutate_store(&app, |store| {
+        child.sort_order = store
+            .todos
+            .iter()
+            .filter(|t| {
+                t.deleted_at.is_none() && t.parent_id.as_deref() == child.parent_id.as_deref()
+            })
+            .map(|t| t.sort_order)
+            .max()
+            .unwrap_or(-1)
+            + 1;
+        store.todos.push(child.clone());
+    });
+    Ok(child)
+}
+
+#[tauri::command]
+pub fn create_todo_month(    app: AppHandle,
     content: String,
     year_month: String,
 ) -> Result<(usize, String), String> {
@@ -317,7 +469,52 @@ pub fn set_todo_status(app: AppHandle, id: String, status: String) -> Result<boo
 }
 
 #[tauri::command]
+pub fn delete_children(app: AppHandle, id: String) -> Result<bool, String> {
+    let store = read_store(&app);
+    let item = find_by_id(&store, &id).ok_or("할 일을 찾을 수 없습니다")?;
+    if item.parent_id.is_some() {
+        return Err("하위항목에서는 전체를 지울 수 없습니다".into());
+    }
+    let anchor = parent_anchor(item);
+    let mut changed = false;
+    mutate_store(&app, |store| {
+        let now = now_ms();
+        for t in store.todos.iter_mut() {
+            if t.deleted_at.is_none() && t.parent_id.as_deref() == Some(anchor.as_str()) {
+                t.deleted_at = Some(now);
+                t.updated_at = now;
+                changed = true;
+            }
+        }
+    });
+    Ok(changed)
+}
+
+#[tauri::command]
 pub fn delete_todo(app: AppHandle, id: String, scope: String) -> Result<bool, String> {
+    let store = read_store(&app);
+    let Some(item) = find_by_id(&store, &id).cloned() else {
+        return Ok(false);
+    };
+    if is_top_level(&item) {
+        let anchor = parent_anchor(&item);
+        if has_live_children(&store, &anchor) {
+            let rows = store
+                .todos
+                .iter()
+                .filter(|t| {
+                    t.deleted_at.is_none()
+                        && is_top_level(t)
+                        && (t.id == anchor || t.batch_id.as_deref() == Some(anchor.as_str()))
+                })
+                .count();
+            let removes_parent = scope == "batch" || item.batch_id.is_none() || rows <= 1;
+            if removes_parent {
+                return Err("하위항목을 먼저 삭제해 주세요.".into());
+            }
+        }
+    }
+
     let mut changed = false;
     mutate_store(&app, |store| {
         let Some(item) = find_by_id(store, &id).cloned() else {
@@ -407,6 +604,16 @@ fn sibling_ids(store: &TodoDatabase, id: &str) -> Vec<String> {
 pub fn get_todo_span(app: AppHandle, id: String) -> Result<TodoSpan, String> {
     let store = read_store(&app);
     let item = find_by_id(&store, &id).ok_or("할 일을 찾을 수 없습니다")?;
+    if let Some(parent) = &item.parent_id {
+        let (limit_start, limit_end) =
+            parent_span(&store, parent).ok_or("할 일을 찾을 수 없습니다")?;
+        return Ok(TodoSpan {
+            start_date: item.target_date.clone(),
+            end_date: span_end(item).to_string(),
+            limit_start: Some(limit_start),
+            limit_end: Some(limit_end),
+        });
+    }
     if let Some(bid) = &item.batch_id {
         let mut dates: Vec<String> = store
             .todos
@@ -426,11 +633,15 @@ pub fn get_todo_span(app: AppHandle, id: String) -> Result<TodoSpan, String> {
         Ok(TodoSpan {
             start_date: start,
             end_date: end,
+            limit_start: None,
+            limit_end: None,
         })
     } else {
         Ok(TodoSpan {
             start_date: item.target_date.clone(),
             end_date: item.target_date.clone(),
+            limit_start: None,
+            limit_end: None,
         })
     }
 }
@@ -452,9 +663,35 @@ pub fn update_todo(
     }
 
     let store = read_store(&app);
-    if find_by_id(&store, &id).is_none() {
-        return Err("할 일을 찾을 수 없습니다".into());
+    let existing = find_by_id(&store, &id).ok_or("할 일을 찾을 수 없습니다")?;
+    if existing.parent_id.is_some() {
+        let parent = existing.parent_id.clone().unwrap();
+        let (limit_start, limit_end) =
+            parent_span(&store, &parent).ok_or("할 일을 찾을 수 없습니다")?;
+        if start_date < limit_start || end_date > limit_end {
+            return Err("부모 기간 안에서만 정할 수 있습니다".into());
+        }
+        let mut changed = false;
+        mutate_store(&app, |store| {
+            if let Some(item) = store
+                .todos
+                .iter_mut()
+                .find(|t| t.id == id && t.deleted_at.is_none())
+            {
+                item.content = content.clone();
+                item.end_date = if start_date == end_date {
+                    None
+                } else {
+                    Some(end_date.clone())
+                };
+                item.target_date = start_date.clone();
+                item.updated_at = now_ms();
+                changed = true;
+            }
+        });
+        return Ok(changed);
     }
+    let old_anchor = parent_anchor(existing);
 
     let new_dates = enumerate_date_range(&start_date, &end_date);
     let mut changed = false;
@@ -483,6 +720,15 @@ pub fn update_todo(
                 item.batch_id = None;
                 item.updated_at = now;
                 changed = true;
+            }
+            if old_anchor != id {
+                for t in store.todos.iter_mut() {
+                    if t.deleted_at.is_none() && t.parent_id.as_deref() == Some(old_anchor.as_str())
+                    {
+                        t.parent_id = Some(id.clone());
+                        t.updated_at = now;
+                    }
+                }
             }
             return;
         }
@@ -526,9 +772,20 @@ pub fn update_todo(
                 updated_at: now,
                 sort_order: base_order + add_i,
                 batch_id: Some(batch_id.clone()),
+                parent_id: None,
+                end_date: None,
                 deleted_at: None,
             });
             add_i += 1;
+        }
+        let new_anchor = batch_id.clone();
+        if old_anchor != new_anchor {
+            for t in store.todos.iter_mut() {
+                if t.deleted_at.is_none() && t.parent_id.as_deref() == Some(old_anchor.as_str()) {
+                    t.parent_id = Some(new_anchor.clone());
+                    t.updated_at = now;
+                }
+            }
         }
         changed = true;
     });
@@ -544,12 +801,22 @@ pub fn reorder_todo(
     over_id: String,
 ) -> Result<bool, String> {
     let store = read_store(&app);
+    let moving = find_by_id(&store, &id);
     let display_list = {
         let items: Vec<DisplayTodo> = store
             .todos
             .iter()
-            .filter(|t| t.target_date == target_date && t.deleted_at.is_none())
-            .map(to_display)
+            .filter(|t| {
+                t.deleted_at.is_none()
+                    && match moving {
+                        Some(subject) if subject.parent_id.is_some() => {
+                            t.parent_id == subject.parent_id
+                        }
+                        Some(_) => is_top_level(t) && t.target_date == target_date,
+                        None => false,
+                    }
+            })
+            .map(|t| to_display(&store, t))
             .collect();
         sort_display(items)
     };

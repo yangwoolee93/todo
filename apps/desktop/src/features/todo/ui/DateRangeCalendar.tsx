@@ -56,6 +56,8 @@ export default function DateRangeCalendar({
   endDate,
   focusDate,
   resetKey,
+  minDate,
+  maxDate,
   className,
   onChange,
 }: {
@@ -63,6 +65,8 @@ export default function DateRangeCalendar({
   endDate: string;
   focusDate: string;
   resetKey: number;
+  minDate?: string;
+  maxDate?: string;
   className?: string;
   onChange: (start: string, end: string) => void;
 }) {
@@ -86,6 +90,8 @@ export default function DateRangeCalendar({
     : [startDate, endDate];
 
   const handleDayClick = (date: string) => {
+    if (minDate && date < minDate) return;
+    if (maxDate && date > maxDate) return;
     if (!pendingStart) {
       setPendingStart(date);
       onChange(date, date);
@@ -146,7 +152,16 @@ export default function DateRangeCalendar({
               key={cell.date}
               type="button"
               onClick={() => handleDayClick(cell.date)}
-              onMouseEnter={() => pendingStart && setHoverDate(cell.date)}
+              onMouseEnter={() => {
+                if (!pendingStart) return;
+                if (minDate && cell.date < minDate) return;
+                if (maxDate && cell.date > maxDate) return;
+                setHoverDate(cell.date);
+              }}
+              disabled={
+                (minDate != null && cell.date < minDate) ||
+                (maxDate != null && cell.date > maxDate)
+              }
               className={cn(
                 "relative flex h-8 items-center justify-center text-xs",
                 !cell.inMonth && "opacity-40",

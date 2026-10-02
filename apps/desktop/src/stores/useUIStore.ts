@@ -11,8 +11,11 @@ type UIState = {
   activeDate: string;
   addModalOpen: boolean;
   duplicateContent: string | undefined;
+  childParentId: string | null;
+  childGroupKey: string | null;
   editTarget: DisplayTodo | null;
   deleteTarget: DisplayTodo | null;
+  deleteChildrenTarget: DisplayTodo | null;
 };
 
 type UIActions = {
@@ -23,9 +26,11 @@ type UIActions = {
   setActiveDate: (activeDate: string) => void;
   openAddModal: () => void;
   openAddModalWithDuplicate: (content: string) => void;
+  openAddChild: (parentId: string, groupKey: string) => void;
   closeAddModal: () => void;
   setEditTarget: (todo: DisplayTodo | null) => void;
   setDeleteTarget: (todo: DisplayTodo | null) => void;
+  setDeleteChildrenTarget: (todo: DisplayTodo | null) => void;
 };
 
 type UIStore = UIState & UIActions;
@@ -36,8 +41,11 @@ const initialState: UIState = {
   activeDate: getTodayString(),
   addModalOpen: false,
   duplicateContent: undefined,
+  childParentId: null,
+  childGroupKey: null,
   editTarget: null,
   deleteTarget: null,
+  deleteChildrenTarget: null,
 };
 
 const createActions = (
@@ -55,12 +63,37 @@ const createActions = (
   },
   setSettingsSection: (settingsSection) => set(() => ({ settingsSection })),
   setActiveDate: (activeDate: string) => set(() => ({ activeDate })),
-  openAddModal: () => set(() => ({ addModalOpen: true, duplicateContent: undefined })),
+  openAddModal: () =>
+    set(() => ({
+      addModalOpen: true,
+      duplicateContent: undefined,
+      childParentId: null,
+      childGroupKey: null,
+    })),
   openAddModalWithDuplicate: (content) =>
-    set(() => ({ addModalOpen: true, duplicateContent: content })),
-  closeAddModal: () => set(() => ({ addModalOpen: false, duplicateContent: undefined })),
+    set(() => ({
+      addModalOpen: true,
+      duplicateContent: content,
+      childParentId: null,
+      childGroupKey: null,
+    })),
+  openAddChild: (parentId, groupKey) =>
+    set(() => ({
+      addModalOpen: true,
+      duplicateContent: undefined,
+      childParentId: parentId,
+      childGroupKey: groupKey,
+    })),
+  closeAddModal: () =>
+    set(() => ({
+      addModalOpen: false,
+      duplicateContent: undefined,
+      childParentId: null,
+      childGroupKey: null,
+    })),
   setEditTarget: (todo) => set(() => ({ editTarget: todo })),
   setDeleteTarget: (todo) => set(() => ({ deleteTarget: todo })),
+  setDeleteChildrenTarget: (todo) => set(() => ({ deleteChildrenTarget: todo })),
 });
 
 export const useUIStore = create<UIStore>()((set, get) => ({

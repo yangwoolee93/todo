@@ -23,6 +23,7 @@ export function EditTodoModal() {
   const [endDate, setEndDate] = useState(activeDate);
   const [resetStart, setResetStart] = useState(activeDate);
   const [resetEnd, setResetEnd] = useState(activeDate);
+  const [limit, setLimit] = useState<{ start: string; end: string } | null>(null);
   const [spanReady, setSpanReady] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -39,6 +40,7 @@ export function EditTodoModal() {
       setResetStart(activeDate);
       setResetEnd(activeDate);
       setSpanReady(false);
+      setLimit(null);
       requestAnimationFrame(() => inputRef.current?.focus());
 
       const todoId = editTarget.id;
@@ -52,6 +54,9 @@ export function EditTodoModal() {
         setEndDate(span.end_date);
         setResetStart(span.start_date);
         setResetEnd(span.end_date);
+        if (span.limit_start && span.limit_end) {
+          setLimit({ start: span.limit_start, end: span.limit_end });
+        }
         setSpanReady(true);
       });
     }
@@ -87,12 +92,14 @@ export function EditTodoModal() {
     <Modal
       open={open}
       onClose={handleClose}
-      label="할 일 수정"
+      label={editTarget?.parent_id ? "하위 수정" : "할 일 수정"}
       size="md"
       className="overflow-visible"
     >
       <div className="relative z-20 mb-4 flex items-center justify-between">
-        <ModalTitle className="text-lg font-semibold text-fg">할 일 수정</ModalTitle>
+        <ModalTitle className="text-lg font-semibold text-fg">
+          {editTarget?.parent_id ? "하위 수정" : "할 일 수정"}
+        </ModalTitle>
         <Button variant="ghost" className="p-1.5" aria-label="닫기" onClick={handleClose}>
           <CloseIcon />
         </Button>
@@ -122,6 +129,7 @@ export function EditTodoModal() {
             endDate={endDate}
             resetStart={resetStart}
             resetEnd={resetEnd}
+            limit={limit}
             inputId="todo-edit-range"
             onChange={(start, end) => {
               setStartDate(start);
@@ -132,9 +140,11 @@ export function EditTodoModal() {
 
         <p className="rounded-(--radius-btn) bg-muted px-3 py-2 text-xs text-fg-secondary">
           <strong className="text-fg">{dayCount}일</strong>
-          {dayCount > 1
-            ? " 동안 매일 저장됩니다. 빠진 날은 지워지고, 늘어난 날은 미완료로 추가됩니다."
-            : "로 저장됩니다."}{" "}
+          {limit
+            ? " 동안 부모 기간 안에서 보입니다."
+            : dayCount > 1
+              ? " 동안 매일 저장됩니다. 빠진 날은 지워지고, 늘어난 날은 미완료로 추가됩니다."
+              : "로 저장됩니다."}{" "}
           ({rangeLabel})
         </p>
 

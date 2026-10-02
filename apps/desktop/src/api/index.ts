@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import type {
   CreateBatchResult,
   CreateTodoMonthPayload,
+  CreateChildPayload,
   CreateTodoPayload,
   CreateTodoRangePayload,
   DataTransferMeta,
@@ -72,6 +73,19 @@ export const api = {
       const [count, batch_id] = res.data;
       return { success: true, data: { count, batch_id } };
     });
+  },
+
+  createChild(payload: CreateChildPayload): Promise<IpcResult<TodoItem>> {
+    return call("create_child", {
+      parentId: payload.parent_id,
+      content: payload.content,
+      startDate: payload.start_date,
+      endDate: payload.end_date,
+    });
+  },
+
+  deleteChildren(id: string): Promise<IpcResult<boolean>> {
+    return call("delete_children", { id });
   },
 
   toggleCompletion(todoId: string): Promise<IpcResult> {

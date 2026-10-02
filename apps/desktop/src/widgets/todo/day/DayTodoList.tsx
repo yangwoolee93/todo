@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { formatDate } from "@renderer/utils/dateUtils";
 import { useUIStore } from "@renderer/stores/useUIStore";
 import TodoList from "@renderer/features/todo/ui/TodoList";
-import { DeleteBatchModal, DeleteConfirmModal, EditTodoModal } from "@renderer/features/todo";
+import { DeleteBatchModal, DeleteChildrenModal, DeleteConfirmModal, EditTodoModal } from "@renderer/features/todo";
 
 export default function DayTodoList({
   year,
@@ -38,6 +38,7 @@ export default function DayTodoList({
       <EditTodoModal />
       <DeleteConfirmModal />
       <DeleteBatchModal />
+      <DeleteChildrenModal />
     </div>
   );
 }

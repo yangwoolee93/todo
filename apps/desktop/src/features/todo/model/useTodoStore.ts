@@ -2,6 +2,7 @@ import { arrayMove } from "@dnd-kit/sortable";
 import { useUIStore } from "@renderer/stores/useUIStore";
 import {
   CreateTodoMonthPayload,
+  CreateChildPayload,
   CreateTodoRangePayload,
   DisplayTodo,
   TodoItem,
@@ -25,6 +26,9 @@ function toDisplay(item: TodoItem): DisplayTodo {
     sort_order: item.sort_order,
     created_at: item.created_at,
     batch_id: item.batch_id,
+    parent_id: item.parent_id ?? null,
+    group_key: item.batch_id ?? item.id,
+    has_children: false,
   };
 }
 
@@ -52,6 +56,8 @@ type TodoActions = {
   createTodo: (content: string, targetDate: string) => Promise<boolean>;
   createTodoRange: (payload: CreateTodoRangePayload) => Promise<boolean>;
   createTodoMonth: (payload: CreateTodoMonthPayload) => Promise<boolean>;
+  createChild: (payload: CreateChildPayload) => Promise<boolean>;
+  deleteChildren: (todoId: string) => Promise<boolean>;
 };
 
 type TodoStore = TodoState & TodoActions;
@@ -90,18 +96,29 @@ const createActions = (
 
     moveTodo: async (activeId, overId) => {
       const current = get().todos;
-      const fromIndex = current.findIndex((todo) => todo.id === activeId);
-      const toIndex = current.findIndex((todo) => todo.id === overId);
-      if (fromIndex === -1 || toIndex === -1) return false;
-      if (fromIndex === toIndex) return true;
+      const from = current.find((todo) => todo.id === activeId);
+      const to = current.find((todo) => todo.id === overId);
+      if (!from || !to) return false;
+      if ((from.parent_id ?? null) !== (to.parent_id ?? null)) return false;
+
+      const siblings = current.filter(
+        (todo) => (todo.parent_id ?? null) === (from.parent_id ?? null),
+      );
+      const fromIndex = siblings.findIndex((todo) => todo.id === activeId);
+      const toIndex = siblings.findIndex((todo) => todo.id === overId);
+      if (fromIndex === -1 || toIndex === -1 || fromIndex === toIndex) return fromIndex === toIndex;
 
       const previousTodos = current;
-      const sortOrders = current.map((t) => t.sort_order).sort((a, b) => a - b);
-      const next = arrayMove(current, fromIndex, toIndex).map((item, index) => ({
+      const sortOrders = siblings.map((todo) => todo.sort_order).sort((a, b) => a - b);
+      const nextSiblings = arrayMove(siblings, fromIndex, toIndex).map((item, index) => ({
         ...item,
         sort_order: sortOrders[index],
       }));
-      set(() => ({ todos: next, error: null }));
+      const byId = new Map(nextSiblings.map((todo) => [todo.id, todo]));
+      set(() => ({
+        todos: current.map((todo) => byId.get(todo.id) ?? todo),
+        error: null,
+      }));
 
       const activeDate = useUIStore.getState().activeDate;
       const result = await window.api.reorderTodo({
@@ -263,6 +280,26 @@ const createActions = (
       const result = await window.api.createTodoMonth(payload);
       if (!result.success) {
         set(() => ({ error: result.error ?? "한 달 일괄 생성 실패" }));
+        return false;
+      }
+      await syncDaily();
+      return true;
+    },
+
+    createChild: async (payload) => {
+      const result = await window.api.createChild(payload);
+      if (!result.success) {
+        set(() => ({ error: result.error ?? "하위항목 생성 실패" }));
+        return false;
+      }
+      await syncDaily();
+      return true;
+    },
+
+    deleteChildren: async (todoId) => {
+      const result = await window.api.deleteChildren(todoId);
+      if (!result.success) {
+        set(() => ({ error: result.error ?? "하위항목 삭제 실패" }));
         return false;
       }
       await syncDaily();
