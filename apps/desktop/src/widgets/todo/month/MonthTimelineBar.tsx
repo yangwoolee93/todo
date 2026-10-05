@@ -8,15 +8,26 @@ export default function MonthTimelineBar({
   bar,
   trackWidth,
   titleRefs,
+  rowRefs,
   fold,
 }: {
   bar: TimelineBar;
   trackWidth: string;
   titleRefs: RefObject<Map<string, HTMLParagraphElement>>;
+  rowRefs?: RefObject<Map<string, HTMLDivElement>>;
   fold?: { open: boolean; onToggle: () => void };
 }) {
   return (
-    <div key={bar.id} className="relative flex" style={{ width: trackWidth }}>
+    <div
+      key={bar.id}
+      ref={(node) => {
+        if (!rowRefs) return;
+        if (node) rowRefs.current.set(bar.id, node);
+        else rowRefs.current.delete(bar.id);
+      }}
+      className="relative flex"
+      style={{ width: trackWidth }}
+    >
       {bar.segments.map((segment, segmentIndex) => {
         const prev = bar.segments[segmentIndex - 1];
         const gapDays = prev

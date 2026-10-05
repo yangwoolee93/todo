@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { DAY_COL_WIDTH } from "./constants";
+import { BAR_EDGE_RATIO, DAY_COL_WIDTH } from "./constants";
 import { DaySummary } from "@shared/types/todo";
 import { cn } from "@renderer/utils/cn";
 import {
@@ -34,6 +34,23 @@ function regionFrame(start: number, end: number, dayCount: number) {
   return { left: `${left}rem`, width: `${right - left}rem` };
 }
 
+function connectorPath(
+  trunkX: number,
+  parentMid: number,
+  children: { mid: number; childLeft: number }[],
+) {
+  const radius = 6;
+  let path = "";
+  children.forEach((child, index) => {
+    const fromY = index === 0 ? parentMid : children[index - 1].mid;
+    const turnX = trunkX + radius;
+    const endX = Math.max(turnX + 4, child.childLeft - 2);
+    const turnY = Math.max(fromY + radius, child.mid);
+    path += `M ${trunkX} ${fromY} V ${turnY - radius} Q ${trunkX} ${turnY} ${turnX} ${turnY} H ${endX} `;
+  });
+  return path;
+}
+
 function groupBars(bars: TimelineBar[]): TimelineGroup[] {
   const groups: TimelineGroup[] = [];
   bars.forEach((bar) => {
@@ -65,6 +82,9 @@ export default function MonthTimeline({
   const todayRef = useRef<HTMLButtonElement>(null);
   const titleRefs = useRef(new Map<string, HTMLParagraphElement>());
   const regionRefs = useRef(new Map<string, HTMLDivElement>());
+  const rowRefs = useRef(new Map<string, HTMLDivElement>());
+  const groupRefs = useRef(new Map<string, HTMLDivElement>());
+  const connectorRefs = useRef(new Map<string, SVGPathElement>());
 
   const [summaries, setSummaries] = useState<DaySummary[]>([]);
   const [ready, setReady] = useState(false);
@@ -111,7 +131,7 @@ export default function MonthTimeline({
     const headRow = headRowRef.current;
     if (!root || !headRow) return;
 
-    const update = () =>
+    const update = () => {
       updateTitlePositions({
         root,
         headRow,
@@ -121,6 +141,40 @@ export default function MonthTimeline({
         regions,
         regionRefs,
       });
+
+      const colWidth = headRow.offsetWidth / dayCount;
+      const edge = colWidth * BAR_EDGE_RATIO;
+      groups.forEach((group) => {
+        const pathNode = connectorRefs.current.get(group.parent.id);
+        const groupNode = groupRefs.current.get(group.parent.id);
+        const parentRow = rowRefs.current.get(group.parent.id);
+        const parentBounds = barBounds(group.parent);
+        const shown = group.children.length > 0 && isChildGroupOpen(group.parent.anchor);
+        if (!pathNode || !groupNode || !parentRow || !parentBounds || !shown) {
+          if (pathNode) pathNode.setAttribute("d", "");
+          return;
+        }
+
+        const groupTop = groupNode.getBoundingClientRect().top;
+        const parentRect = parentRow.getBoundingClientRect();
+        const parentMid = parentRect.top + parentRect.height / 2 - groupTop;
+        const parentLeft = (parentBounds.start - 1) * colWidth + edge;
+        const trunkX = Math.max(4, parentLeft - 10);
+        const joints = group.children.flatMap((child) => {
+          const row = rowRefs.current.get(child.id);
+          const start = child.segments[0]?.start;
+          if (!row || !start) return [];
+          const rect = row.getBoundingClientRect();
+          return [
+            {
+              mid: rect.top + rect.height / 2 - groupTop,
+              childLeft: (start - 1) * colWidth + edge,
+            },
+          ];
+        });
+        pathNode.setAttribute("d", joints.length ? connectorPath(trunkX, parentMid, joints) : "");
+      });
+    };
     update();
     root.addEventListener("scroll", update, {
       passive: true,
@@ -191,6 +245,10 @@ export default function MonthTimeline({
                 return (
                   <div
                     key={group.parent.id}
+                    ref={(node) => {
+                      if (node) groupRefs.current.set(group.parent.id, node);
+                      else groupRefs.current.delete(group.parent.id);
+                    }}
                     className={cn(
                       "relative flex flex-col gap-1",
                       hasChildren && "py-1",
@@ -207,10 +265,28 @@ export default function MonthTimeline({
                         style={regionFrame(bounds.start, bounds.end, dayCount)}
                       />
                     ) : null}
+                    {hasChildren && open ? (
+                      <svg
+                        className="pointer-events-none absolute inset-0 z-10 overflow-visible"
+                        aria-hidden
+                      >
+                        <path
+                          ref={(node) => {
+                            if (node) connectorRefs.current.set(group.parent.id, node);
+                            else connectorRefs.current.delete(group.parent.id);
+                          }}
+                          fill="none"
+                          stroke="var(--color-border-strong)"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                    ) : null}
                     <MonthTimelineBar
                       bar={group.parent}
                       trackWidth={trackWidth}
                       titleRefs={titleRefs}
+                      rowRefs={rowRefs}
                       fold={
                         hasChildren
                           ? {
@@ -225,21 +301,13 @@ export default function MonthTimeline({
                     />
                     {hasChildren && open ? (
                       <div className="relative flex flex-col gap-1">
-                        {bounds ? (
-                          <div
-                            aria-hidden
-                            className="pointer-events-none absolute z-10 top-0 bottom-0 border-l border-border"
-                            style={{
-                              left: `calc(${bounds.start - 1} * ${DAY_COL_WIDTH} + 0.3rem)`,
-                            }}
-                          />
-                        ) : null}
                         {group.children.map((child) => (
                           <MonthTimelineBar
                             key={child.id}
                             bar={child}
                             trackWidth={trackWidth}
                             titleRefs={titleRefs}
+                            rowRefs={rowRefs}
                           />
                         ))}
                       </div>
