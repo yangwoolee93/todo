@@ -1,4 +1,5 @@
 import { cn } from "@renderer/utils/cn";
+import { ChevronRightIcon } from "@renderer/shared/ui";
 import { BAR_EDGE, DAY_COL_WIDTH } from "./constants";
 import { dayRailWidth, TimelineBar } from "./timeline";
 import { RefObject } from "react";
@@ -7,10 +8,12 @@ export default function MonthTimelineBar({
   bar,
   trackWidth,
   titleRefs,
+  fold,
 }: {
   bar: TimelineBar;
   trackWidth: string;
   titleRefs: RefObject<Map<string, HTMLParagraphElement>>;
+  fold?: { open: boolean; onToggle: () => void };
 }) {
   return (
     <div key={bar.id} className="relative flex" style={{ width: trackWidth }}>
@@ -31,6 +34,19 @@ export default function MonthTimelineBar({
               width: `calc(${segment.days.length} * ${DAY_COL_WIDTH} - ${BAR_EDGE} - ${BAR_EDGE})`,
             }}
           >
+            {fold && segmentIndex === 0 ? (
+              <button
+                type="button"
+                className="absolute top-1/2 left-1 z-10 -translate-y-1/2 rounded p-0.5 text-fg-secondary hover:bg-muted hover:text-fg"
+                aria-label={fold.open ? "하위 접기" : "하위 펼치기"}
+                aria-expanded={fold.open}
+                onClick={fold.onToggle}
+              >
+                <ChevronRightIcon
+                  className={cn("h-4 w-4 transition-transform", fold.open && "rotate-90")}
+                />
+              </button>
+            ) : null}
             <p className="invisible px-3 font-medium leading-snug">&nbsp;</p>
             <div className="flex h-1 w-full" aria-hidden>
               {segment.days.map((status, index) => (
@@ -60,7 +76,8 @@ export default function MonthTimelineBar({
             else titleRefs.current.delete(bar.id);
           }}
           className={cn(
-            "w-max self-start px-3 font-medium leading-snug",
+            "w-max self-start pr-3 font-medium leading-snug",
+            bar.nested || fold ? "pl-8" : "px-3",
             bar.settled ? "text-fg-muted" : "text-fg",
           )}
         >

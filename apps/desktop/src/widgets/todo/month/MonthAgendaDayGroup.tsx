@@ -1,6 +1,11 @@
 import { cn } from "@renderer/utils/cn";
+import { ChevronRightIcon } from "@renderer/shared/ui";
 import { koreanPublicHolidayName } from "@renderer/utils/koreanHolidays";
 import { dateHeadTextClass } from "@renderer/widgets/todo/dateHeadTextClass";
+import {
+  isChildGroupOpen,
+  setChildGroupOpen,
+} from "@renderer/features/todo/model/childExpanded";
 import { weekdayLabel, type AgendaGroup } from "./agenda";
 import MonthAgendaItem from "./MonthAgendaItem";
 import type { RefObject } from "react";
@@ -11,12 +16,16 @@ export default function MonthAgendaDayGroup({
   group,
   todayRef,
   onClickDay,
+  foldTick,
+  onFold,
 }: {
   year: number;
   month: number;
   group: AgendaGroup;
   todayRef: RefObject<HTMLElement | null>;
   onClickDay: (date: number) => void;
+  foldTick: number;
+  onFold: () => void;
 }) {
   const now = new Date();
   const isToday =
@@ -54,11 +63,46 @@ export default function MonthAgendaDayGroup({
           <span className="text-xs text-danger">· {holidayName}</span>
         ) : null}
       </button>
-      {group.items.length > 0 ? (
+      {group.blocks.length > 0 ? (
         <ul className="flex flex-col gap-2">
-          {group.items.map((item) => (
-            <MonthAgendaItem key={item.id} item={item} />
-          ))}
+          {group.blocks.map((block) => {
+            const hasChildren = block.children.length > 0;
+            const open = foldTick >= 0 && isChildGroupOpen(block.anchor);
+            return (
+              <li key={block.item.id} className="flex items-start gap-1">
+                {hasChildren ? (
+                  <button
+                    type="button"
+                    className="mt-3 shrink-0 rounded p-0.5 text-fg-secondary hover:bg-muted hover:text-fg"
+                    aria-label={open ? "하위 접기" : "하위 펼치기"}
+                    aria-expanded={open}
+                    onClick={() => {
+                      setChildGroupOpen(block.anchor, !open);
+                      onFold();
+                    }}
+                  >
+                    <ChevronRightIcon
+                      className={cn("h-4 w-4 transition-transform", open && "rotate-90")}
+                    />
+                  </button>
+                ) : (
+                  <span className="w-5 shrink-0" aria-hidden />
+                )}
+                <div className="flex min-w-0 flex-1 flex-col gap-1">
+                  <ul>
+                    <MonthAgendaItem item={block.item} />
+                  </ul>
+                  {hasChildren && open ? (
+                    <ul className="ml-2 flex flex-col gap-1 border-l border-border pl-2">
+                      {block.children.map((child) => (
+                        <MonthAgendaItem key={child.id} item={child} />
+                      ))}
+                    </ul>
+                  ) : null}
+                </div>
+              </li>
+            );
+          })}
         </ul>
       ) : (
         <p className="px-1 py-2 text-sm text-fg-muted">

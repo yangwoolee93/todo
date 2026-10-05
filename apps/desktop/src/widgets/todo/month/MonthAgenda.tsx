@@ -26,6 +26,7 @@ export default function MonthAgenda({
 
   const [summaries, setSummaries] = useState<DaySummary[]>([]);
   const [ready, setReady] = useState(false);
+  const [foldTick, setFoldTick] = useState(0);
 
   const groups = agendaGroupsFromSummaries(
     summaries,
@@ -80,6 +81,8 @@ export default function MonthAgenda({
               group={group}
               todayRef={todayRef}
               onClickDay={onClickDay}
+              foldTick={foldTick}
+              onFold={() => setFoldTick((n) => n + 1)}
             />
           ))}
         </div>

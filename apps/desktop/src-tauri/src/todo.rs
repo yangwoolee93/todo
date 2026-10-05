@@ -249,7 +249,7 @@ pub fn get_month_summary(app: AppHandle, year_month: String) -> Result<Vec<DaySu
     let summaries = dates
         .iter()
         .map(|date| {
-            let items: Vec<DisplayTodo> = store
+            let mut items: Vec<DisplayTodo> = store
                 .todos
                 .iter()
                 .filter(|t| {
@@ -257,6 +257,22 @@ pub fn get_month_summary(app: AppHandle, year_month: String) -> Result<Vec<DaySu
                 })
                 .map(|t| to_display(&store, t))
                 .collect();
+            let children: Vec<DisplayTodo> = store
+                .todos
+                .iter()
+                .filter(|t| {
+                    t.deleted_at.is_none()
+                        && t.parent_id.is_some()
+                        && &t.target_date == date
+                        && parent_covers(
+                            &store,
+                            t.parent_id.as_deref().unwrap_or(""),
+                            date,
+                        )
+                })
+                .map(|t| to_display(&store, t))
+                .collect();
+            items.extend(children);
             let day = date[8..10].parse::<u32>().unwrap_or(0);
             DaySummary {
                 date: date.clone(),

@@ -13,7 +13,22 @@ export type TimelineBar = {
   label: string;
   segments: TimelineSegment[];
   settled: boolean;
+  nested: boolean;
+  /** 부모 묶음 키. 접기는 일별 목록과 이 값으로 같이 기억한다. */
+  anchor: string;
 };
+
+/** 막대가 차지하는 첫날·마지막 날. 하루짜리는 그 칸만 돌아온다. */
+export function barBounds(bar: TimelineBar): { start: number; end: number } | null {
+  if (bar.segments.length === 0) return null;
+  let start = bar.segments[0].start;
+  let end = bar.segments[0].start + bar.segments[0].days.length - 1;
+  bar.segments.forEach((segment) => {
+    start = Math.min(start, segment.start);
+    end = Math.max(end, segment.start + segment.days.length - 1);
+  });
+  return { start, end };
+}
 
 /** 띠 칸 너비 — 막대 좌우 여백을 첫날·마지막 날에 반영한다 */
 export function dayRailWidth(index: number, count: number) {
@@ -55,6 +70,8 @@ export function barsFromSummaries(summaries: DaySummary[]): TimelineBar[] {
       label: row.content,
       segments: segmentsFromCells(row.startIndex, row.cells),
       settled: row.isSettled,
+      nested: row.nested,
+      anchor: row.anchor,
     }))
     .filter((bar) => bar.segments.length > 0);
 }
@@ -104,19 +121,61 @@ export function titleLeftInTrack(
   return Math.max(0, Math.min(left, Math.max(0, trackWidth - titleWidth)));
 }
 
-/** 뷰포트 스크롤에 맞춰 제목 위치와 표시 여부를 정한다 */
+export type TimelineRegion = {
+  id: string;
+  bars: TimelineBar[];
+};
+
+const REGION_PAD_PX = 12;
+
+function titlePlacement(
+  bar: TimelineBar,
+  title: HTMLParagraphElement,
+  colWidth: number,
+  edge: number,
+  track: number,
+  viewLeft: number,
+  viewRight: number,
+) {
+  const ranges = bar.segments.map((segment) =>
+    segmentEdgePx(segment.start, segment.days.length, colWidth, edge),
+  );
+  let best = -1;
+  let bestOverlap = 0;
+  ranges.forEach((range, index) => {
+    const overlap = viewOverlap(range.left, range.right, viewLeft, viewRight);
+    if (overlap > bestOverlap) {
+      bestOverlap = overlap;
+      best = index;
+    }
+  });
+
+  const width = title.offsetWidth;
+  const visible = best >= 0;
+  const home = ranges[visible ? best : 0];
+  const left = visible
+    ? titleLeftInTrack(home.left, home.right, width, track, viewLeft, viewRight)
+    : Math.max(0, Math.min(home.left, track - width));
+  return { left, width, visible };
+}
+
+/** 뷰포트 스크롤에 맞춰 제목과, 글자를 덮는 영역 너비를 정한다 */
 export function updateTitlePositions({
   root,
   headRow,
   dayCount,
   bars,
   titleRefs,
+  regions,
+  regionRefs,
 }: {
   root: HTMLDivElement;
   headRow: HTMLDivElement;
   dayCount: number;
   bars: TimelineBar[];
   titleRefs: RefObject<Map<string, HTMLParagraphElement>>;
+  regions?: TimelineRegion[];
+  regionRefs?: RefObject<Map<string, HTMLDivElement>>;
 }) {
   const track = headRow.offsetWidth;
   if (track === 0) return;
@@ -125,40 +184,47 @@ export function updateTitlePositions({
   const edge = colWidth * BAR_EDGE_RATIO;
   const viewLeft = root.scrollLeft;
   const viewRight = viewLeft + root.clientWidth;
+  const placed = new Map<string, { left: number; width: number; visible: boolean }>();
 
   bars.forEach((bar) => {
     const title = titleRefs.current.get(bar.id);
     if (!title || bar.segments.length === 0) return;
 
-    const ranges = bar.segments.map((segment) =>
-      segmentEdgePx(segment.start, segment.days.length, colWidth, edge),
+    const place = titlePlacement(
+      bar,
+      title,
+      colWidth,
+      edge,
+      track,
+      viewLeft,
+      viewRight,
     );
-    let best = -1;
-    let bestOverlap = 0;
-    ranges.forEach((range, index) => {
-      const overlap = viewOverlap(range.left, range.right, viewLeft, viewRight);
-      if (overlap > bestOverlap) {
-        bestOverlap = overlap;
-        best = index;
+    placed.set(bar.id, place);
+    title.style.opacity = place.visible ? "1" : "0";
+    title.style.transform = `translateX(${place.left}px)`;
+  });
+
+  regions?.forEach((region) => {
+    const node = regionRefs?.current.get(region.id);
+    if (!node) return;
+
+    let left = track;
+    let right = 0;
+    region.bars.forEach((bar) => {
+      const bounds = barBounds(bar);
+      if (bounds) {
+        left = Math.min(left, (bounds.start - 1) * colWidth - REGION_PAD_PX);
+        right = Math.max(right, bounds.end * colWidth + REGION_PAD_PX);
       }
+      const place = placed.get(bar.id);
+      if (!place || !place.visible || place.width <= 0) return;
+      left = Math.min(left, place.left - REGION_PAD_PX);
+      right = Math.max(right, place.left + place.width + REGION_PAD_PX);
     });
 
-    const titleWidth = title.offsetWidth;
-    const visible = best >= 0;
-    const home = ranges[visible ? best : 0];
-    // 감출 때도 트랙 안에 세워 둔다. 안 그러면 가로 스크롤이 트랙보다 길어진다
-    const left = visible
-      ? titleLeftInTrack(
-          home.left,
-          home.right,
-          titleWidth,
-          track,
-          viewLeft,
-          viewRight,
-        )
-      : Math.max(0, Math.min(home.left, track - titleWidth));
-
-    title.style.opacity = visible ? "1" : "0";
-    title.style.transform = `translateX(${left}px)`;
+    left = Math.max(0, left);
+    right = Math.min(track, right);
+    node.style.left = `${left}px`;
+    node.style.width = `${Math.max(0, right - left)}px`;
   });
 }
