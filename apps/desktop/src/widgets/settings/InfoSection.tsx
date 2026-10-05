@@ -47,7 +47,7 @@ export default function InfoSection() {
       </div>
       <div className={settingsInfoRowClass}>
         <p className="text-xs text-fg-secondary">버전</p>
-        <p className="mt-0.5 text-sm text-fg">{APP_VERSION} (프리릴리즈)</p>
+        <p className="mt-0.5 text-sm text-fg">{APP_VERSION}</p>
       </div>
       <button
         type="button"
