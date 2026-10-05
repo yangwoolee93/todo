@@ -37,6 +37,9 @@ pub fn read_store(app: &tauri::AppHandle) -> TodoDatabase {
     if crate::memo::ensure_memo_schema(&mut store) {
         write_store(app, &store);
     }
+    if crate::todo::expand_legacy_child_spans(&mut store) {
+        write_store(app, &store);
+    }
 
     store
 }

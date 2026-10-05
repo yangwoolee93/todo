@@ -164,8 +164,9 @@ export function AddTodoModal() {
         <p className="rounded-(--radius-btn) bg-muted px-3 py-2 text-xs text-fg-secondary">
           {childParentId ? (
             <>
-              부모 기간 안에서 <strong className="text-fg">{dayCount}일</strong> 동안
-              보입니다. ({rangeLabel})
+              부모 기간 안에서 <strong className="text-fg">{dayCount}일</strong>{" "}
+              {dayCount > 1 ? "동안 매일 " : ""}
+              추가됩니다. 날마다 따로 완료할 수 있습니다. ({rangeLabel})
             </>
           ) : (
             <>

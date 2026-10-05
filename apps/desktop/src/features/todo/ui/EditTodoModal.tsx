@@ -140,11 +140,9 @@ export function EditTodoModal() {
 
         <p className="rounded-(--radius-btn) bg-muted px-3 py-2 text-xs text-fg-secondary">
           <strong className="text-fg">{dayCount}일</strong>
-          {limit
-            ? " 동안 부모 기간 안에서 보입니다."
-            : dayCount > 1
-              ? " 동안 매일 저장됩니다. 빠진 날은 지워지고, 늘어난 날은 미완료로 추가됩니다."
-              : "로 저장됩니다."}{" "}
+          {dayCount > 1
+            ? " 동안 매일 저장됩니다. 빠진 날은 지워지고, 늘어난 날은 미완료로 추가됩니다."
+            : "로 저장됩니다."}{" "}
           ({rangeLabel})
         </p>
 

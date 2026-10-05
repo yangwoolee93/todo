@@ -27,7 +27,7 @@ function toDisplay(item: TodoItem): DisplayTodo {
     created_at: item.created_at,
     batch_id: item.batch_id,
     parent_id: item.parent_id ?? null,
-    group_key: item.batch_id ?? item.id,
+    group_key: item.parent_id ?? item.batch_id ?? item.id,
     has_children: false,
   };
 }

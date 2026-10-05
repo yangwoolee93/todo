@@ -14,7 +14,7 @@ pub struct TodoItem {
     /// 하위항목이면 부모의 id, 기간 할 일이면 그 묶음 id.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parent_id: Option<String>,
-    /// 하위항목의 종료일. 없으면 `target_date` 하루만이다.
+    /// 예전 하위 기간. 읽으면서 날마다 한 줄로 나누고 비운다.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub end_date: Option<String>,
     /// 삭제 시각(tombstone). 병합 시 다른 기기의 사본이 되살아나지 않도록
