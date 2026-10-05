@@ -1,5 +1,4 @@
 import { cn } from "@renderer/utils/cn";
-import { ChevronRightIcon } from "@renderer/shared/ui";
 import { koreanPublicHolidayName } from "@renderer/utils/koreanHolidays";
 import { dateHeadTextClass } from "@renderer/widgets/todo/dateHeadTextClass";
 import {
@@ -69,37 +68,30 @@ export default function MonthAgendaDayGroup({
             const hasChildren = block.children.length > 0;
             const open = foldTick >= 0 && isChildGroupOpen(block.anchor);
             return (
-              <li key={block.item.id} className="flex items-start gap-1">
-                {hasChildren ? (
-                  <button
-                    type="button"
-                    className="mt-3 shrink-0 rounded p-0.5 text-fg-secondary hover:bg-muted hover:text-fg"
-                    aria-label={open ? "하위 접기" : "하위 펼치기"}
-                    aria-expanded={open}
-                    onClick={() => {
-                      setChildGroupOpen(block.anchor, !open);
-                      onFold();
-                    }}
-                  >
-                    <ChevronRightIcon
-                      className={cn("h-4 w-4 transition-transform", open && "rotate-90")}
-                    />
-                  </button>
-                ) : (
-                  <span className="w-5 shrink-0" aria-hidden />
-                )}
-                <div className="flex min-w-0 flex-1 flex-col gap-1">
-                  <ul>
-                    <MonthAgendaItem item={block.item} />
+              <li key={block.item.id} className="flex flex-col gap-1">
+                <ul>
+                  <MonthAgendaItem
+                    item={block.item}
+                    fold={
+                      hasChildren
+                        ? {
+                            open,
+                            onToggle: () => {
+                              setChildGroupOpen(block.anchor, !open);
+                              onFold();
+                            },
+                          }
+                        : undefined
+                    }
+                  />
+                </ul>
+                {hasChildren && open ? (
+                  <ul className="ml-4 flex flex-col gap-1 border-l border-border pl-2">
+                    {block.children.map((child) => (
+                      <MonthAgendaItem key={child.id} item={child} />
+                    ))}
                   </ul>
-                  {hasChildren && open ? (
-                    <ul className="ml-2 flex flex-col gap-1 border-l border-border pl-2">
-                      {block.children.map((child) => (
-                        <MonthAgendaItem key={child.id} item={child} />
-                      ))}
-                    </ul>
-                  ) : null}
-                </div>
+                ) : null}
               </li>
             );
           })}
