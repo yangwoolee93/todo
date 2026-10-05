@@ -16,7 +16,9 @@ export function AppShell({ children }: AppShellProps) {
       <AppHeader />
 
       <div className="mx-auto flex min-h-0 w-full flex-1 flex-col overflow-hidden">
-        <main className="flex min-h-0 flex-1 flex-col overflow-hidden">{children}</main>
+        <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          {children}
+        </main>
       </div>
       <footer
         className={cn(
@@ -24,8 +26,8 @@ export function AppShell({ children }: AppShellProps) {
           "text-xs text-fg-secondary",
         )}
       >
-        <span className="-translate-y-px">PRE_RELEASE</span>
-        <span className="-translate-y-px">v{APP_VERSION}</span>
+        <span className="-translate-y-px">Orbit Todo</span>
+        <span className="-translate-y-px">{APP_VERSION}</span>
       </footer>
     </div>
   );
