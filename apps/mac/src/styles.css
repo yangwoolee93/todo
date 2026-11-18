@@ -1,8 +1,240 @@
-html,
-body,
-#root,
-main {
-  height: 100%;
-  margin: 0;
+@import "tailwindcss";
+
+/* 다크 모드: html.dark 클래스 기준 */
+@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant light (&:where(.light, .light *));
+
+/*
+ * 컬러 팔레트 (라이트 모드 기본값)
+ * Tailwind 유틸: bg-base, text-fg, border-border 등
+ */
+@theme {
+  --color-base: #ebe8e1;
+  --color-surface: #f5f2ec;
+  --color-surface-raised: #f7f4ef;
+  --color-muted: #e4dfd6;
+  --color-fg: #1c1917;
+  --color-fg-secondary: #57534e;
+  --color-fg-muted: #a8a29e;
+  --color-accent: #45ada5;
+  --color-accent-hover: #3d968f;
+  --color-accent-soft: #dce8e6;
+  --color-border: #d6d0c6;
+  --color-border-strong: #c4bcb0;
+  --color-danger: #dc2626;
+  --color-danger-soft: #fee2e2;
+  --color-success: #15803d;
+  --color-failed: #ea580c;
+  --color-failed-soft: #ffedd5;
+  --color-today-ring: #45ada5;
+  --font-sans: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --radius-card: 0.5rem;
+  --radius-btn: 0.5rem;
+  --color-saturday: #2563eb;
+  --color-memo-teal: #45ada5;
+  --color-memo-blue: #2563eb;
+  --color-memo-violet: #7c3aed;
+  --color-memo-rose: #e11d48;
+  --color-memo-amber: #d97706;
+  --color-memo-green: #16885a;
+  --color-memo-orange: #ea580c;
+  --color-memo-slate: #78716c;
+}
+
+:root {
+  --scrollbar-size: 8px;
+  --scrollbar-inset: 1rem;
+  --scrollbar-gap: calc((var(--scrollbar-inset) - var(--scrollbar-size)) / 2);
+  --scrollbar-thumb: #c4bcb0;
+  --scrollbar-thumb-hover: #a8a29e;
+}
+
+.light {
+  --color-base: #ebe8e1;
+  --color-surface: #f5f2ec;
+  --color-surface-raised: #f7f4ef;
+  --color-muted: #e4dfd6;
+  --color-fg: #1c1917;
+  --color-fg-secondary: #57534e;
+  --color-fg-muted: #a8a29e;
+  --color-accent: #45ada5;
+  --color-accent-hover: #3d968f;
+  --color-accent-soft: #dce8e6;
+  --color-border: #d6d0c6;
+  --color-border-strong: #c4bcb0;
+  --color-danger: #dc2626;
+  --color-danger-soft: #fee2e2;
+  --color-success: #16885a;
+  --color-failed: #ea580c;
+  --color-failed-soft: #ffedd5;
+  --color-today-ring: #45ada5;
+  --scrollbar-thumb: #c4bcb0;
+  --scrollbar-thumb-hover: #a8a29e;
+  --color-saturday: #2563eb;
+  --color-memo-teal: #45ada5;
+  --color-memo-blue: #2563eb;
+  --color-memo-violet: #7c3aed;
+  --color-memo-rose: #e11d48;
+  --color-memo-amber: #d97706;
+  --color-memo-green: #16885a;
+  --color-memo-orange: #ea580c;
+  --color-memo-slate: #78716c;
+}
+
+/* 어두운 모드 팔레트 — 중립 다크 그레이 */
+.dark {
+  --color-base: #121212;
+  --color-surface: #1a1a1a;
+  --color-surface-raised: #222222;
+  --color-muted: #2a2a2a;
+  --color-fg: #ececec;
+  --color-fg-secondary: #a3a3a3;
+  --color-fg-muted: #737373;
+  --color-accent: #2dd4bf;
+  --color-accent-hover: #14b8a6;
+  --color-accent-soft: #134e4a;
+  --color-border: #333333;
+  --color-border-strong: #404040;
+  --color-danger: #f87171;
+  --color-danger-soft: #450a0a;
+  --color-success: #22c55e;
+  --color-failed: #fb923c;
+  --color-failed-soft: #431407;
+  --color-today-ring: #2dd4bf;
+  --scrollbar-thumb: #404040;
+  --scrollbar-thumb-hover: #525252;
+  --color-saturday: #3b82f6;
+  --color-memo-teal: #2dd4bf;
+  --color-memo-blue: #60a5fa;
+  --color-memo-violet: #a78bfa;
+  --color-memo-rose: #fb7185;
+  --color-memo-amber: #fbbf24;
+  --color-memo-green: #4ade80;
+  --color-memo-orange: #fb923c;
+  --color-memo-slate: #a3a3a3;
+}
+
+@layer base {
+  html {
+    @apply antialiased h-full overflow-hidden;
+  }
+
+  body {
+    @apply text-fg font-sans m-0 h-full overflow-hidden;
+  }
+
+  #root {
+    @apply h-full;
+  }
+
+  /* button {
+    @apply cursor-pointer;
+  } */
+
+  /* button:disabled {
+    @apply cursor-not-allowed opacity-40;
+  } */
+}
+
+/* 페이크 글래스 테두리 */
+@utility glass-rim-sm {
+  --rim-start: 18%;
+  --rim-mid-start: 51%;
+  --rim-mid-end: 54%;
+  --rim-end: 85%;
+  position: relative;
+  background-color: color-mix(in srgb, var(--color-base) 1%, transparent);
+
+  &::before {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    box-sizing: border-box;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      to bottom right,
+      color-mix(in srgb, var(--color-fg) 50%, transparent) 0%,
+      color-mix(in srgb, var(--color-fg) 15%, transparent) var(--rim-start),
+      color-mix(in srgb, var(--color-base) 1%, transparent) var(--rim-mid-start),
+      color-mix(in srgb, var(--color-base) 1%, transparent) var(--rim-mid-end),
+      color-mix(in srgb, var(--color-fg) 15%, transparent) var(--rim-end),
+      color-mix(in srgb, var(--color-fg) 50%, transparent) 100%
+    );
+    mask:
+      linear-gradient(#fff 0 0) content-box exclude,
+      linear-gradient(#fff 0 0);
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box xor,
+      linear-gradient(#fff 0 0);
+  }
+}
+
+@utility glass-rim-lg {
+  --rim-fade: 120px;
+  position: relative;
+  background-color: color-mix(in srgb, var(--color-base) 1%, transparent);
+
+  &::before {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    box-sizing: border-box;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      to bottom right,
+      color-mix(in srgb, var(--color-fg) 50%, transparent) 0,
+      color-mix(in srgb, var(--color-fg) 15%, transparent) var(--rim-fade),
+      color-mix(in srgb, var(--color-fg) 15%, transparent)
+        calc(100% - var(--rim-fade)),
+      color-mix(in srgb, var(--color-fg) 50%, transparent) 100%
+    );
+    mask:
+      linear-gradient(#fff 0 0) content-box exclude,
+      linear-gradient(#fff 0 0);
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box xor,
+      linear-gradient(#fff 0 0);
+  }
+}
+
+.scrollbar {
+  cursor: default;
+}
+
+.scrollbar::-webkit-scrollbar {
+  width: var(--scrollbar-size);
+  height: var(--scrollbar-size);
+}
+
+.scrollbar::-webkit-scrollbar-track {
   background: transparent;
+}
+
+.scrollbar::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: 9999px;
+  cursor: pointer;
+}
+
+.scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
+}
+
+.scrollbar::-webkit-scrollbar-thumb:active {
+  cursor: grabbing;
+}
+
+.scrollbar::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+.scrollbar-y-inset {
+  overflow-y: scroll;
+  padding-right: var(--scrollbar-gap);
 }

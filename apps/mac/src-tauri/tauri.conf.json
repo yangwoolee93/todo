@@ -24,9 +24,6 @@
         "y": 100,
         "transparent": true,
         "titleBarStyle": "Overlay",
-        "windowEffects": {
-          "effects": ["liquidGlassRegular", "underWindowBackground"]
-        },
         "trafficLightPosition": {
           "x": 20,
           "y": 28
