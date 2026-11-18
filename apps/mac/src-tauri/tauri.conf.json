@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Orbit",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "identifier": "com.orbit.mac",
   "build": {
     "beforeDevCommand": "pnpm dev",
@@ -13,12 +13,24 @@
     "windows": [
       {
         "title": "Orbit",
+        "hiddenTitle": true,
         "width": 1100,
         "height": 760,
         "minWidth": 480,
         "minHeight": 640,
         "decorations": true,
-        "center": true
+        "center": false,
+        "x": 100,
+        "y": 100,
+        "transparent": true,
+        "titleBarStyle": "Overlay",
+        "windowEffects": {
+          "effects": ["liquidGlassRegular", "underWindowBackground"]
+        },
+        "trafficLightPosition": {
+          "x": 20,
+          "y": 28
+        }
       }
     ],
     "security": {
