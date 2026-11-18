@@ -3,9 +3,9 @@
   "private": true,
   "version": "1.0.0",
   "scripts": {
-    "desktop": "pnpm --filter @orbit/desktop tauri dev",
-    "desktop:build": "pnpm --filter @orbit/desktop tauri build",
-    "dev": "pnpm desktop"
+    "old": "pnpm --filter @orbit/desktop tauri dev",
+    "old:build": "pnpm --filter @orbit/desktop tauri build",
+    "dev": "pnpm --filter @orbit/mac tauri dev"
   },
   "devDependencies": {
     "nx": "^21.0.0"
