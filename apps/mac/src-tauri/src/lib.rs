@@ -1,7 +1,8 @@
+mod dev_icon;
 mod document;
 
 use serde_json::Value;
-use tauri::AppHandle;
+use tauri::{webview::PageLoadEvent, AppHandle, Manager};
 
 #[tauri::command]
 fn load_menu(app: AppHandle) -> Result<Value, String> {
@@ -17,6 +18,15 @@ fn save_menu(app: AppHandle, menu: Value) -> Result<(), String> {
 pub fn run() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![load_menu, save_menu])
+        .setup(|app| {
+            dev_icon::apply_all(app.handle());
+            Ok(())
+        })
+        .on_page_load(|webview, payload| {
+            if payload.event() == PageLoadEvent::Finished {
+                dev_icon::apply_all(webview.app_handle());
+            }
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
