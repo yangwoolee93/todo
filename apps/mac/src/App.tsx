@@ -1,4 +1,8 @@
-import { SidebarIcon } from "@phosphor-icons/react";
+import {
+  CaretLeftIcon,
+  CaretRightIcon,
+  SidebarIcon,
+} from "@phosphor-icons/react";
 import { GlassButton } from "./components/GlassButton";
 import { DeleteConfirm } from "./features/sidebar/DeleteConfirm";
 import { PageScreen } from "./features/sidebar/PageScreen";
@@ -12,6 +16,12 @@ import { useEffect, useState } from "react";
 export function App() {
   useThemeSync();
   const hydrated = useSidebarStore((state) => state.hydrated);
+  const canBack = useSidebarStore((state) => state.index > 0);
+  const canForward = useSidebarStore(
+    (state) => state.index < state.entries.length - 1,
+  );
+  const back = useSidebarStore((state) => state.back);
+  const forward = useSidebarStore((state) => state.forward);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   useEffect(() => {
@@ -83,10 +93,32 @@ export function App() {
             >
               <SidebarIcon aria-hidden="true" size={22} weight="light" />
             </GlassButton>
-            <GlassButton className="flex p-1.5 px-2">ㄹㅇㄹㄴ</GlassButton>
-            <button className="glass-rim-sm rounded-full p-1.5 px-2">
+            <div className="group/history inline-flex items-center rounded-full glass-rim-sm bg-base/4 p-1">
+              <button
+                type="button"
+                aria-label="뒤로"
+                data-history-step
+                disabled={!canBack}
+                className="flex rounded-full p-1 text-fg hover:bg-fg/10 disabled:pointer-events-none disabled:opacity-40"
+                onClick={back}
+              >
+                <CaretLeftIcon aria-hidden="true" size={20} weight="light" />
+              </button>
+              <div className="h-4 w-px bg-fg/50 transition-opacity group-has-[[data-history-step]:hover]/history:opacity-0" />
+              <button
+                type="button"
+                aria-label="앞으로"
+                data-history-step
+                disabled={!canForward}
+                className="flex rounded-full p-1 text-fg hover:bg-fg/10 disabled:pointer-events-none disabled:opacity-40"
+                onClick={forward}
+              >
+                <CaretRightIcon aria-hidden="true" size={20} weight="light" />
+              </button>
+            </div>
+            {/* <button className="glass-rim-sm rounded-full p-1.5 px-2">
               ㄹㅇㄹㄴ
-            </button>
+            </button> */}
             {hydrated && <SelectionActions />}
           </div>
         </div>

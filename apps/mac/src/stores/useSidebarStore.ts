@@ -1,5 +1,10 @@
 import { create } from "zustand";
 import {
+  syncHistory,
+  visit,
+  type HistoryLocation,
+} from "../features/sidebar/history";
+import {
   inTauri,
   loadMenu,
   menuPayload,
@@ -35,6 +40,8 @@ type SidebarState = {
   selectedGroupId: string | null;
   deleteTarget: DeleteTarget | null;
   hydrated: boolean;
+  entries: HistoryLocation[];
+  index: number;
 };
 
 type SidebarActions = {
@@ -48,6 +55,8 @@ type SidebarActions = {
   requestDelete: (target: DeleteTarget) => void;
   cancelDelete: () => void;
   confirmDelete: () => void;
+  back: () => void;
+  forward: () => void;
   hydrate: () => Promise<void>;
 };
 
@@ -60,6 +69,87 @@ function now() {
   return Date.now();
 }
 
+function locationFrom(state: {
+  selectedPageId: string | null;
+  selectedGroupId: string | null;
+}): HistoryLocation {
+  if (state.selectedPageId) return { kind: "page", id: state.selectedPageId };
+  if (state.selectedGroupId) return { kind: "project", id: state.selectedGroupId };
+  return { kind: "empty" };
+}
+
+function pushed(
+  state: SidebarState,
+  partial: Partial<SidebarState>,
+): Partial<SidebarState> {
+  const history = visit(
+    { entries: state.entries, index: state.index },
+    locationFrom({ ...state, ...partial }),
+  );
+  if (history.entries === state.entries && history.index === state.index) {
+    return partial;
+  }
+  return { ...partial, entries: history.entries, index: history.index };
+}
+
+function reveal(state: SidebarState, location: HistoryLocation): Partial<SidebarState> {
+  if (location.kind === "project") {
+    if (!state.groups.some((group) => group.id === location.id)) {
+      return { selectedPageId: null, selectedGroupId: null };
+    }
+    return { selectedPageId: null, selectedGroupId: location.id };
+  }
+  if (location.kind === "page") {
+    const page = state.pages.find((item) => item.id === location.id);
+    if (!page) return { selectedPageId: null, selectedGroupId: null };
+    return {
+      selectedPageId: page.id,
+      selectedGroupId: null,
+      groups: state.groups.map((group) =>
+        group.id === page.groupId && group.collapsed
+          ? { ...group, collapsed: false, updatedAt: now() }
+          : group,
+      ),
+    };
+  }
+  return { selectedPageId: null, selectedGroupId: null };
+}
+
+function remembered(
+  state: SidebarState,
+  partial: Partial<SidebarState>,
+): Partial<SidebarState> {
+  const next = { ...state, ...partial };
+  const history = syncHistory(
+    { entries: state.entries, index: state.index },
+    (location) =>
+      location.kind === "empty" ||
+      (location.kind === "project"
+        ? next.groups.some((group) => group.id === location.id)
+        : next.pages.some((page) => page.id === location.id)),
+    locationFrom(next),
+  );
+  return { ...partial, entries: history.entries, index: history.index };
+}
+
+function step(state: SidebarState, delta: number): Partial<SidebarState> {
+  const index = state.index + delta;
+  if (index < 0 || index >= state.entries.length) return {};
+  const partial = reveal(state, state.entries[index]);
+  const next = { ...state, ...partial };
+  const actual = locationFrom(next);
+  const history = syncHistory(
+    { entries: state.entries, index },
+    (location) =>
+      location.kind === "empty" ||
+      (location.kind === "project"
+        ? next.groups.some((group) => group.id === location.id)
+        : next.pages.some((page) => page.id === location.id)),
+    actual,
+  );
+  return { ...partial, entries: history.entries, index: history.index };
+}
+
 export const useSidebarStore = create<SidebarState & SidebarActions>()(
   (set) => ({
     groups: [],
@@ -68,38 +158,49 @@ export const useSidebarStore = create<SidebarState & SidebarActions>()(
     selectedGroupId: null,
     deleteTarget: null,
     hydrated: !inTauri(),
+    entries: [{ kind: "empty" }],
+    index: 0,
 
     addGroup: (name) => {
       const groupName = trimmed(name);
       if (!groupName) return;
       const groupId = crypto.randomUUID();
-      set((state) => ({
-        groups: [
-          ...state.groups,
-          { id: groupId, name: groupName, collapsed: false, updatedAt: now() },
-        ],
-        selectedPageId: null,
-        selectedGroupId: groupId,
-      }));
+      set((state) =>
+        pushed(state, {
+          groups: [
+            ...state.groups,
+            {
+              id: groupId,
+              name: groupName,
+              collapsed: false,
+              updatedAt: now(),
+            },
+          ],
+          selectedPageId: null,
+          selectedGroupId: groupId,
+        }),
+      );
     },
 
     addPage: (groupId, type, name) => {
       const pageName = trimmed(name);
       if (!pageName) return;
       const pageId = crypto.randomUUID();
-      set((state) => ({
-        groups: state.groups.map((group) =>
-          group.id === groupId && group.collapsed
-            ? { ...group, collapsed: false, updatedAt: now() }
-            : group,
-        ),
-        pages: [
-          ...state.pages,
-          { id: pageId, groupId, type, name: pageName, updatedAt: now() },
-        ],
-        selectedPageId: null,
-        selectedGroupId: groupId,
-      }));
+      set((state) =>
+        pushed(state, {
+          groups: state.groups.map((group) =>
+            group.id === groupId && group.collapsed
+              ? { ...group, collapsed: false, updatedAt: now() }
+              : group,
+          ),
+          pages: [
+            ...state.pages,
+            { id: pageId, groupId, type, name: pageName, updatedAt: now() },
+          ],
+          selectedPageId: null,
+          selectedGroupId: groupId,
+        }),
+      );
     },
 
     renameGroup: (id, name) => {
@@ -134,13 +235,15 @@ export const useSidebarStore = create<SidebarState & SidebarActions>()(
       })),
 
     selectProject: (id) =>
-      set({ selectedGroupId: id, selectedPageId: null }),
+      set((state) =>
+        pushed(state, { selectedGroupId: id, selectedPageId: null }),
+      ),
 
     selectPage: (id) =>
       set((state) => {
         const page = state.pages.find((item) => item.id === id);
         if (!page) return {};
-        return {
+        return pushed(state, {
           selectedPageId: id,
           selectedGroupId: null,
           groups: state.groups.map((group) =>
@@ -148,7 +251,7 @@ export const useSidebarStore = create<SidebarState & SidebarActions>()(
               ? { ...group, collapsed: false, updatedAt: now() }
               : group,
           ),
-        };
+        });
       }),
 
     requestDelete: (target) => set({ deleteTarget: target }),
@@ -160,19 +263,19 @@ export const useSidebarStore = create<SidebarState & SidebarActions>()(
         const target = state.deleteTarget;
         if (!target) return {};
         if (target.kind === "page") {
-          return {
+          return remembered(state, {
             pages: state.pages.filter((page) => page.id !== target.id),
             selectedPageId:
               state.selectedPageId === target.id ? null : state.selectedPageId,
             deleteTarget: null,
-          };
+          });
         }
         const removed = new Set(
           state.pages
             .filter((page) => page.groupId === target.id)
             .map((page) => page.id),
         );
-        return {
+        const partial = {
           groups: state.groups.filter((group) => group.id !== target.id),
           pages: state.pages.filter((page) => page.groupId !== target.id),
           selectedPageId:
@@ -183,14 +286,23 @@ export const useSidebarStore = create<SidebarState & SidebarActions>()(
             state.selectedGroupId === target.id ? null : state.selectedGroupId,
           deleteTarget: null,
         };
+        return remembered(state, partial);
       }),
+
+    back: () => set((state) => step(state, -1)),
+
+    forward: () => set((state) => step(state, 1)),
 
     hydrate: async () => {
       persistEnabled = false;
       const menu = await loadMenu();
       if (menu) applyMenu(menu);
       lastSaved = JSON.stringify(menuPayload(snapshot()));
-      set({ hydrated: true });
+      set((state) => ({
+        hydrated: true,
+        entries: [locationFrom(state)],
+        index: 0,
+      }));
       persistEnabled = true;
     },
   }),
