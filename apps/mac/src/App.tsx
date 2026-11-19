@@ -2,9 +2,15 @@ import { SidebarIcon } from "@phosphor-icons/react";
 import { GlassButton } from "./components/GlassButton";
 import { useThemeSync } from "./hooks/useThemeSync";
 import { cn } from "./utils/cn";
+import { useState } from "react";
 
 export function App() {
   useThemeSync();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+  const handleSidebarToggle = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
 
   return (
     <div
@@ -28,6 +34,9 @@ export function App() {
           "w-60 flex flex-col m-2 rounded-2xl",
           "overflow-hidden",
           "glass-rim-lg",
+          // isSidebarOpen ? "w-60" : "w-0",
+          "pointer-events-none transition-transform duration-200 ease-out",
+          isSidebarOpen ? "translate-x-0" : "-translate-x-[calc(100%+1rem)]",
         )}
       >
         {/* 사이드바 헤더 */}
@@ -38,7 +47,10 @@ export function App() {
               "h-full flex justify-end items-center p-1.5 px-2",
             )}
           >
-            <div className="flex hover:bg-fg/10 px-1 rounded-full">
+            <div
+              className="flex hover:bg-fg/10 px-1 rounded-full pointer-events-auto"
+              onClick={handleSidebarToggle}
+            >
               <SidebarIcon aria-hidden="true" size={22} weight="light" />
             </div>
           </div>
@@ -46,16 +58,35 @@ export function App() {
         {/* 메뉴 */}
       </div>
       {/* 컨텐츠 */}
-      <div className={cn("bg-red-200/50-", "flex flex-col flex-1")}>
+      <div
+        className={cn(
+          "bg-red-200/50-",
+          "flex flex-col flex-1",
+          "transition-[margin] duration-200 ease-out",
+          !isSidebarOpen && "-ml-62",
+        )}
+      >
         {/* 컨텐츠 내 헤더(컨트롤영역) */}
-        <div className={cn("bg-green-200/50-", "flex item-center")}>
+        <div
+          className={cn(
+            "bg-green-200/50-",
+            "flex item-center",
+            !isSidebarOpen && "pl-22",
+          )}
+        >
           <div
             className={cn(
               "bg-purple-200/50-",
               "mt-2 flex flex-1 gap-2 items-center rounded-full",
             )}
           >
-            <GlassButton className="flex p-1.5 px-2 hover:bg-fg/10">
+            <GlassButton
+              className={cn(
+                "flex p-1.5 px-2 hover:bg-fg/10",
+                isSidebarOpen && "hidden",
+              )}
+              onClick={handleSidebarToggle}
+            >
               <SidebarIcon aria-hidden="true" size={22} weight="light" />
             </GlassButton>
             <GlassButton className="flex p-1.5 px-2">ㄹㅇㄹㄴ</GlassButton>
@@ -65,11 +96,9 @@ export function App() {
           </div>
         </div>
         {/* 진짜 컨텐츠 */}
-        <div className={cn("bg-amber-200/50-", "flex-1")}>
-          <GlassButton className="w-200 h-160 rounded-2xl m-4">
-            ㄹㅇㄹㄴ
-          </GlassButton>
-        </div>
+        <div
+          className={cn("bg-amber-200/50-", "flex-1 pt-2 overflow-y-auto")}
+        ></div>
       </div>
     </div>
   );
