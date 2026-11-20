@@ -20,9 +20,36 @@ export function App() {
   const canForward = useSidebarStore(
     (state) => state.index < state.entries.length - 1,
   );
+  const groups = useSidebarStore((state) => state.groups);
+  const selectedGroupId = useSidebarStore((state) => state.selectedGroupId);
+  const pages = useSidebarStore((state) => state.pages);
+  const selectedPageId = useSidebarStore((state) => state.selectedPageId);
+
   const back = useSidebarStore((state) => state.back);
   const forward = useSidebarStore((state) => state.forward);
+  const selectProject = useSidebarStore((state) => state.selectProject);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const selectedPage = pages.find((page) => page.id === selectedPageId);
+  const selectedGroup = groups.find((group) =>
+    selectedPage
+      ? group.id === selectedPage.groupId
+      : group.id === selectedGroupId,
+  );
+  const contentTitle = [
+    selectedGroup && {
+      id: selectedGroup.id,
+      name: selectedGroup.name,
+      kind: "project" as const,
+    },
+    selectedPage && {
+      id: selectedPage.id,
+      name: selectedPage.name,
+      kind: "page" as const,
+    },
+  ].filter(
+    (item): item is { id: string; name: string; kind: "project" | "page" } =>
+      Boolean(item?.name),
+  );
 
   useEffect(() => {
     void useSidebarStore.getState().hydrate();
@@ -54,7 +81,6 @@ export function App() {
           "w-60 min-h-0 flex flex-col m-2 rounded-2xl",
           "overflow-hidden",
           "glass-rim-lg",
-          // isSidebarOpen ? "w-60" : "w-0",
           "pointer-events-none transition-transform duration-200 ease-out",
           isSidebarOpen ? "translate-x-0" : "-translate-x-[calc(100%+1rem)]",
         )}
@@ -116,9 +142,44 @@ export function App() {
                 <CaretRightIcon aria-hidden="true" size={20} weight="light" />
               </button>
             </div>
-            {/* <button className="glass-rim-sm rounded-full p-1.5 px-2">
-              ㄹㅇㄹㄴ
-            </button> */}
+            {/* 제목 */}
+            <div className="relative flex ml-2 min-w-0 items-center gap-1 text-sm font-medium">
+              {hydrated &&
+                contentTitle.map((title, index) => {
+                  const current = index === contentTitle.length - 1;
+                  return (
+                    <span
+                      key={`${title.kind}-${title.id}`}
+                      className="flex min-w-0 items-center gap-1"
+                    >
+                      {index > 0 && (
+                        <CaretRightIcon
+                          aria-hidden="true"
+                          size={16}
+                          weight="light"
+                          className="shrink-0 text-fg/50"
+                        />
+                      )}
+                      {current ? (
+                        <span className="truncate text-fg cursor-default">
+                          {title.name}
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          className="min-w-0 truncate text-fg/50 hover:underline"
+                          onClick={() => {
+                            if (title.kind === "project")
+                              selectProject(title.id);
+                          }}
+                        >
+                          {title.name}
+                        </button>
+                      )}
+                    </span>
+                  );
+                })}
+            </div>
             {hydrated && <SelectionActions />}
           </div>
         </div>

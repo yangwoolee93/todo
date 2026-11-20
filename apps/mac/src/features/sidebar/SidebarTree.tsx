@@ -195,7 +195,7 @@ function GroupBlock({
     <div className="flex flex-col gap-0.5">
       <div
         className={cn(
-          "flex items-center gap-0.5 rounded-lg pr-1 pl-1",
+          "flex items-center gap-0.5 rounded-lg px-2",
           selectedGroupId === group.id || selectedChildHidden
             ? "bg-fg/10"
             : "hover:bg-fg/5",
@@ -203,21 +203,19 @@ function GroupBlock({
       >
         <button
           type="button"
-          className="flex min-w-0 flex-1 items-center px-1.5 py-2 text-left"
+          className="flex min-w-0 flex-1 items-center px-1.5 py-2.5 text-left"
           onClick={() => selectProject(group.id)}
         >
-          <span className="truncate text-sm font-medium text-fg">
-            {group.name}
-          </span>
+          <span className="truncate font-medium text-fg">{group.name}</span>
         </button>
         <button
           type="button"
           aria-label={group.collapsed ? "하위 목록 열기" : "하위 목록 닫기"}
-          className="shrink-0 rounded-md p-1 text-fg-secondary hover:bg-fg/10"
+          className="shrink-0 rounded-md p-1.5 text-fg-secondary hover:bg-fg/10"
           onClick={() => toggleGroup(group.id)}
         >
           <CaretRightIcon
-            size={14}
+            size={16}
             className={cn(
               "transition-transform",
               !group.collapsed && "rotate-90",
@@ -230,26 +228,25 @@ function GroupBlock({
         pages.map((page) => {
           const PageIcon = pageIcons[page.type];
           return (
-            <div key={page.id} className="ml-4">
-              <div
-                className={cn(
-                  "flex items-center rounded-lg pr-1",
-                  selectedPageId === page.id ? "bg-fg/10" : "hover:bg-fg/5",
-                )}
+            <div
+              key={page.id}
+              className={cn(
+                "flex items-center rounded-lg pl-6",
+                selectedPageId === page.id ? "bg-fg/10" : "hover:bg-fg/5",
+              )}
+            >
+              <button
+                type="button"
+                className="flex min-w-0 flex-1 items-center gap-1.5 py-2 text-left text-fg"
+                onClick={() => selectPage(page.id)}
               >
-                <button
-                  type="button"
-                  className="flex min-w-0 flex-1 items-center gap-1.5 px-2 py-2 text-left text-sm text-fg"
-                  onClick={() => selectPage(page.id)}
-                >
-                  <PageIcon
-                    aria-hidden="true"
-                    size={16}
-                    className="shrink-0 text-fg-secondary"
-                  />
-                  <span className="truncate">{page.name}</span>
-                </button>
-              </div>
+                <PageIcon
+                  aria-hidden="true"
+                  size={16}
+                  className="shrink-0 text-fg-secondary"
+                />
+                <span className="truncate">{page.name}</span>
+              </button>
             </div>
           );
         })}
@@ -267,6 +264,7 @@ export function SidebarTree({ onToggle }: { onToggle: () => void }) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
+      {/* 사이드바 헤더 */}
       <div className="pointer-events-none flex h-11 shrink-0 items-center justify-end gap-1 px-2">
         <div className="group/add pointer-events-auto relative">
           <button
@@ -296,12 +294,14 @@ export function SidebarTree({ onToggle }: { onToggle: () => void }) {
           <SidebarIcon aria-hidden="true" size={22} weight="light" />
         </button>
       </div>
+      {/* 프로젝트 추가 폼 */}
       {addingGroup && (
         <div className="pointer-events-auto px-2 pb-2">
           <AddGroupForm onClose={() => setDraft(null)} />
         </div>
       )}
-      <div className="scrollbar pointer-events-auto flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-2 pb-2">
+      {/* 프로젝트 및 하위 목록 */}
+      <div className="scrollbar pointer-events-auto flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-2.5 pb-2">
         {groups.map((group) => (
           <GroupBlock
             key={group.id}
