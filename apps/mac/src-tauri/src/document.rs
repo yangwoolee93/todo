@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use serde_json::{Map, Value};
 use tauri::{AppHandle, Manager};
 
-const FILE_NAME: &str = "orbit.json";
+const FILE_NAME: &str = "arc.json";
 
 pub fn document_path(app: &AppHandle) -> Result<PathBuf, String> {
     Ok(app
@@ -73,7 +73,7 @@ fn read_document(path: &Path) -> Result<Map<String, Value>, String> {
     }
     match serde_json::from_str(&raw).map_err(|err| err.to_string())? {
         Value::Object(map) => Ok(map),
-        _ => Err("orbit.json 형식이 올바르지 않습니다.".into()),
+        _ => Err("arc.json 형식이 올바르지 않습니다.".into()),
     }
 }
 

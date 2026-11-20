@@ -5,7 +5,7 @@
   "scripts": {
     "old": "pnpm --filter @orbit/desktop tauri dev",
     "old:build": "pnpm --filter @orbit/desktop tauri build",
-    "dev": "pnpm --filter @orbit/mac tauri dev"
+    "dev": "pnpm --filter @arc/mac tauri dev"
   },
   "devDependencies": {
     "nx": "^21.0.0"
