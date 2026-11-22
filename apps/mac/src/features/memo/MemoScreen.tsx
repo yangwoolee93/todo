@@ -14,6 +14,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { GlassButton } from "../../components/GlassButton";
+import { useIconScale } from "../../hooks/useIconScale";
 import {
   DetailPanelBody,
   DetailPanelMenuBody,
@@ -38,6 +39,7 @@ const dateFormat = new Intl.DateTimeFormat("ko-KR", {
 });
 
 export function MemoScreen({ pageId }: { pageId: string }) {
+  const icon = useIconScale();
   const memos = useMemoStore((state) => state.memos);
   const addMemo = useMemoStore((state) => state.addMemo);
   const updateMemo = useMemoStore((state) => state.updateMemo);
@@ -114,7 +116,7 @@ export function MemoScreen({ pageId }: { pageId: string }) {
           className="gap-1 pad-sm text-sm"
           onClick={() => setView({ kind: "create" })}
         >
-          <PlusIcon aria-hidden="true" size={16} weight="light" />
+          <PlusIcon aria-hidden="true" size={icon(16)} weight="light" />
           메모 추가
         </GlassButton>
         <button
@@ -135,7 +137,7 @@ export function MemoScreen({ pageId }: { pageId: string }) {
         </p>
       ) : (
         <div
-          className="mt-4 grid grid-flow-dense grid-cols-[repeat(auto-fill,minmax(8rem,1fr))] gap-2"
+          className="mt-4 grid grid-flow-dense grid-cols-[repeat(auto-fill,minmax(10em,1fr))] gap-2"
           style={{ gridAutoRows: "1px" }}
         >
           {visible.map((memo) => (
@@ -205,6 +207,7 @@ function MemoCard({
   selected: boolean;
   onOpen: () => void;
 }) {
+  const icon = useIconScale();
   const itemRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLSpanElement>(null);
 
@@ -263,7 +266,7 @@ function MemoCard({
               <PushPinIcon
                 aria-hidden="true"
                 className="shrink-0 text-accent"
-                size={14}
+                size={icon(14)}
                 weight="fill"
               />
             )}
@@ -285,6 +288,7 @@ function MemoCard({
 }
 
 function MemoDetail({ memo }: { memo: MemoItem }) {
+  const icon = useIconScale();
   const togglePin = useMemoStore((state) => state.togglePin);
   return (
     <div className="flex flex-col gap-3">
@@ -306,7 +310,7 @@ function MemoDetail({ memo }: { memo: MemoItem }) {
         >
           <PushPinIcon
             aria-hidden="true"
-            size={16}
+            size={icon(16)}
             weight={memo.pinned ? "fill" : "regular"}
             className={memo.pinned ? "text-accent" : "text-fg-secondary"}
           />
@@ -342,6 +346,7 @@ function MemoMenu({
   onDuplicate: () => void;
   onDelete: () => void;
 }) {
+  const icon = useIconScale();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -368,7 +373,7 @@ function MemoMenu({
         className="flex p-2 hover:bg-fg/10"
         onClick={() => setOpen((value) => !value)}
       >
-        <DotsThreeIcon aria-hidden="true" size={20} weight="bold" />
+        <DotsThreeIcon aria-hidden="true" size={icon(20)} weight="bold" />
       </GlassButton>
       {open && (
         <div className="menu-xs absolute top-full right-0 z-30 mt-2 flex flex-col rounded-xl border border-border bg-surface">
@@ -447,6 +452,7 @@ function MemoDraft({
   onSave: (draft: DraftValue) => void;
   onCancel: () => void;
 }) {
+  const icon = useIconScale();
   const [title, setTitle] = useState(initial?.title ?? "");
   const [body, setBody] = useState(initial?.body ?? "");
   const [tags, setTags] = useState<string[]>(() => [...(initial?.tags ?? [])]);
@@ -541,7 +547,7 @@ function MemoDraft({
                 setTags((current) => current.filter((item) => item !== tag))
               }
             >
-              <XIcon aria-hidden="true" size={12} weight="bold" />
+              <XIcon aria-hidden="true" size={icon(12)} weight="bold" />
             </button>
           </span>
         ))}

@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { MemoScreen } from "../memo/MemoScreen";
 import { pageIcons, pageTypeLabel } from "./pageTypes";
 import { useDetailPanelStore } from "../../stores/useDetailPanelStore";
+import { useIconScale } from "../../hooks/useIconScale";
 import { useSidebarStore } from "../../stores/useSidebarStore";
 
 export function PageScreen() {
@@ -10,6 +11,7 @@ export function PageScreen() {
   const selectedPageId = useSidebarStore((state) => state.selectedPageId);
   const selectedGroupId = useSidebarStore((state) => state.selectedGroupId);
   const selectPage = useSidebarStore((state) => state.selectPage);
+  const icon = useIconScale();
   const page = pages.find((item) => item.id === selectedPageId);
 
   useEffect(() => {
@@ -25,7 +27,7 @@ export function PageScreen() {
         <h1 className="flex items-center gap-2 text-2xl font-medium text-fg">
           <PageIcon
             aria-hidden="true"
-            size={24}
+            size={icon(24)}
             className="shrink-0 text-fg-secondary"
           />
           <span className="min-w-0 truncate">{page.name}</span>
@@ -57,7 +59,7 @@ export function PageScreen() {
             >
               <PageIcon
                 aria-hidden="true"
-                size={16}
+                size={icon(16)}
                 className="mt-0.5 shrink-0 text-fg-secondary"
               />
               <span className="min-w-0">

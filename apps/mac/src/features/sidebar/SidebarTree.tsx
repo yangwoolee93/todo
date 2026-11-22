@@ -1,5 +1,6 @@
 import { CaretRightIcon, GearIcon, PlusIcon, SidebarIcon } from "@phosphor-icons/react";
 import { useState, type FormEvent } from "react";
+import { useIconScale } from "../../hooks/useIconScale";
 import { cn } from "../../utils/cn";
 import {
   useSidebarStore,
@@ -190,6 +191,7 @@ function GroupBlock({
   const toggleGroup = useSidebarStore((state) => state.toggleGroup);
   const selectProject = useSidebarStore((state) => state.selectProject);
   const selectPage = useSidebarStore((state) => state.selectPage);
+  const icon = useIconScale();
   const selectedChildHidden =
     group.collapsed && pages.some((page) => page.id === selectedPageId);
 
@@ -218,7 +220,7 @@ function GroupBlock({
           onClick={() => toggleGroup(group.id)}
         >
           <CaretRightIcon
-            size={16}
+            size={icon(16)}
             className={cn(
               "transition-transform",
               !group.collapsed && "rotate-90",
@@ -247,7 +249,7 @@ function GroupBlock({
               >
                 <PageIcon
                   aria-hidden="true"
-                  size={16}
+                  size={icon(16)}
                   className="shrink-0 text-fg-secondary"
                 />
                 <span className="truncate">{page.name}</span>
@@ -267,6 +269,7 @@ export function SidebarTree({ onToggle }: { onToggle: () => void }) {
   const settingsOpen = useSidebarStore((state) => state.settingsOpen);
   const toggleSettings = useSidebarStore((state) => state.toggleSettings);
   const [draft, setDraft] = useState<Draft>(null);
+  const icon = useIconScale();
   const addingGroup = draft?.kind === "group";
 
   return (
@@ -281,7 +284,7 @@ export function SidebarTree({ onToggle }: { onToggle: () => void }) {
             className="flex rounded-full p-1 text-fg hover:bg-fg/10"
             onClick={() => setDraft(addingGroup ? null : { kind: "group" })}
           >
-            <PlusIcon size={22} weight="light" />
+            <PlusIcon size={icon(22)} weight="light" />
           </button>
           {!addingGroup && (
             <span
@@ -298,7 +301,7 @@ export function SidebarTree({ onToggle }: { onToggle: () => void }) {
           className="pointer-events-auto flex rounded-full p-1 text-fg hover:bg-fg/10"
           onClick={onToggle}
         >
-          <SidebarIcon aria-hidden="true" size={22} weight="light" />
+          <SidebarIcon aria-hidden="true" size={icon(22)} weight="light" />
         </button>
       </div>
       {/* 프로젝트 추가 폼 */}
@@ -332,7 +335,7 @@ export function SidebarTree({ onToggle }: { onToggle: () => void }) {
         >
           <GearIcon
             aria-hidden="true"
-            size={16}
+            size={icon(16)}
             weight="light"
             className="shrink-0 text-fg-secondary"
           />

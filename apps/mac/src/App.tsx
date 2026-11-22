@@ -16,6 +16,8 @@ import { SettingsScreen } from "./features/settings/SettingsScreen";
 import { PageScreen } from "./features/sidebar/PageScreen";
 import { SelectionActions } from "./features/sidebar/SelectionActions";
 import { SidebarTree } from "./features/sidebar/SidebarTree";
+import { useFontSizeSync } from "./hooks/useFontSizeSync";
+import { useIconScale } from "./hooks/useIconScale";
 import { useThemeSync } from "./hooks/useThemeSync";
 import { useDetailPanelStore } from "./stores/useDetailPanelStore";
 import { useMemoStore } from "./stores/useMemoStore";
@@ -33,6 +35,8 @@ import {
 
 export function App() {
   useThemeSync();
+  useFontSizeSync();
+  const icon = useIconScale();
   const hydrated = useSidebarStore((state) => state.hydrated);
   const canBack = useSidebarStore((state) => state.index > 0);
   const canForward = useSidebarStore(
@@ -282,7 +286,7 @@ export function App() {
           ref={contentRef}
           className={cn(
             "bg-red-200/50-",
-            "flex min-h-0 min-w-0 flex-col flex-1",
+            "pointer-events-none flex min-h-0 min-w-0 flex-col flex-1",
             "transition-[margin] duration-200 ease-out",
             !isSidebarOpen && "-ml-62",
           )}
@@ -292,26 +296,26 @@ export function App() {
             ref={headerRef}
             className={cn(
               "bg-green-200/50-",
-              "relative z-20 flex item-center",
+              "pointer-events-none relative z-20 flex item-center",
               !isSidebarOpen && "pl-22",
             )}
           >
             <div
               className={cn(
                 "bg-purple-200/50-",
-                "mt-2 flex flex-1 gap-2 items-center rounded-full",
+                "pointer-events-none mt-2 flex flex-1 gap-2 items-center rounded-full",
               )}
             >
               <GlassButton
                 className={cn(
-                  "flex p-1.5 px-2 hover:bg-fg/10",
+                  "pointer-events-auto flex p-1.5 px-2 hover:bg-fg/10",
                   isSidebarOpen && "hidden",
                 )}
                 onClick={handleSidebarToggle}
               >
-                <SidebarIcon aria-hidden="true" size={22} weight="light" />
+                <SidebarIcon aria-hidden="true" size={icon(22)} weight="light" />
               </GlassButton>
-              <div className="group/history inline-flex items-center rounded-full glass-rim-sm bg-base/4 p-1">
+              <div className="group/history pointer-events-auto inline-flex items-center rounded-full glass-rim-sm bg-base/4 p-1">
                 <button
                   type="button"
                   aria-label="뒤로"
@@ -320,7 +324,7 @@ export function App() {
                   className="flex rounded-full p-1 text-fg hover:bg-fg/10 disabled:pointer-events-none disabled:opacity-40"
                   onClick={back}
                 >
-                  <CaretLeftIcon aria-hidden="true" size={20} weight="light" />
+                  <CaretLeftIcon aria-hidden="true" size={icon(20)} weight="light" />
                 </button>
                 <div className="h-4 w-px bg-fg/50 transition-opacity group-has-[[data-history-step]:hover]/history:opacity-0" />
                 <button
@@ -331,35 +335,35 @@ export function App() {
                   className="flex rounded-full p-1 text-fg hover:bg-fg/10 disabled:pointer-events-none disabled:opacity-40"
                   onClick={forward}
                 >
-                  <CaretRightIcon aria-hidden="true" size={20} weight="light" />
+                  <CaretRightIcon aria-hidden="true" size={icon(20)} weight="light" />
                 </button>
               </div>
               {/* 제목 */}
-              <div className="relative flex ml-2 min-w-0 items-center gap-1 text-sm font-medium">
+              <div className="pointer-events-none relative flex ml-2 min-w-0 items-center gap-1 text-sm font-medium">
                 {hydrated &&
                   contentTitle.map((title, index) => {
                     const current = index === contentTitle.length - 1;
                     return (
                       <span
                         key={`${title.kind}-${title.id}`}
-                        className="flex min-w-0 items-center gap-1"
+                        className="pointer-events-none flex min-w-0 items-center gap-1"
                       >
                         {index > 0 && (
                           <CaretRightIcon
                             aria-hidden="true"
-                            size={16}
+                            size={icon(16)}
                             weight="light"
                             className="shrink-0 text-fg/50"
                           />
                         )}
                         {current ? (
-                          <span className="truncate text-fg cursor-default">
+                          <span className="pointer-events-none truncate text-fg cursor-default">
                             {title.name}
                           </span>
                         ) : (
                           <button
                             type="button"
-                            className="min-w-0 truncate text-fg/50 hover:underline"
+                            className="pointer-events-auto min-w-0 truncate text-fg/50 hover:underline"
                             onClick={() => {
                               if (title.kind === "project") selectProject(title.id);
                               if (title.kind === "settings") setSection("home");
@@ -377,7 +381,7 @@ export function App() {
           </div>
           <div
             className={cn(
-              "relative min-h-0 overflow-y-auto",
+              "pointer-events-auto relative min-h-0 overflow-y-auto",
               overlay ? "flex-1 self-start" : "flex-1",
             )}
             style={overlay ? { width: pageLayout.contentMin } : undefined}
@@ -401,9 +405,8 @@ export function App() {
             className={cn(
               "bg-base",
               "flex min-h-0 flex-col border-l border-fg/10",
-              covered
-                ? "pointer-events-auto absolute inset-y-0 right-0 z-30"
-                : "pointer-events-none",
+              "pointer-events-none",
+              covered && "absolute inset-y-0 right-0 z-30",
               !covered &&
                 (overlay
                   ? "absolute right-0 bottom-0 z-10"
@@ -427,13 +430,13 @@ export function App() {
             <div
               className={cn(
                 "bg-green-200/50-",
-                "relative z-10 flex item-center px-2",
+                "pointer-events-none relative z-10 flex item-center px-2",
               )}
             >
               <div
                 className={cn(
                   "bg-purple-200/50-",
-                  "mt-2 flex flex-1 gap-2 items-center justify-between rounded-full",
+                  "pointer-events-none mt-2 flex flex-1 gap-2 items-center justify-between rounded-full",
                 )}
               >
                 <GlassButton
@@ -441,7 +444,7 @@ export function App() {
                   className="pointer-events-auto flex p-2 hover:bg-fg/10"
                   onClick={closeDetail}
                 >
-                  <CaretDoubleRightIcon aria-hidden="true" size={20} />
+                  <CaretDoubleRightIcon aria-hidden="true" size={icon(20)} />
                 </GlassButton>
                 <DetailPanelMenuTarget className="pointer-events-auto relative" />
               </div>

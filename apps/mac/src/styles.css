@@ -121,6 +121,7 @@
 
   body {
     @apply text-fg font-sans m-0 h-full overflow-hidden;
+    font-size: var(--text-base);
   }
 
   #root {
@@ -134,6 +135,53 @@
   /* button:disabled {
     @apply cursor-not-allowed opacity-40;
   } */
+}
+
+/*
+ * 글자 단계. 보통이 기준이다.
+ * 매우작음 0.75, 작음 0.875, 보통 1, 큰 1.125, 매우큰 1.25.
+ * 가장 작은 글자는 10px, 열린 메모 제목의 매우큰은 22px.
+ * 줄 간격은 각 크기에 이미 있는 비율을 따른다.
+ * 여백과 메뉴 너비는 em이라 글자를 따라간다.
+ */
+html[data-font-step="xsmall"] {
+  --text-xs: 10px;
+  --text-sm: 11px;
+  --text-base: 12px;
+  --text-lg: 14px;
+  --text-2xl: 18px;
+}
+
+html[data-font-step="small"] {
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-base: 14px;
+  --text-lg: 16px;
+  --text-2xl: 21px;
+}
+
+html[data-font-step="medium"] {
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-base: 16px;
+  --text-lg: 18px;
+  --text-2xl: 24px;
+}
+
+html[data-font-step="large"] {
+  --text-xs: 14px;
+  --text-sm: 16px;
+  --text-base: 18px;
+  --text-lg: 20px;
+  --text-2xl: 27px;
+}
+
+html[data-font-step="xlarge"] {
+  --text-xs: 15px;
+  --text-sm: 18px;
+  --text-base: 20px;
+  --text-lg: 22px;
+  --text-2xl: 30px;
 }
 
 /* 보통 기준. 여백과 메뉴 너비는 그 글자 크기(em)를 따른다. */
@@ -291,6 +339,11 @@ html.detail-resizing * {
 
 .settings-scale {
   --thumb: 18px;
+}
+
+.settings-scale button {
+  font-size: 12px;
+  line-height: calc(1 / 0.75);
 }
 
 .settings-range {

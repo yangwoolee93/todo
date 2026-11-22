@@ -1,6 +1,7 @@
 import { CaretRightIcon, MonitorIcon, MoonIcon, SunIcon } from "@phosphor-icons/react";
 import type { CSSProperties } from "react";
 import { fontStepLabel, fontSteps } from "./fontSteps";
+import { useIconScale } from "../../hooks/useIconScale";
 import { useFontSizeStore } from "../../stores/useFontSizeStore";
 import {
   settingsSectionLabel,
@@ -33,6 +34,7 @@ function SettingsLink({
   detail: string;
   onClick: () => void;
 }) {
+  const icon = useIconScale();
   return (
     <button
       type="button"
@@ -45,7 +47,7 @@ function SettingsLink({
       </span>
       <CaretRightIcon
         aria-hidden="true"
-        size={16}
+        size={icon(16)}
         className="shrink-0 text-fg-secondary"
       />
     </button>
@@ -82,6 +84,7 @@ function ThemeControl() {
   const mode = useThemeStore((state) => state.mode);
   const setMode = useThemeStore((state) => state.setMode);
   const current = themeOptions.find((option) => option.value === mode) ?? themeOptions[2];
+  const icon = useIconScale();
 
   return (
     <section className="@container rounded-2xl border border-border bg-surface p-4">
@@ -107,7 +110,7 @@ function ThemeControl() {
               )}
               onClick={() => setMode(option.value)}
             >
-              <Icon aria-hidden="true" size={16} className="shrink-0" />
+              <Icon aria-hidden="true" size={icon(16)} className="shrink-0" />
               {option.label}
             </button>
           );

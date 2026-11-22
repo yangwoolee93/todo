@@ -1,5 +1,6 @@
 import { DotsThreeIcon, PlusIcon } from "@phosphor-icons/react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useIconScale } from "../../hooks/useIconScale";
 import { useSidebarStore } from "../../stores/useSidebarStore";
 import { AddPageForm } from "./SidebarTree";
 
@@ -14,6 +15,7 @@ export function SelectionActions() {
   const renamePage = useSidebarStore((state) => state.renamePage);
   const requestDelete = useSidebarStore((state) => state.requestDelete);
   const [panel, setPanel] = useState<Panel>(null);
+  const icon = useIconScale();
   const rootRef = useRef<HTMLDivElement>(null);
 
   const page = pages.find((item) => item.id === selectedPageId) ?? null;
@@ -65,7 +67,7 @@ export function SelectionActions() {
   return (
     <div
       ref={rootRef}
-      className="ml-auto flex items-center gap-1 mr-2 glass-rim-sm rounded-full p-1"
+      className="pointer-events-auto ml-auto flex items-center gap-1 mr-2 glass-rim-sm rounded-full p-1"
     >
       {project && (
         <div className="relative">
@@ -76,7 +78,7 @@ export function SelectionActions() {
             className="flex rounded-full p-1 text-fg hover:bg-fg/10"
             onClick={() => setPanel(panel === "add" ? null : "add")}
           >
-            <PlusIcon aria-hidden="true" size={20} weight="light" />
+            <PlusIcon aria-hidden="true" size={icon(20)} weight="light" />
           </button>
           {panel === "add" && (
             <div className="menu-sm absolute top-full right-0 z-30 mt-2 rounded-2xl border border-border bg-surface">
@@ -96,7 +98,7 @@ export function SelectionActions() {
           className="flex rounded-full p-1 text-fg hover:bg-fg/10"
           onClick={() => setPanel(panel === "menu" ? null : "menu")}
         >
-          <DotsThreeIcon aria-hidden="true" size={20} weight="bold" />
+          <DotsThreeIcon aria-hidden="true" size={icon(20)} weight="bold" />
         </button>
         {panel === "menu" && (
           <div className="menu-xs absolute top-full right-0 z-30 mt-2 flex flex-col rounded-xl border border-border bg-surface">
