@@ -12,12 +12,14 @@ import {
   DetailPanelTarget,
 } from "./features/detail/DetailPanelSlot";
 import { DeleteConfirm } from "./features/sidebar/DeleteConfirm";
+import { SettingsScreen } from "./features/settings/SettingsScreen";
 import { PageScreen } from "./features/sidebar/PageScreen";
 import { SelectionActions } from "./features/sidebar/SelectionActions";
 import { SidebarTree } from "./features/sidebar/SidebarTree";
 import { useThemeSync } from "./hooks/useThemeSync";
 import { useDetailPanelStore } from "./stores/useDetailPanelStore";
 import { useMemoStore } from "./stores/useMemoStore";
+import { settingsSectionLabel, useSettingsStore } from "./stores/useSettingsStore";
 import { useSidebarStore } from "./stores/useSidebarStore";
 import { cn } from "./utils/cn";
 import {
@@ -40,6 +42,9 @@ export function App() {
   const selectedGroupId = useSidebarStore((state) => state.selectedGroupId);
   const pages = useSidebarStore((state) => state.pages);
   const selectedPageId = useSidebarStore((state) => state.selectedPageId);
+  const settingsOpen = useSidebarStore((state) => state.settingsOpen);
+  const section = useSettingsStore((state) => state.section);
+  const setSection = useSettingsStore((state) => state.setSection);
 
   const back = useSidebarStore((state) => state.back);
   const forward = useSidebarStore((state) => state.forward);
@@ -67,21 +72,34 @@ export function App() {
       ? group.id === selectedPage.groupId
       : group.id === selectedGroupId,
   );
-  const contentTitle = [
-    selectedGroup && {
-      id: selectedGroup.id,
-      name: selectedGroup.name,
-      kind: "project" as const,
-    },
-    selectedPage && {
-      id: selectedPage.id,
-      name: selectedPage.name,
-      kind: "page" as const,
-    },
-  ].filter(
-    (item): item is { id: string; name: string; kind: "project" | "page" } =>
-      Boolean(item?.name),
-  );
+  const contentTitle = settingsOpen
+    ? [
+        { id: "settings", name: "설정", kind: "settings" as const },
+        ...(section === "home"
+          ? []
+          : [
+              {
+                id: section,
+                name: settingsSectionLabel(section),
+                kind: "section" as const,
+              },
+            ]),
+      ]
+    : [
+        selectedGroup && {
+          id: selectedGroup.id,
+          name: selectedGroup.name,
+          kind: "project" as const,
+        },
+        selectedPage && {
+          id: selectedPage.id,
+          name: selectedPage.name,
+          kind: "page" as const,
+        },
+      ].filter(
+        (item): item is { id: string; name: string; kind: "project" | "page" } =>
+          Boolean(item?.name),
+      );
 
   useEffect(() => {
     void (async () => {
@@ -343,8 +361,8 @@ export function App() {
                             type="button"
                             className="min-w-0 truncate text-fg/50 hover:underline"
                             onClick={() => {
-                              if (title.kind === "project")
-                                selectProject(title.id);
+                              if (title.kind === "project") selectProject(title.id);
+                              if (title.kind === "settings") setSection("home");
                             }}
                           >
                             {title.name}
@@ -354,7 +372,7 @@ export function App() {
                     );
                   })}
               </div>
-              {hydrated && !detailOpen && <SelectionActions />}
+              {hydrated && !detailOpen && !settingsOpen && <SelectionActions />}
             </div>
           </div>
           <div
@@ -366,7 +384,7 @@ export function App() {
             onClick={closeDetailOnBackground}
           >
             <div className={cn("bg-amber-200/50-", "flex-1 mt-2")}>
-              {hydrated && <PageScreen />}
+              {hydrated && (settingsOpen ? <SettingsScreen /> : <PageScreen />)}
             </div>
           </div>
         </div>

@@ -61,10 +61,10 @@ export function PageScreen() {
                 className="mt-0.5 shrink-0 text-fg-secondary"
               />
               <span className="min-w-0">
-                <span className="block truncate text-sm font-medium text-fg">
+                <span className="block truncate text-base font-medium text-fg">
                   {item.name}
                 </span>
-                <span className="mt-1 block text-xs text-fg-secondary">
+                <span className="mt-1 block text-sm text-fg-secondary">
                   {pageTypeLabel(item.type)}
                 </span>
               </span>

@@ -111,7 +111,7 @@ export function MemoScreen({ pageId }: { pageId: string }) {
       <div className="flex items-center gap-2">
         <GlassButton
           data-opens-detail
-          className="gap-1 px-3 py-1.5 text-sm"
+          className="gap-1 pad-sm text-sm"
           onClick={() => setView({ kind: "create" })}
         >
           <PlusIcon aria-hidden="true" size={16} weight="light" />
@@ -121,7 +121,7 @@ export function MemoScreen({ pageId }: { pageId: string }) {
           type="button"
           aria-pressed={pinOnly}
           className={cn(
-            "rounded-full px-3 py-1.5 text-sm",
+            "rounded-full pad-sm text-sm",
             pinOnly ? "bg-fg/10 text-fg" : "text-fg-secondary hover:bg-fg/5",
           )}
           onClick={() => setPinOnly((value) => !value)}
@@ -253,7 +253,7 @@ function MemoCard({
           <span className="flex items-start gap-2">
             <span
               className={cn(
-                "min-w-0 flex-1 break-words text-sm font-medium",
+                "min-w-0 flex-1 break-words text-base font-medium",
                 memo.title.trim() ? "text-fg" : "text-fg-muted",
               )}
             >
@@ -269,12 +269,12 @@ function MemoCard({
             )}
           </span>
           {memo.body.trim() && (
-            <span className="mt-1 line-clamp-12 whitespace-pre-wrap break-words text-xs text-fg-secondary">
+            <span className="mt-1 line-clamp-12 whitespace-pre-wrap break-words text-sm text-fg-secondary">
               {memo.body.trim()}
             </span>
           )}
           {memo.tags.length > 0 && (
-            <span className="mt-1 break-words text-xs text-fg-secondary">
+            <span className="mt-1 break-words text-sm text-fg-secondary">
               {memo.tags.map((tag) => `#${tag}`).join(" ")}
             </span>
           )}
@@ -291,7 +291,7 @@ function MemoDetail({ memo }: { memo: MemoItem }) {
       <div className="flex items-start gap-2">
         <h2
           className={cn(
-            "min-w-0 flex-1 text-base font-medium",
+            "min-w-0 flex-1 text-lg font-medium",
             memo.title.trim() ? "text-fg" : "text-fg-muted",
           )}
         >
@@ -314,18 +314,18 @@ function MemoDetail({ memo }: { memo: MemoItem }) {
       </div>
       <p
         className={cn(
-          "whitespace-pre-wrap text-sm",
+          "whitespace-pre-wrap text-base",
           memo.body.trim() ? "text-fg" : "text-fg-muted",
         )}
       >
         {memo.body.trim() || "내용 없음"}
       </p>
       {memo.tags.length > 0 && (
-        <p className="text-xs text-fg-secondary">
+        <p className="text-sm text-fg-secondary">
           {memo.tags.map((tag) => `#${tag}`).join(" ")}
         </p>
       )}
-      <dl className="flex flex-col gap-1 text-xs text-fg-secondary">
+      <dl className="flex flex-col gap-1 text-sm text-fg-secondary">
         <div>작성 {dateFormat.format(memo.createdAt)}</div>
         <div>수정 {dateFormat.format(memo.updatedAt)}</div>
       </dl>
@@ -371,24 +371,24 @@ function MemoMenu({
         <DotsThreeIcon aria-hidden="true" size={20} weight="bold" />
       </GlassButton>
       {open && (
-        <div className="absolute top-full right-0 z-30 mt-2 flex w-28 flex-col rounded-xl border border-border bg-surface p-1">
+        <div className="menu-xs absolute top-full right-0 z-30 mt-2 flex flex-col rounded-xl border border-border bg-surface">
           <button
             type="button"
-            className="rounded-md px-2 py-1 text-left text-xs text-fg hover:bg-fg/10"
+            className="rounded-md pad-xs text-left text-xs text-fg hover:bg-fg/10"
             onClick={() => choose(onEdit)}
           >
             수정
           </button>
           <button
             type="button"
-            className="rounded-md px-2 py-1 text-left text-xs text-fg hover:bg-fg/10"
+            className="rounded-md pad-xs text-left text-xs text-fg hover:bg-fg/10"
             onClick={() => choose(onDelete)}
           >
             삭제
           </button>
           <button
             type="button"
-            className="rounded-md px-2 py-1 text-left text-xs text-fg hover:bg-fg/10"
+            className="rounded-md pad-xs text-left text-xs text-fg hover:bg-fg/10"
             onClick={() => choose(onDuplicate)}
           >
             복제
@@ -415,21 +415,21 @@ function MemoDeleteConfirm({
         role="dialog"
         aria-modal="true"
         aria-labelledby="memo-delete-title"
-        className="w-72 rounded-2xl border border-border bg-surface p-4"
+        className="dialog-sm rounded-2xl border border-border bg-surface"
         onMouseDown={(event) => event.stopPropagation()}
       >
         <p id="memo-delete-title" className="text-sm text-fg">
           내용이 있는데 삭제하시겠습니까?
         </p>
-        <div className="mt-4 flex justify-end gap-2">
+        <div className="mt-[1.143em] flex justify-end gap-[0.571em]">
           <GlassButton
-            className="px-3 py-1.5 text-sm"
+            className="pad-sm text-sm"
             onClick={onCancel}
             autoFocus
           >
             취소
           </GlassButton>
-          <GlassButton className="px-3 py-1.5 text-sm" onClick={onConfirm}>
+          <GlassButton className="pad-sm text-sm" onClick={onConfirm}>
             삭제
           </GlassButton>
         </div>
@@ -514,7 +514,7 @@ function MemoDraft({
         aria-label="제목"
         value={title}
         placeholder="제목"
-        className="w-full rounded-lg bg-fg/5 px-2 py-1 text-sm font-medium text-fg outline-none placeholder:text-fg-muted"
+        className="w-full rounded-lg bg-fg/5 pad-field text-lg font-medium text-fg outline-none placeholder:text-fg-muted"
         onChange={(event) => setTitle(event.target.value)}
         onKeyDown={keepTitle}
       />
@@ -523,14 +523,14 @@ function MemoDraft({
         value={body}
         placeholder="내용"
         rows={6}
-        className="w-full resize-none rounded-lg bg-fg/5 px-2 py-1 text-sm text-fg outline-none placeholder:text-fg-muted"
+        className="w-full resize-none rounded-lg bg-fg/5 pad-field text-base text-fg outline-none placeholder:text-fg-muted"
         onChange={(event) => setBody(event.target.value)}
       />
       <div className="flex flex-wrap items-center gap-1">
         {tags.map((tag) => (
           <span
             key={tag}
-            className="inline-flex items-center gap-0.5 rounded-full bg-fg/5 px-2 py-0.5 text-xs text-fg-secondary"
+            className="inline-flex items-center gap-0.5 rounded-full bg-fg/5 pad-chip text-sm text-fg-secondary"
           >
             #{tag}
             <button
@@ -541,7 +541,7 @@ function MemoDraft({
                 setTags((current) => current.filter((item) => item !== tag))
               }
             >
-              <XIcon aria-hidden="true" size={10} weight="bold" />
+              <XIcon aria-hidden="true" size={12} weight="bold" />
             </button>
           </span>
         ))}
@@ -549,7 +549,7 @@ function MemoDraft({
           aria-label="해시태그"
           value={draft}
           placeholder="태그"
-          className="min-w-16 flex-1 bg-transparent px-1 py-0.5 text-xs text-fg outline-none placeholder:text-fg-muted"
+          className="min-w-[5.333em] flex-1 bg-transparent px-[0.333em] py-[0.167em] text-sm text-fg outline-none placeholder:text-fg-muted"
           onChange={(event) => setDraft(event.target.value)}
           onKeyDown={onTagKeyDown}
           onBlur={commitDraft}
@@ -558,7 +558,7 @@ function MemoDraft({
       <div className="mt-1 flex justify-end gap-1">
         <button
           type="button"
-          className="rounded-full px-2 py-1 text-xs text-fg-secondary hover:bg-fg/10"
+          className="rounded-full pad-xs text-xs text-fg-secondary hover:bg-fg/10"
           onClick={onCancel}
         >
           취소
@@ -566,7 +566,7 @@ function MemoDraft({
         <button
           type="submit"
           disabled={!ready}
-          className="rounded-full px-2 py-1 text-xs text-fg hover:bg-fg/10 disabled:pointer-events-none disabled:opacity-40"
+          className="rounded-full pad-xs text-xs text-fg hover:bg-fg/10 disabled:pointer-events-none disabled:opacity-40"
         >
           저장
         </button>

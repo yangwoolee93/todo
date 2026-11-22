@@ -79,7 +79,7 @@ export function SelectionActions() {
             <PlusIcon aria-hidden="true" size={20} weight="light" />
           </button>
           {panel === "add" && (
-            <div className="absolute top-full right-0 z-30 mt-2 w-60 rounded-2xl border border-border bg-surface p-2">
+            <div className="menu-sm absolute top-full right-0 z-30 mt-2 rounded-2xl border border-border bg-surface">
               <AddPageForm
                 groupId={project.id}
                 onClose={() => setPanel(null)}
@@ -99,17 +99,17 @@ export function SelectionActions() {
           <DotsThreeIcon aria-hidden="true" size={20} weight="bold" />
         </button>
         {panel === "menu" && (
-          <div className="absolute top-full right-0 z-30 mt-2 flex w-28 flex-col rounded-xl border border-border bg-surface p-1">
+          <div className="menu-xs absolute top-full right-0 z-30 mt-2 flex flex-col rounded-xl border border-border bg-surface">
             <button
               type="button"
-              className="rounded-md px-2 py-1 text-left text-xs text-fg hover:bg-fg/10"
+              className="rounded-md pad-xs text-left text-xs text-fg hover:bg-fg/10"
               onClick={() => setPanel("rename")}
             >
               이름 수정
             </button>
             <button
               type="button"
-              className="rounded-md px-2 py-1 text-left text-xs text-fg hover:bg-fg/10"
+              className="rounded-md pad-xs text-left text-xs text-fg hover:bg-fg/10"
               onClick={() => {
                 requestDelete({ kind: target.kind, id: target.id });
                 setPanel(null);
@@ -121,7 +121,7 @@ export function SelectionActions() {
         )}
         {panel === "rename" && (
           <form
-            className="absolute top-full right-0 z-30 mt-2 flex w-60 flex-col gap-2 rounded-2xl border border-border bg-surface p-2"
+            className="menu-sm absolute top-full right-0 z-30 mt-2 flex flex-col gap-[0.571em] rounded-2xl border border-border bg-surface"
             onSubmit={submitRename}
           >
             <input
@@ -129,19 +129,19 @@ export function SelectionActions() {
               defaultValue={target.name}
               aria-label={target.label}
               autoFocus
-              className="w-full rounded-lg bg-fg/5 px-2 py-1 text-sm text-fg outline-none"
+              className="w-full rounded-lg bg-fg/5 pad-field text-sm text-fg outline-none"
             />
             <div className="flex justify-end gap-1">
               <button
                 type="button"
-                className="rounded-full px-2 py-1 text-xs text-fg-secondary hover:bg-fg/10"
+                className="rounded-full pad-xs text-xs text-fg-secondary hover:bg-fg/10"
                 onClick={() => setPanel(null)}
               >
                 취소
               </button>
               <button
                 type="submit"
-                className="rounded-full px-2 py-1 text-xs text-fg hover:bg-fg/10"
+                className="rounded-full pad-xs text-xs text-fg hover:bg-fg/10"
               >
                 저장
               </button>

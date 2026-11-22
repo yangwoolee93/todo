@@ -1,7 +1,8 @@
 export type HistoryLocation =
   | { kind: "empty" }
   | { kind: "project"; id: string }
-  | { kind: "page"; id: string };
+  | { kind: "page"; id: string }
+  | { kind: "settings" };
 
 export type History = {
   entries: HistoryLocation[];
@@ -10,8 +11,9 @@ export type History = {
 
 export function sameLocation(a: HistoryLocation, b: HistoryLocation) {
   if (a.kind !== b.kind) return false;
-  if (a.kind === "empty" || b.kind === "empty") return true;
-  return a.id === b.id;
+  if (a.kind === "project" && b.kind === "project") return a.id === b.id;
+  if (a.kind === "page" && b.kind === "page") return a.id === b.id;
+  return true;
 }
 
 export function visit(history: History, location: HistoryLocation): History {

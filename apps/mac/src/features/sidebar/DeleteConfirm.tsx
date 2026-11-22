@@ -17,17 +17,17 @@ export function DeleteConfirm() {
         role="dialog"
         aria-modal="true"
         aria-labelledby="delete-confirm-title"
-        className="w-72 rounded-2xl border border-border bg-surface p-4"
+        className="dialog-sm rounded-2xl border border-border bg-surface"
         onMouseDown={(event) => event.stopPropagation()}
       >
         <p id="delete-confirm-title" className="text-sm text-fg">
           내용이 있는데 삭제하시겠습니까?
         </p>
-        <div className="mt-4 flex justify-end gap-2">
-          <GlassButton className="px-3 py-1.5 text-sm" onClick={cancelDelete} autoFocus>
+        <div className="mt-[1.143em] flex justify-end gap-[0.571em]">
+          <GlassButton className="pad-sm text-sm" onClick={cancelDelete} autoFocus>
             취소
           </GlassButton>
-          <GlassButton className="px-3 py-1.5 text-sm" onClick={confirmDelete}>
+          <GlassButton className="pad-sm text-sm" onClick={confirmDelete}>
             삭제
           </GlassButton>
         </div>

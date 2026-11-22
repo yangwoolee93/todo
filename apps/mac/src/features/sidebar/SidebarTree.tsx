@@ -1,4 +1,4 @@
-import { CaretRightIcon, PlusIcon, SidebarIcon } from "@phosphor-icons/react";
+import { CaretRightIcon, GearIcon, PlusIcon, SidebarIcon } from "@phosphor-icons/react";
 import { useState, type FormEvent } from "react";
 import { cn } from "../../utils/cn";
 import {
@@ -26,7 +26,7 @@ function NameField({
       placeholder={label}
       aria-label={label}
       autoFocus
-      className="w-full rounded-lg bg-fg/5 px-2 py-1 text-sm text-fg outline-none placeholder:text-fg-muted"
+      className="w-full rounded-lg bg-fg/5 pad-field text-sm text-fg outline-none placeholder:text-fg-muted"
     />
   );
 }
@@ -70,7 +70,7 @@ function TypePicker({
           key={type.id}
           type="button"
           className={cn(
-            "rounded-full px-2 py-1 text-xs",
+            "rounded-full pad-xs text-xs",
             value === type.id
               ? "bg-fg/15 text-fg"
               : "text-fg-secondary hover:bg-fg/10",
@@ -97,7 +97,7 @@ function FormActions({
     <div className="flex justify-end gap-1">
       <button
         type="button"
-        className="rounded-full px-2 py-1 text-xs text-fg-secondary hover:bg-fg/10"
+        className="rounded-full pad-xs text-xs text-fg-secondary hover:bg-fg/10"
         onClick={onCancel}
       >
         취소
@@ -105,7 +105,7 @@ function FormActions({
       <button
         type="submit"
         disabled={disabled}
-        className="rounded-full px-2 py-1 text-xs text-fg hover:bg-fg/10 disabled:opacity-40"
+        className="rounded-full pad-xs text-xs text-fg hover:bg-fg/10 disabled:opacity-40"
       >
         {submitLabel}
       </button>
@@ -126,7 +126,7 @@ function AddGroupForm({ onClose }: { onClose: () => void }) {
 
   return (
     <form
-      className="flex flex-col gap-2 rounded-xl bg-fg/5 p-2"
+      className="flex flex-col gap-[0.571em] rounded-xl bg-fg/5 p-[0.571em] text-sm"
       onSubmit={submit}
     >
       <NameField value={name} onChange={setName} label="프로젝트 이름" />
@@ -160,7 +160,7 @@ export function AddPageForm({
 
   return (
     <form
-      className="flex flex-col gap-2 rounded-xl bg-fg/5 p-2"
+      className="flex flex-col gap-[0.571em] rounded-xl bg-fg/5 p-[0.571em] text-sm"
       onSubmit={submit}
     >
       <TypePicker value={type} onChange={setType} />
@@ -179,11 +179,13 @@ function GroupBlock({
   pages,
   selectedPageId,
   selectedGroupId,
+  settingsOpen,
 }: {
   group: SidebarGroup;
   pages: SidebarPage[];
   selectedPageId: string | null;
   selectedGroupId: string | null;
+  settingsOpen: boolean;
 }) {
   const toggleGroup = useSidebarStore((state) => state.toggleGroup);
   const selectProject = useSidebarStore((state) => state.selectProject);
@@ -196,7 +198,8 @@ function GroupBlock({
       <div
         className={cn(
           "flex items-center gap-0.5 rounded-lg px-2",
-          selectedGroupId === group.id || selectedChildHidden
+          !settingsOpen &&
+            (selectedGroupId === group.id || selectedChildHidden)
             ? "bg-fg/10"
             : "hover:bg-fg/5",
         )}
@@ -232,7 +235,9 @@ function GroupBlock({
               key={page.id}
               className={cn(
                 "flex items-center rounded-lg pl-6",
-                selectedPageId === page.id ? "bg-fg/10" : "hover:bg-fg/5",
+                !settingsOpen && selectedPageId === page.id
+                  ? "bg-fg/10"
+                  : "hover:bg-fg/5",
               )}
             >
               <button
@@ -259,6 +264,8 @@ export function SidebarTree({ onToggle }: { onToggle: () => void }) {
   const pages = useSidebarStore((state) => state.pages);
   const selectedPageId = useSidebarStore((state) => state.selectedPageId);
   const selectedGroupId = useSidebarStore((state) => state.selectedGroupId);
+  const settingsOpen = useSidebarStore((state) => state.settingsOpen);
+  const toggleSettings = useSidebarStore((state) => state.toggleSettings);
   const [draft, setDraft] = useState<Draft>(null);
   const addingGroup = draft?.kind === "group";
 
@@ -309,8 +316,28 @@ export function SidebarTree({ onToggle }: { onToggle: () => void }) {
             pages={pages.filter((page) => page.groupId === group.id)}
             selectedPageId={selectedPageId}
             selectedGroupId={selectedGroupId}
+            settingsOpen={settingsOpen}
           />
         ))}
+      </div>
+      <div className="pointer-events-auto shrink-0 px-2.5 pb-2">
+        <button
+          type="button"
+          aria-current={settingsOpen ? "page" : undefined}
+          className={cn(
+            "flex w-full items-center gap-2 rounded-lg px-3.5 py-2.5 text-left",
+            settingsOpen ? "bg-fg/10" : "hover:bg-fg/5",
+          )}
+          onClick={toggleSettings}
+        >
+          <GearIcon
+            aria-hidden="true"
+            size={16}
+            weight="light"
+            className="shrink-0 text-fg-secondary"
+          />
+          <span className="font-medium text-fg">설정</span>
+        </button>
       </div>
     </div>
   );

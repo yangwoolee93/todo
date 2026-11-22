@@ -12,6 +12,7 @@ import {
   type MenuSnapshot,
 } from "../features/sidebar/menuFile";
 import { type PageTypeId } from "../features/sidebar/pageTypes";
+import { useSettingsStore } from "./useSettingsStore";
 
 export type SidebarGroup = {
   id: string;
@@ -38,6 +39,7 @@ type SidebarState = {
   pages: SidebarPage[];
   selectedPageId: string | null;
   selectedGroupId: string | null;
+  settingsOpen: boolean;
   deleteTarget: DeleteTarget | null;
   hydrated: boolean;
   entries: HistoryLocation[];
@@ -57,8 +59,21 @@ type SidebarActions = {
   confirmDelete: () => void;
   back: () => void;
   forward: () => void;
+  toggleSettings: () => void;
   hydrate: () => Promise<void>;
 };
+
+function locationAlive(
+  location: HistoryLocation,
+  groups: SidebarGroup[],
+  pages: SidebarPage[],
+) {
+  if (location.kind === "empty" || location.kind === "settings") return true;
+  if (location.kind === "project") {
+    return groups.some((group) => group.id === location.id);
+  }
+  return pages.some((page) => page.id === location.id);
+}
 
 function trimmed(value: string) {
   const next = value.trim();
@@ -70,9 +85,11 @@ function now() {
 }
 
 function locationFrom(state: {
+  settingsOpen: boolean;
   selectedPageId: string | null;
   selectedGroupId: string | null;
 }): HistoryLocation {
+  if (state.settingsOpen) return { kind: "settings" };
   if (state.selectedPageId) return { kind: "page", id: state.selectedPageId };
   if (state.selectedGroupId) return { kind: "project", id: state.selectedGroupId };
   return { kind: "empty" };
@@ -93,16 +110,24 @@ function pushed(
 }
 
 function reveal(state: SidebarState, location: HistoryLocation): Partial<SidebarState> {
+  if (location.kind === "settings") return { settingsOpen: true };
   if (location.kind === "project") {
     if (!state.groups.some((group) => group.id === location.id)) {
-      return { selectedPageId: null, selectedGroupId: null };
+      return { settingsOpen: false, selectedPageId: null, selectedGroupId: null };
     }
-    return { selectedPageId: null, selectedGroupId: location.id };
+    return {
+      settingsOpen: false,
+      selectedPageId: null,
+      selectedGroupId: location.id,
+    };
   }
   if (location.kind === "page") {
     const page = state.pages.find((item) => item.id === location.id);
-    if (!page) return { selectedPageId: null, selectedGroupId: null };
+    if (!page) {
+      return { settingsOpen: false, selectedPageId: null, selectedGroupId: null };
+    }
     return {
+      settingsOpen: false,
       selectedPageId: page.id,
       selectedGroupId: null,
       groups: state.groups.map((group) =>
@@ -112,7 +137,7 @@ function reveal(state: SidebarState, location: HistoryLocation): Partial<Sidebar
       ),
     };
   }
-  return { selectedPageId: null, selectedGroupId: null };
+  return { settingsOpen: false, selectedPageId: null, selectedGroupId: null };
 }
 
 function remembered(
@@ -122,11 +147,7 @@ function remembered(
   const next = { ...state, ...partial };
   const history = syncHistory(
     { entries: state.entries, index: state.index },
-    (location) =>
-      location.kind === "empty" ||
-      (location.kind === "project"
-        ? next.groups.some((group) => group.id === location.id)
-        : next.pages.some((page) => page.id === location.id)),
+    (location) => locationAlive(location, next.groups, next.pages),
     locationFrom(next),
   );
   return { ...partial, entries: history.entries, index: history.index };
@@ -140,22 +161,19 @@ function step(state: SidebarState, delta: number): Partial<SidebarState> {
   const actual = locationFrom(next);
   const history = syncHistory(
     { entries: state.entries, index },
-    (location) =>
-      location.kind === "empty" ||
-      (location.kind === "project"
-        ? next.groups.some((group) => group.id === location.id)
-        : next.pages.some((page) => page.id === location.id)),
+    (location) => locationAlive(location, next.groups, next.pages),
     actual,
   );
   return { ...partial, entries: history.entries, index: history.index };
 }
 
 export const useSidebarStore = create<SidebarState & SidebarActions>()(
-  (set) => ({
+  (set, get) => ({
     groups: [],
     pages: [],
     selectedPageId: null,
     selectedGroupId: null,
+    settingsOpen: false,
     deleteTarget: null,
     hydrated: !inTauri(),
     entries: [{ kind: "empty" }],
@@ -178,6 +196,7 @@ export const useSidebarStore = create<SidebarState & SidebarActions>()(
           ],
           selectedPageId: null,
           selectedGroupId: groupId,
+          settingsOpen: false,
         }),
       );
     },
@@ -199,6 +218,7 @@ export const useSidebarStore = create<SidebarState & SidebarActions>()(
           ],
           selectedPageId: null,
           selectedGroupId: groupId,
+          settingsOpen: false,
         }),
       );
     },
@@ -236,7 +256,11 @@ export const useSidebarStore = create<SidebarState & SidebarActions>()(
 
     selectProject: (id) =>
       set((state) =>
-        pushed(state, { selectedGroupId: id, selectedPageId: null }),
+        pushed(state, {
+          selectedGroupId: id,
+          selectedPageId: null,
+          settingsOpen: false,
+        }),
       ),
 
     selectPage: (id) =>
@@ -246,6 +270,7 @@ export const useSidebarStore = create<SidebarState & SidebarActions>()(
         return pushed(state, {
           selectedPageId: id,
           selectedGroupId: null,
+          settingsOpen: false,
           groups: state.groups.map((group) =>
             group.id === page.groupId && group.collapsed
               ? { ...group, collapsed: false, updatedAt: now() }
@@ -292,6 +317,24 @@ export const useSidebarStore = create<SidebarState & SidebarActions>()(
     back: () => set((state) => step(state, -1)),
 
     forward: () => set((state) => step(state, 1)),
+
+    toggleSettings: () => {
+      const state = get();
+      if (state.settingsOpen) {
+        set((current) => {
+          if (
+            current.entries[current.index]?.kind === "settings" &&
+            current.index > 0
+          ) {
+            return step(current, -1);
+          }
+          return remembered(current, { settingsOpen: false });
+        });
+        return;
+      }
+      useSettingsStore.getState().setSection("home");
+      set((current) => pushed(current, { settingsOpen: true }));
+    },
 
     hydrate: async () => {
       persistEnabled = false;
