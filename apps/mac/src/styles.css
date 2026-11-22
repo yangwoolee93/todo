@@ -238,3 +238,9 @@
   overflow-y: scroll;
   padding-right: var(--scrollbar-gap);
 }
+
+html.detail-resizing,
+html.detail-resizing * {
+  cursor: col-resize !important;
+  user-select: none !important;
+}

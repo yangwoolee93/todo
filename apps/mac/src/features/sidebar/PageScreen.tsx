@@ -1,4 +1,7 @@
+import { useEffect } from "react";
+import { MemoScreen } from "../memo/MemoScreen";
 import { pageIcons, pageTypeLabel } from "./pageTypes";
+import { useDetailPanelStore } from "../../stores/useDetailPanelStore";
 import { useSidebarStore } from "../../stores/useSidebarStore";
 
 export function PageScreen() {
@@ -9,10 +12,16 @@ export function PageScreen() {
   const selectPage = useSidebarStore((state) => state.selectPage);
   const page = pages.find((item) => item.id === selectedPageId);
 
+  useEffect(() => {
+    return () => {
+      useDetailPanelStore.getState().closePanel();
+    };
+  }, [selectedPageId]);
+
   if (page) {
     const PageIcon = pageIcons[page.type];
     return (
-      <div className="px-4 py-3">
+      <div className="p-2 pt-1">
         <h1 className="flex items-center gap-2 text-2xl font-medium text-fg">
           <PageIcon
             aria-hidden="true"
@@ -24,6 +33,7 @@ export function PageScreen() {
         <p className="mt-1 text-sm text-fg-secondary">
           {pageTypeLabel(page.type)}
         </p>
+        {page.type === "memo" && <MemoScreen key={page.id} pageId={page.id} />}
       </div>
     );
   }
