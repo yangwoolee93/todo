@@ -23,7 +23,7 @@ export function PageScreen() {
   if (page) {
     const PageIcon = pageIcons[page.type];
     return (
-      <div className="p-2 pt-1">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-2 pt-1">
         <h1 className="flex items-center gap-2 text-2xl font-medium text-fg">
           <PageIcon
             aria-hidden="true"
@@ -45,7 +45,7 @@ export function PageScreen() {
   const children = pages.filter((item) => item.groupId === group.id);
 
   return (
-    <div className="px-4 py-3">
+    <div className="scrollbar min-h-0 flex-1 overflow-y-auto px-4 py-3">
       <h1 className="text-2xl font-medium text-fg">{group.name}</h1>
       <div className="mt-4 grid grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] gap-3">
         {children.map((item) => {

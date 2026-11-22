@@ -381,13 +381,13 @@ export function App() {
           </div>
           <div
             className={cn(
-              "pointer-events-auto relative min-h-0 overflow-y-auto",
+              "pointer-events-auto relative flex min-h-0 flex-col overflow-hidden",
               overlay ? "flex-1 self-start" : "flex-1",
             )}
             style={overlay ? { width: pageLayout.contentMin } : undefined}
             onClick={closeDetailOnBackground}
           >
-            <div className={cn("bg-amber-200/50-", "flex-1 mt-2")}>
+            <div className="mt-2 flex min-h-0 flex-1 flex-col">
               {hydrated && (settingsOpen ? <SettingsScreen /> : <PageScreen />)}
             </div>
           </div>
@@ -449,7 +449,7 @@ export function App() {
                 <DetailPanelMenuTarget className="pointer-events-auto relative" />
               </div>
             </div>
-            <DetailPanelTarget className="pointer-events-auto min-h-0 flex-1 overflow-y-auto p-4" />
+            <DetailPanelTarget className="pointer-events-auto flex min-h-0 flex-1 flex-col overflow-hidden" />
           </div>
         )}
         <DeleteConfirm />

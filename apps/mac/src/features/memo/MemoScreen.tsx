@@ -109,7 +109,7 @@ export function MemoScreen({ pageId }: { pageId: string }) {
   };
 
   return (
-    <div className="mt-4">
+    <div className="mt-4 flex min-h-0 flex-1 flex-col">
       <div className="flex items-center gap-2">
         <GlassButton
           data-opens-detail
@@ -131,25 +131,27 @@ export function MemoScreen({ pageId }: { pageId: string }) {
           핀만
         </button>
       </div>
-      {visible.length === 0 ? (
-        <p className="mt-6 text-sm text-fg-secondary">
-          {pinOnly ? "핀한 메모가 없습니다." : "메모가 없습니다."}
-        </p>
-      ) : (
-        <div
-          className="mt-4 grid grid-flow-dense grid-cols-[repeat(auto-fill,minmax(10em,1fr))] gap-2"
-          style={{ gridAutoRows: "1px" }}
-        >
-          {visible.map((memo) => (
-            <MemoCard
-              key={memo.id}
-              memo={memo}
-              selected={memo.id === opened?.id}
-              onOpen={() => setView({ kind: "detail", id: memo.id })}
-            />
-          ))}
-        </div>
-      )}
+      <div className="scrollbar mt-4 min-h-0 flex-1 overflow-y-auto">
+        {visible.length === 0 ? (
+          <p className="text-sm text-fg-secondary">
+            {pinOnly ? "핀한 메모가 없습니다." : "메모가 없습니다."}
+          </p>
+        ) : (
+          <div
+            className="grid grid-flow-dense grid-cols-[repeat(auto-fill,minmax(10em,1fr))] gap-2"
+            style={{ gridAutoRows: "1px" }}
+          >
+            {visible.map((memo) => (
+              <MemoCard
+                key={memo.id}
+                memo={memo}
+                selected={memo.id === opened?.id}
+                onOpen={() => setView({ kind: "detail", id: memo.id })}
+              />
+            ))}
+          </div>
+        )}
+      </div>
       {view?.kind === "create" && (
         <DetailPanelBody>
           <MemoDraft
@@ -291,7 +293,7 @@ function MemoDetail({ memo }: { memo: MemoItem }) {
   const icon = useIconScale();
   const togglePin = useMemoStore((state) => state.togglePin);
   return (
-    <div className="flex flex-col gap-3">
+    <div className="scrollbar flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4">
       <div className="flex items-start gap-2">
         <h2
           className={cn(
@@ -427,11 +429,7 @@ function MemoDeleteConfirm({
           내용이 있는데 삭제하시겠습니까?
         </p>
         <div className="mt-[1.143em] flex justify-end gap-[0.571em]">
-          <GlassButton
-            className="pad-sm text-sm"
-            onClick={onCancel}
-            autoFocus
-          >
+          <GlassButton className="pad-sm text-sm" onClick={onCancel} autoFocus>
             취소
           </GlassButton>
           <GlassButton className="pad-sm text-sm" onClick={onConfirm}>
@@ -511,7 +509,7 @@ function MemoDraft({
 
   return (
     <form
-      className="flex flex-col gap-2"
+      className="scrollbar flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-4"
       onSubmit={save}
       onKeyDown={saveFromKey}
     >

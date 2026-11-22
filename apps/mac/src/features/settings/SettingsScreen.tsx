@@ -208,7 +208,15 @@ function DataSection() {
 
 export function SettingsScreen() {
   const section = useSettingsStore((state) => state.section);
-  if (section === "display") return <DisplaySection />;
-  if (section === "data") return <DataSection />;
-  return <SettingsHome />;
+  return (
+    <div className="scrollbar min-h-0 flex-1 overflow-y-auto">
+      {section === "display" ? (
+        <DisplaySection />
+      ) : section === "data" ? (
+        <DataSection />
+      ) : (
+        <SettingsHome />
+      )}
+    </div>
+  );
 }

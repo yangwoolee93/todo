@@ -45,8 +45,8 @@
   --scrollbar-size: 8px;
   --scrollbar-inset: 1rem;
   --scrollbar-gap: calc((var(--scrollbar-inset) - var(--scrollbar-size)) / 2);
-  --scrollbar-thumb: #c4bcb0;
-  --scrollbar-thumb-hover: #a8a29e;
+  --scrollbar-thumb: #78716c;
+  --scrollbar-thumb-hover: #57534e;
 }
 
 .light {
@@ -68,8 +68,8 @@
   --color-failed: #ea580c;
   --color-failed-soft: #ffedd5;
   --color-today-ring: #45ada5;
-  --scrollbar-thumb: #c4bcb0;
-  --scrollbar-thumb-hover: #a8a29e;
+  --scrollbar-thumb: #78716c;
+  --scrollbar-thumb-hover: #57534e;
   --color-saturday: #2563eb;
   --color-memo-teal: #45ada5;
   --color-memo-blue: #2563eb;
@@ -101,8 +101,8 @@
   --color-failed: #fb923c;
   --color-failed-soft: #431407;
   --color-today-ring: #2dd4bf;
-  --scrollbar-thumb: #404040;
-  --scrollbar-thumb-hover: #525252;
+  --scrollbar-thumb: #737373;
+  --scrollbar-thumb-hover: #a3a3a3;
   --color-saturday: #3b82f6;
   --color-memo-teal: #2dd4bf;
   --color-memo-blue: #60a5fa;
@@ -306,10 +306,9 @@ html[data-font-step="xlarge"] {
   background: transparent;
 }
 
+/* 투명 테두리와 background-clip은 WebKit에서 손잡이를 검게 그린다. */
 .scrollbar::-webkit-scrollbar-thumb {
   background-color: var(--scrollbar-thumb);
-  border: 2px solid transparent;
-  background-clip: padding-box;
   border-radius: 9999px;
   cursor: pointer;
 }
