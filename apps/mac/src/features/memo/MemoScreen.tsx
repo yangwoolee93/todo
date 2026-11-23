@@ -47,6 +47,8 @@ export function MemoScreen({ pageId }: { pageId: string }) {
   const [pinOnly, setPinOnly] = useState(false);
   const [view, setView] = useState<PanelView | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [cardsOverflow, setCardsOverflow] = useState(false);
+  const cardScrollRef = useRef<HTMLDivElement>(null);
   const pageMemos = memos.filter((memo) => memo.pageId === pageId);
   const visible = sortMemos(pageMemos).filter(
     (memo) => !pinOnly || memo.pinned,
@@ -108,6 +110,20 @@ export function MemoScreen({ pageId }: { pageId: string }) {
     setConfirmingDelete(false);
   };
 
+  useLayoutEffect(() => {
+    const el = cardScrollRef.current;
+    if (!el) return;
+    const update = () => {
+      const overflows = el.scrollHeight - el.clientHeight > 1;
+      setCardsOverflow((current) => (current === overflows ? current : overflows));
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    if (el.firstElementChild) observer.observe(el.firstElementChild);
+    return () => observer.disconnect();
+  }, [visible.length]);
+
   return (
     <div className="mt-4 flex min-h-0 flex-1 flex-col">
       <div className="flex items-center gap-2">
@@ -131,7 +147,13 @@ export function MemoScreen({ pageId }: { pageId: string }) {
           핀만
         </button>
       </div>
-      <div className="scrollbar mt-4 min-h-0 flex-1 overflow-y-auto">
+      <div
+        ref={cardScrollRef}
+        className={cn(
+          "scrollbar mt-4 min-h-0 flex-1 overflow-y-auto",
+          cardsOverflow && "pr-2",
+        )}
+      >
         {visible.length === 0 ? (
           <p className="text-sm text-fg-secondary">
             {pinOnly ? "핀한 메모가 없습니다." : "메모가 없습니다."}
