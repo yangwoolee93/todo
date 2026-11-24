@@ -21,6 +21,7 @@ import { useIconScale } from "./hooks/useIconScale";
 import { useThemeSync } from "./hooks/useThemeSync";
 import { useDetailPanelStore } from "./stores/useDetailPanelStore";
 import { useMemoStore } from "./stores/useMemoStore";
+import { useTimelineStore } from "./stores/useTimelineStore";
 import { settingsSectionLabel, useSettingsStore } from "./stores/useSettingsStore";
 import { useSidebarStore } from "./stores/useSidebarStore";
 import { cn } from "./utils/cn";
@@ -109,6 +110,7 @@ export function App() {
     void (async () => {
       await useSidebarStore.getState().hydrate();
       await useMemoStore.getState().hydrate();
+      await useTimelineStore.getState().hydrate();
     })();
   }, []);
 

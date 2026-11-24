@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { MemoScreen } from "../memo/MemoScreen";
+import { TimelineScreen } from "../timeline/TimelineScreen";
 import { pageIcons, pageTypeLabel } from "./pageTypes";
 import { useDetailPanelStore } from "../../stores/useDetailPanelStore";
 import { useIconScale } from "../../hooks/useIconScale";
@@ -36,6 +37,9 @@ export function PageScreen() {
           {pageTypeLabel(page.type)}
         </p>
         {page.type === "memo" && <MemoScreen key={page.id} pageId={page.id} />}
+        {page.type === "timeline" && (
+          <TimelineScreen key={page.id} pageId={page.id} />
+        )}
       </div>
     );
   }
