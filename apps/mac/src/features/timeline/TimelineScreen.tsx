@@ -335,7 +335,7 @@ export function TimelineScreen({ pageId }: { pageId: string }) {
       <div
         ref={scrollRef}
         role="region"
-        aria-label="타임라인"
+        aria-label="케이던스"
         data-timeline-scroll
         className="scrollbar mt-2 min-h-0 flex-1 overflow-auto overscroll-x-contain"
       >

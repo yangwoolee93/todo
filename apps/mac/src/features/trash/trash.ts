@@ -77,7 +77,7 @@ export function trashRows(
       kind: "series",
       id: todo.seriesId,
       title: todo.title.trim() || "제목 없는 할일",
-      place: [group?.name, page?.name].filter(Boolean).join(" / ") || "타임라인",
+      place: [group?.name, page?.name].filter(Boolean).join(" / ") || "케이던스",
       deletedAt: todo.deletedAt,
     });
   }

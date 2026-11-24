@@ -1,7 +1,7 @@
 import { NotepadIcon, PathIcon, type Icon } from "@phosphor-icons/react";
 
 export const pageTypes = [
-  { id: "timeline", label: "타임라인" },
+  { id: "timeline", label: "케이던스" },
   { id: "memo", label: "메모" },
 ] as const;
 
