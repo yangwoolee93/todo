@@ -1,19 +1,17 @@
 import { DotsThreeIcon, PlusIcon } from "@phosphor-icons/react";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useIconScale } from "../../hooks/useIconScale";
 import { useSidebarStore } from "../../stores/useSidebarStore";
 import { TrashHoldConfirm } from "../trash/TrashHoldConfirm";
 import { AddPageForm } from "./SidebarTree";
 
-type Panel = "add" | "menu" | "rename" | null;
+type Panel = "add" | "menu" | null;
 
 export function SelectionActions() {
   const groups = useSidebarStore((state) => state.groups);
   const pages = useSidebarStore((state) => state.pages);
   const selectedGroupId = useSidebarStore((state) => state.selectedGroupId);
   const selectedPageId = useSidebarStore((state) => state.selectedPageId);
-  const renameGroup = useSidebarStore((state) => state.renameGroup);
-  const renamePage = useSidebarStore((state) => state.renamePage);
   const trashGroup = useSidebarStore((state) => state.trashGroup);
   const trashPage = useSidebarStore((state) => state.trashPage);
   const [panel, setPanel] = useState<Panel>(null);
@@ -27,19 +25,9 @@ export function SelectionActions() {
       ? null
       : (groups.find((group) => group.id === selectedGroupId) ?? null);
   const target = project
-    ? {
-        kind: "group" as const,
-        id: project.id,
-        name: project.name,
-        label: "프로젝트 이름",
-      }
+    ? { kind: "group" as const, id: project.id }
     : page
-      ? {
-          kind: "page" as const,
-          id: page.id,
-          name: page.name,
-          label: "페이지 이름",
-        }
+      ? { kind: "page" as const, id: page.id }
       : null;
 
   useEffect(() => {
@@ -57,16 +45,6 @@ export function SelectionActions() {
   }, [panel]);
 
   if (!target) return null;
-
-  const submitRename = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const value = new FormData(event.currentTarget).get("name");
-    const name = typeof value === "string" ? value.trim() : "";
-    if (!name) return;
-    if (target.kind === "group") renameGroup(target.id, name);
-    else renamePage(target.id, name);
-    setPanel(null);
-  };
 
   return (
     <div
@@ -98,7 +76,7 @@ export function SelectionActions() {
         <button
           type="button"
           aria-label="메뉴"
-          aria-expanded={panel === "menu" || panel === "rename"}
+          aria-expanded={panel === "menu"}
           className="flex rounded-full p-1 text-fg hover:bg-fg/10"
           onClick={() => setPanel(panel === "menu" ? null : "menu")}
         >
@@ -106,13 +84,6 @@ export function SelectionActions() {
         </button>
         {panel === "menu" && (
           <div className="menu-xs absolute top-full right-0 z-30 mt-2 flex flex-col rounded-xl border border-border bg-surface">
-            <button
-              type="button"
-              className="rounded-md pad-xs text-left text-xs text-fg hover:bg-fg/10"
-              onClick={() => setPanel("rename")}
-            >
-              이름 수정
-            </button>
             <button
               type="button"
               className="rounded-md pad-xs text-left text-xs text-fg hover:bg-fg/10"
@@ -124,35 +95,6 @@ export function SelectionActions() {
               삭제
             </button>
           </div>
-        )}
-        {panel === "rename" && (
-          <form
-            className="menu-sm absolute top-full right-0 z-30 mt-2 flex flex-col gap-[0.571em] rounded-2xl border border-border bg-surface"
-            onSubmit={submitRename}
-          >
-            <input
-              name="name"
-              defaultValue={target.name}
-              aria-label={target.label}
-              autoFocus
-              className="w-full rounded-lg bg-fg/5 pad-field text-sm text-fg outline-none"
-            />
-            <div className="flex justify-end gap-1">
-              <button
-                type="button"
-                className="rounded-full pad-xs text-xs text-fg-secondary hover:bg-fg/10"
-                onClick={() => setPanel(null)}
-              >
-                취소
-              </button>
-              <button
-                type="submit"
-                className="rounded-full pad-xs text-xs text-fg hover:bg-fg/10"
-              >
-                저장
-              </button>
-            </div>
-          </form>
         )}
       </div>
       {confirming && target && (
