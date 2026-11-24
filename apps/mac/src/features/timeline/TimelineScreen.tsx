@@ -130,15 +130,19 @@ export function TimelineScreen({ pageId }: { pageId: string }) {
     const el = scrollRef.current;
     if (!el) return;
     lockRef.current = true;
+    let moved = false;
     if (shiftRef.current) {
       el.scrollLeft += shiftRef.current;
       shiftRef.current = 0;
+      moved = true;
     }
     if (bootRef.current || jumpRef.current) {
       scrollTodayToCenter(el);
       bootRef.current = false;
       jumpRef.current = false;
+      moved = true;
     }
+    if (moved) el.dispatchEvent(new Event("scroll"));
     lockRef.current = false;
     publishToday(el, setTodayInView);
   }, [months]);
@@ -326,6 +330,7 @@ export function TimelineScreen({ pageId }: { pageId: string }) {
         ref={scrollRef}
         role="region"
         aria-label="타임라인"
+        data-timeline-scroll
         className="scrollbar mt-2 min-h-0 flex-1 overflow-auto overscroll-x-contain"
       >
         <div

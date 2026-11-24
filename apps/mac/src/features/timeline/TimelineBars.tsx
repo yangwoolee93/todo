@@ -37,6 +37,7 @@ export function TimelineBars({
   onOpen: (seriesId: string) => void;
 }) {
   const [foldTick, setFoldTick] = useState(0);
+  const selfRef = useRef<HTMLDivElement>(null);
   const titleRefs = useRef(new Map<string, HTMLParagraphElement>());
   const rowRefs = useRef(new Map<string, HTMLDivElement>());
   const regionRefs = useRef(new Map<string, HTMLDivElement>());
@@ -45,86 +46,105 @@ export function TimelineBars({
   const groups = groupBars(bars);
 
   useLayoutEffect(() => {
-    const root = scrollRef.current;
-    if (!root) return;
-    const update = () => {
-      const colWidth =
-        root.querySelector<HTMLElement>("[data-day]")?.getBoundingClientRect().width ?? 0;
-      if (colWidth <= 0 || dayCount <= 0) return;
-      const track = colWidth * dayCount;
-      const viewLeft = root.scrollLeft;
-      const viewRight = viewLeft + root.clientWidth;
-      const edge = colWidth * (0.25 / 4);
-      const placed = new Map<string, ReturnType<typeof placeTitle>>();
+    let cancelled = false;
+    let stop = () => {};
+    const start = () => {
+      if (cancelled) return;
+      const root =
+        scrollRef.current ??
+        selfRef.current?.closest<HTMLElement>("[data-timeline-scroll]") ??
+        null;
+      if (!root) return;
+      stop();
+      const update = () => {
+        const colWidth =
+          root.querySelector<HTMLElement>("[data-day]")?.getBoundingClientRect().width ?? 0;
+        if (colWidth <= 0 || dayCount <= 0) return;
+        const track = colWidth * dayCount;
+        const viewLeft = root.scrollLeft;
+        const viewRight = viewLeft + root.clientWidth;
+        const edge = colWidth * (0.25 / 4);
+        const placed = new Map<string, ReturnType<typeof placeTitle>>();
 
-      for (const bar of groups.flatMap((group) => visibleBars(group))) {
-        const title = titleRefs.current.get(bar.seriesId);
-        if (!title || bar.segments.length === 0) continue;
-        const ranges = bar.segments.map((segment) =>
-          segmentEdges(segment.start, segment.todos.length, colWidth),
-        );
-        const place = placeTitle(ranges, title.offsetWidth, track, viewLeft, viewRight);
-        placed.set(bar.seriesId, place);
-        title.style.opacity = place.visible ? "1" : "0";
-        title.style.transform = `translateX(${place.left}px)`;
-      }
-
-      for (const group of groups) {
-        const shown = visibleBars(group);
-        const region = regionRefs.current.get(group.parent.seriesId);
-        if (region && group.children.length > 0) {
-          const box = regionSpan(
-            shown.flatMap((bar) => {
-              const bounds = barBounds(bar);
-              return bounds ? [bounds] : [];
-            }),
-            shown.flatMap((bar) => {
-              const place = placed.get(bar.seriesId);
-              return place ? [place] : [];
-            }),
-            track,
-            colWidth,
+        for (const bar of groups.flatMap((group) => visibleBars(group))) {
+          const title = titleRefs.current.get(bar.seriesId);
+          if (!title || bar.segments.length === 0) continue;
+          const ranges = bar.segments.map((segment) =>
+            segmentEdges(segment.start, segment.todos.length, colWidth),
           );
-          region.style.left = `${box.left}px`;
-          region.style.width = `${box.width}px`;
+          const place = placeTitle(ranges, title.offsetWidth, track, viewLeft, viewRight);
+          placed.set(bar.seriesId, place);
+          title.style.opacity = place.visible ? "1" : "0";
+          title.style.transform = `translateX(${place.left}px)`;
         }
 
-        const pathNode = connectorRefs.current.get(group.parent.seriesId);
-        const groupNode = groupRefs.current.get(group.parent.seriesId);
-        const parentRow = rowRefs.current.get(group.parent.seriesId);
-        const parentBounds = barBounds(group.parent);
-        const open = group.children.length > 0 && isSeriesOpen(group.parent.seriesId);
-        if (!pathNode || !groupNode || !parentRow || !parentBounds || !open) {
-          if (pathNode) pathNode.setAttribute("d", "");
-          continue;
+        for (const group of groups) {
+          const shown = visibleBars(group);
+          const region = regionRefs.current.get(group.parent.seriesId);
+          if (region && group.children.length > 0) {
+            const box = regionSpan(
+              shown.flatMap((bar) => {
+                const bounds = barBounds(bar);
+                return bounds ? [bounds] : [];
+              }),
+              shown.flatMap((bar) => {
+                const place = placed.get(bar.seriesId);
+                return place ? [place] : [];
+              }),
+              track,
+              colWidth,
+            );
+            region.style.left = `${box.left}px`;
+            region.style.width = `${box.width}px`;
+          }
+
+          const pathNode = connectorRefs.current.get(group.parent.seriesId);
+          const groupNode = groupRefs.current.get(group.parent.seriesId);
+          const parentRow = rowRefs.current.get(group.parent.seriesId);
+          const parentBounds = barBounds(group.parent);
+          const open = group.children.length > 0 && isSeriesOpen(group.parent.seriesId);
+          if (!pathNode || !groupNode || !parentRow || !parentBounds || !open) {
+            if (pathNode) pathNode.setAttribute("d", "");
+            continue;
+          }
+          const groupTop = groupNode.getBoundingClientRect().top;
+          const parentRect = parentRow.getBoundingClientRect();
+          const parentMid = parentRect.top + parentRect.height / 2 - groupTop;
+          const parentLeft = parentBounds.start * colWidth + edge;
+          const trunkX = Math.max(4, parentLeft - 10);
+          const joints = group.children.flatMap((child) => {
+            const row = rowRefs.current.get(child.seriesId);
+            const start = child.segments[0]?.start;
+            if (!row || start === undefined) return [];
+            const rect = row.getBoundingClientRect();
+            return [
+              {
+                mid: rect.top + rect.height / 2 - groupTop,
+                childLeft: start * colWidth + edge,
+              },
+            ];
+          });
+          pathNode.setAttribute("d", joints.length ? connectorPath(trunkX, parentMid, joints) : "");
         }
-        const groupTop = groupNode.getBoundingClientRect().top;
-        const parentRect = parentRow.getBoundingClientRect();
-        const parentMid = parentRect.top + parentRect.height / 2 - groupTop;
-        const parentLeft = parentBounds.start * colWidth + edge;
-        const trunkX = Math.max(4, parentLeft - 10);
-        const joints = group.children.flatMap((child) => {
-          const row = rowRefs.current.get(child.seriesId);
-          const start = child.segments[0]?.start;
-          if (!row || start === undefined) return [];
-          const rect = row.getBoundingClientRect();
-          return [
-            {
-              mid: rect.top + rect.height / 2 - groupTop,
-              childLeft: start * colWidth + edge,
-            },
-          ];
-        });
-        pathNode.setAttribute("d", joints.length ? connectorPath(trunkX, parentMid, joints) : "");
-      }
+      };
+      update();
+      root.addEventListener("scroll", update, { passive: true });
+      const observer = new ResizeObserver(update);
+      observer.observe(root);
+      const column = root.querySelector("[data-day]");
+      if (column) observer.observe(column);
+      stop = () => {
+        root.removeEventListener("scroll", update);
+        observer.disconnect();
+      };
     };
-    update();
-    root.addEventListener("scroll", update, { passive: true });
-    const observer = new ResizeObserver(update);
-    observer.observe(root);
+    start();
+    queueMicrotask(start);
+    const frame = requestAnimationFrame(start);
     return () => {
-      root.removeEventListener("scroll", update);
-      observer.disconnect();
+      cancelled = true;
+      cancelAnimationFrame(frame);
+      stop();
     };
   }, [bars, dayCount, foldTick, groups, scrollRef]);
 
@@ -136,7 +156,7 @@ export function TimelineBars({
   const rootSlot = rootPreview ? insertSlot(groups.map((group) => group.parent), rootPreview, sorts) : -1;
 
   return (
-    <div className="pointer-events-none relative flex flex-col gap-2 py-2">
+    <div ref={selfRef} className="pointer-events-none relative flex flex-col gap-2 py-2">
       {groups.map((group, index) => {
         const hasChildren = group.children.length > 0;
         const open = foldTick >= 0 && isSeriesOpen(group.parent.seriesId);
