@@ -19,6 +19,7 @@ export type SidebarGroup = {
   name: string;
   collapsed: boolean;
   updatedAt: number;
+  deletedAt: number | null;
 };
 
 export type SidebarPage = {
@@ -27,11 +28,7 @@ export type SidebarPage = {
   type: PageTypeId;
   name: string;
   updatedAt: number;
-};
-
-export type DeleteTarget = {
-  kind: "group" | "page";
-  id: string;
+  deletedAt: number | null;
 };
 
 type SidebarState = {
@@ -40,7 +37,7 @@ type SidebarState = {
   selectedPageId: string | null;
   selectedGroupId: string | null;
   settingsOpen: boolean;
-  deleteTarget: DeleteTarget | null;
+  trashOpen: boolean;
   hydrated: boolean;
   entries: HistoryLocation[];
   index: number;
@@ -54,12 +51,16 @@ type SidebarActions = {
   toggleGroup: (id: string) => void;
   selectProject: (id: string) => void;
   selectPage: (id: string) => void;
-  requestDelete: (target: DeleteTarget) => void;
-  cancelDelete: () => void;
-  confirmDelete: () => void;
+  trashGroup: (id: string) => void;
+  trashPage: (id: string) => void;
+  restoreGroup: (id: string) => void;
+  restorePage: (id: string) => void;
+  purgeGroup: (id: string) => void;
+  purgePage: (id: string) => void;
   back: () => void;
   forward: () => void;
   toggleSettings: () => void;
+  toggleTrash: () => void;
   hydrate: () => Promise<void>;
 };
 
@@ -68,11 +69,17 @@ function locationAlive(
   groups: SidebarGroup[],
   pages: SidebarPage[],
 ) {
-  if (location.kind === "empty" || location.kind === "settings") return true;
-  if (location.kind === "project") {
-    return groups.some((group) => group.id === location.id);
+  if (location.kind === "empty" || location.kind === "settings" || location.kind === "trash") {
+    return true;
   }
-  return pages.some((page) => page.id === location.id);
+  if (location.kind === "project") {
+    return groups.some((group) => group.id === location.id && group.deletedAt == null);
+  }
+  const page = pages.find((item) => item.id === location.id && item.deletedAt == null);
+  return (
+    page != null &&
+    groups.some((group) => group.id === page.groupId && group.deletedAt == null)
+  );
 }
 
 function trimmed(value: string) {
@@ -85,10 +92,12 @@ function now() {
 }
 
 function locationFrom(state: {
+  trashOpen: boolean;
   settingsOpen: boolean;
   selectedPageId: string | null;
   selectedGroupId: string | null;
 }): HistoryLocation {
+  if (state.trashOpen) return { kind: "trash" };
   if (state.settingsOpen) return { kind: "settings" };
   if (state.selectedPageId) return { kind: "page", id: state.selectedPageId };
   if (state.selectedGroupId) return { kind: "project", id: state.selectedGroupId };
@@ -110,24 +119,44 @@ function pushed(
 }
 
 function reveal(state: SidebarState, location: HistoryLocation): Partial<SidebarState> {
-  if (location.kind === "settings") return { settingsOpen: true };
+  if (location.kind === "trash") {
+    return {
+      trashOpen: true,
+      settingsOpen: false,
+      selectedPageId: null,
+      selectedGroupId: null,
+    };
+  }
+  if (location.kind === "settings") {
+    return {
+      settingsOpen: true,
+      trashOpen: false,
+      selectedPageId: null,
+      selectedGroupId: null,
+    };
+  }
   if (location.kind === "project") {
-    if (!state.groups.some((group) => group.id === location.id)) {
-      return { settingsOpen: false, selectedPageId: null, selectedGroupId: null };
+    if (!state.groups.some((group) => group.id === location.id && group.deletedAt == null)) {
+      return { settingsOpen: false, trashOpen: false, selectedPageId: null, selectedGroupId: null };
     }
     return {
       settingsOpen: false,
+      trashOpen: false,
       selectedPageId: null,
       selectedGroupId: location.id,
     };
   }
   if (location.kind === "page") {
-    const page = state.pages.find((item) => item.id === location.id);
-    if (!page) {
-      return { settingsOpen: false, selectedPageId: null, selectedGroupId: null };
+    const page = state.pages.find((item) => item.id === location.id && item.deletedAt == null);
+    const groupLive =
+      page != null &&
+      state.groups.some((group) => group.id === page.groupId && group.deletedAt == null);
+    if (!page || !groupLive) {
+      return { settingsOpen: false, trashOpen: false, selectedPageId: null, selectedGroupId: null };
     }
     return {
       settingsOpen: false,
+      trashOpen: false,
       selectedPageId: page.id,
       selectedGroupId: null,
       groups: state.groups.map((group) =>
@@ -137,7 +166,7 @@ function reveal(state: SidebarState, location: HistoryLocation): Partial<Sidebar
       ),
     };
   }
-  return { settingsOpen: false, selectedPageId: null, selectedGroupId: null };
+  return { settingsOpen: false, trashOpen: false, selectedPageId: null, selectedGroupId: null };
 }
 
 function remembered(
@@ -174,7 +203,7 @@ export const useSidebarStore = create<SidebarState & SidebarActions>()(
     selectedPageId: null,
     selectedGroupId: null,
     settingsOpen: false,
-    deleteTarget: null,
+    trashOpen: false,
     hydrated: !inTauri(),
     entries: [{ kind: "empty" }],
     index: 0,
@@ -192,11 +221,13 @@ export const useSidebarStore = create<SidebarState & SidebarActions>()(
               name: groupName,
               collapsed: false,
               updatedAt: now(),
+              deletedAt: null,
             },
           ],
           selectedPageId: null,
           selectedGroupId: groupId,
           settingsOpen: false,
+          trashOpen: false,
         }),
       );
     },
@@ -214,11 +245,12 @@ export const useSidebarStore = create<SidebarState & SidebarActions>()(
           ),
           pages: [
             ...state.pages,
-            { id: pageId, groupId, type, name: pageName, updatedAt: now() },
+            { id: pageId, groupId, type, name: pageName, updatedAt: now(), deletedAt: null },
           ],
           selectedPageId: null,
           selectedGroupId: groupId,
           settingsOpen: false,
+          trashOpen: false,
         }),
       );
     },
@@ -255,22 +287,28 @@ export const useSidebarStore = create<SidebarState & SidebarActions>()(
       })),
 
     selectProject: (id) =>
-      set((state) =>
-        pushed(state, {
+      set((state) => {
+        if (!state.groups.some((group) => group.id === id && group.deletedAt == null)) return {};
+        return pushed(state, {
           selectedGroupId: id,
           selectedPageId: null,
           settingsOpen: false,
-        }),
-      ),
+          trashOpen: false,
+        });
+      }),
 
     selectPage: (id) =>
       set((state) => {
-        const page = state.pages.find((item) => item.id === id);
-        if (!page) return {};
+        const page = state.pages.find((item) => item.id === id && item.deletedAt == null);
+        const groupLive =
+          page != null &&
+          state.groups.some((group) => group.id === page.groupId && group.deletedAt == null);
+        if (!page || !groupLive) return {};
         return pushed(state, {
           selectedPageId: id,
           selectedGroupId: null,
           settingsOpen: false,
+          trashOpen: false,
           groups: state.groups.map((group) =>
             group.id === page.groupId && group.collapsed
               ? { ...group, collapsed: false, updatedAt: now() }
@@ -279,39 +317,89 @@ export const useSidebarStore = create<SidebarState & SidebarActions>()(
         });
       }),
 
-    requestDelete: (target) => set({ deleteTarget: target }),
-
-    cancelDelete: () => set({ deleteTarget: null }),
-
-    confirmDelete: () =>
+    trashGroup: (id) =>
       set((state) => {
-        const target = state.deleteTarget;
-        if (!target) return {};
-        if (target.kind === "page") {
-          return remembered(state, {
-            pages: state.pages.filter((page) => page.id !== target.id),
-            selectedPageId:
-              state.selectedPageId === target.id ? null : state.selectedPageId,
-            deleteTarget: null,
-          });
-        }
-        const removed = new Set(
-          state.pages
-            .filter((page) => page.groupId === target.id)
-            .map((page) => page.id),
+        const group = state.groups.find((item) => item.id === id && item.deletedAt == null);
+        if (!group) return {};
+        const pageIds = new Set(
+          state.pages.filter((page) => page.groupId === id).map((page) => page.id),
         );
-        const partial = {
-          groups: state.groups.filter((group) => group.id !== target.id),
-          pages: state.pages.filter((page) => page.groupId !== target.id),
+        const viewing =
+          state.selectedGroupId === id ||
+          (state.selectedPageId != null && pageIds.has(state.selectedPageId));
+        return remembered(state, {
+          groups: state.groups.map((item) =>
+            item.id === id ? { ...item, deletedAt: now(), updatedAt: now() } : item,
+          ),
+          selectedPageId: viewing ? null : state.selectedPageId,
+          selectedGroupId: viewing ? null : state.selectedGroupId,
+        });
+      }),
+
+    trashPage: (id) =>
+      set((state) => {
+        const page = state.pages.find((item) => item.id === id && item.deletedAt == null);
+        if (!page) return {};
+        const groupLive = state.groups.some(
+          (group) => group.id === page.groupId && group.deletedAt == null,
+        );
+        const viewing = state.selectedPageId === id;
+        return remembered(state, {
+          pages: state.pages.map((item) =>
+            item.id === id ? { ...item, deletedAt: now(), updatedAt: now() } : item,
+          ),
+          selectedPageId: viewing ? null : state.selectedPageId,
+          selectedGroupId: viewing && groupLive ? page.groupId : state.selectedGroupId,
+        });
+      }),
+
+    restoreGroup: (id) =>
+      set((state) => ({
+        groups: state.groups.map((group) =>
+          group.id === id && group.deletedAt != null
+            ? { ...group, deletedAt: null, updatedAt: now() }
+            : group,
+        ),
+        pages: state.pages.map((page) =>
+          page.groupId === id && page.deletedAt != null
+            ? { ...page, deletedAt: null, updatedAt: now() }
+            : page,
+        ),
+      })),
+
+    restorePage: (id) =>
+      set((state) => ({
+        pages: state.pages.map((item) =>
+          item.id === id && item.deletedAt != null
+            ? { ...item, deletedAt: null, updatedAt: now() }
+            : item,
+        ),
+      })),
+
+    purgeGroup: (id) =>
+      set((state) => {
+        const removed = new Set(
+          state.pages.filter((page) => page.groupId === id).map((page) => page.id),
+        );
+        if (!state.groups.some((group) => group.id === id) && removed.size === 0) return {};
+        return remembered(state, {
+          groups: state.groups.filter((group) => group.id !== id),
+          pages: state.pages.filter((page) => page.groupId !== id),
           selectedPageId:
             state.selectedPageId && removed.has(state.selectedPageId)
               ? null
               : state.selectedPageId,
-          selectedGroupId:
-            state.selectedGroupId === target.id ? null : state.selectedGroupId,
-          deleteTarget: null,
-        };
-        return remembered(state, partial);
+          selectedGroupId: state.selectedGroupId === id ? null : state.selectedGroupId,
+        });
+      }),
+
+    purgePage: (id) =>
+      set((state) => {
+        if (!state.pages.some((page) => page.id === id)) return {};
+        return remembered(state, {
+          pages: state.pages.filter((page) => page.id !== id),
+          selectedPageId: state.selectedPageId === id ? null : state.selectedPageId,
+        });
       }),
 
     back: () => set((state) => step(state, -1)),
@@ -333,7 +421,28 @@ export const useSidebarStore = create<SidebarState & SidebarActions>()(
         return;
       }
       useSettingsStore.getState().setSection("home");
-      set((current) => pushed(current, { settingsOpen: true }));
+      set((current) => pushed(current, { settingsOpen: true, trashOpen: false }));
+    },
+
+    toggleTrash: () => {
+      const state = get();
+      if (state.trashOpen) {
+        set((current) => {
+          if (current.entries[current.index]?.kind === "trash" && current.index > 0) {
+            return step(current, -1);
+          }
+          return remembered(current, { trashOpen: false });
+        });
+        return;
+      }
+      set((current) =>
+        pushed(current, {
+          trashOpen: true,
+          settingsOpen: false,
+          selectedPageId: null,
+          selectedGroupId: null,
+        }),
+      );
     },
 
     hydrate: async () => {
@@ -357,14 +466,27 @@ let lastSaved = "";
 let writing = false;
 let queued: MenuSnapshot | null = null;
 
+function livePage(menu: MenuSnapshot, pageId: string | null) {
+  const page = menu.pages.find((item) => item.id === pageId && item.deletedAt == null);
+  return (
+    page != null &&
+    menu.groups.some((group) => group.id === page.groupId && group.deletedAt == null)
+  );
+}
+
 function applyMenu(menu: MenuSnapshot) {
   menuExtra = menu.extra;
   useSidebarStore.setState({
     groups: menu.groups,
     pages: menu.pages,
-    selectedPageId: menu.selection.pageId,
-    selectedGroupId: menu.selection.groupId,
-    deleteTarget: null,
+    selectedPageId: livePage(menu, menu.selection.pageId) ? menu.selection.pageId : null,
+    selectedGroupId: livePage(menu, menu.selection.pageId)
+      ? null
+      : menu.groups.some(
+            (group) => group.id === menu.selection.groupId && group.deletedAt == null,
+          )
+        ? menu.selection.groupId
+        : null,
   });
 }
 

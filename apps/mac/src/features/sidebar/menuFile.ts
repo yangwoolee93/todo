@@ -6,6 +6,7 @@ type MenuGroup = {
   name: string;
   collapsed: boolean;
   updatedAt: number;
+  deletedAt: number | null;
 };
 
 type MenuPage = {
@@ -14,6 +15,7 @@ type MenuPage = {
   type: PageTypeId;
   name: string;
   updatedAt: number;
+  deletedAt: number | null;
 };
 
 export type MenuSelection = {
@@ -99,6 +101,7 @@ function parseGroups(value: unknown): MenuGroup[] {
       name,
       collapsed: group.collapsed === true,
       updatedAt: time(group.updatedAt),
+      deletedAt: stamp(group.deletedAt),
     });
   }
   return groups;
@@ -122,6 +125,7 @@ function parsePages(value: unknown): MenuPage[] {
       type: type as PageTypeId,
       name,
       updatedAt: time(page.updatedAt),
+      deletedAt: stamp(page.deletedAt),
     });
   }
   return pages;
@@ -141,4 +145,8 @@ function text(value: unknown) {
 
 function time(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function stamp(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
 }

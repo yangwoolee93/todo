@@ -11,9 +11,9 @@ import {
   DetailPanelSlot,
   DetailPanelTarget,
 } from "./features/detail/DetailPanelSlot";
-import { DeleteConfirm } from "./features/sidebar/DeleteConfirm";
 import { SettingsScreen } from "./features/settings/SettingsScreen";
 import { PageScreen } from "./features/sidebar/PageScreen";
+import { TrashScreen } from "./features/trash/TrashScreen";
 import { SelectionActions } from "./features/sidebar/SelectionActions";
 import { SidebarTree } from "./features/sidebar/SidebarTree";
 import { useFontSizeSync } from "./hooks/useFontSizeSync";
@@ -48,6 +48,7 @@ export function App() {
   const pages = useSidebarStore((state) => state.pages);
   const selectedPageId = useSidebarStore((state) => state.selectedPageId);
   const settingsOpen = useSidebarStore((state) => state.settingsOpen);
+  const trashOpen = useSidebarStore((state) => state.trashOpen);
   const section = useSettingsStore((state) => state.section);
   const setSection = useSettingsStore((state) => state.setSection);
 
@@ -65,19 +66,24 @@ export function App() {
   const heldShutRef = useRef(false);
   const [heldShut, setHeldShut] = useState(false);
   const [frame, setFrame] = useState({ available: 0, headerTop: 0 });
-  const selectedPage = pages.find((page) => page.id === selectedPageId);
+  const selectedPage = pages.find((page) => {
+    if (page.id !== selectedPageId || page.deletedAt != null) return false;
+    return groups.some((group) => group.id === page.groupId && group.deletedAt == null);
+  });
   const pageLayout = detailLayout[selectedPage?.type ?? "memo"];
   const overlay =
     !heldShut &&
     frame.available > 0 &&
     detailWidth > frame.available - pageLayout.contentMin;
   const covered = overlay && detailWidth >= frame.available;
-  const selectedGroup = groups.find((group) =>
-    selectedPage
-      ? group.id === selectedPage.groupId
-      : group.id === selectedGroupId,
+  const selectedGroup = groups.find(
+    (group) =>
+      group.deletedAt == null &&
+      (selectedPage ? group.id === selectedPage.groupId : group.id === selectedGroupId),
   );
-  const contentTitle = settingsOpen
+  const contentTitle = trashOpen
+    ? [{ id: "trash", name: "휴지통", kind: "trash" as const }]
+    : settingsOpen
     ? [
         { id: "settings", name: "설정", kind: "settings" as const },
         ...(section === "home"
@@ -378,7 +384,7 @@ export function App() {
                     );
                   })}
               </div>
-              {hydrated && !detailOpen && !settingsOpen && <SelectionActions />}
+              {hydrated && !detailOpen && !settingsOpen && !trashOpen && <SelectionActions />}
             </div>
           </div>
           <div
@@ -390,7 +396,8 @@ export function App() {
             onClick={closeDetailOnBackground}
           >
             <div className="mt-2 flex min-h-0 flex-1 flex-col">
-              {hydrated && (settingsOpen ? <SettingsScreen /> : <PageScreen />)}
+              {hydrated &&
+                (trashOpen ? <TrashScreen /> : settingsOpen ? <SettingsScreen /> : <PageScreen />)}
             </div>
           </div>
         </div>
@@ -454,7 +461,6 @@ export function App() {
             <DetailPanelTarget className="pointer-events-auto flex min-h-0 flex-1 flex-col overflow-hidden" />
           </div>
         )}
-        <DeleteConfirm />
       </div>
     </DetailPanelSlot>
   );

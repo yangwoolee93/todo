@@ -2,7 +2,8 @@ export type HistoryLocation =
   | { kind: "empty" }
   | { kind: "project"; id: string }
   | { kind: "page"; id: string }
-  | { kind: "settings" };
+  | { kind: "settings" }
+  | { kind: "trash" };
 
 export type History = {
   entries: HistoryLocation[];

@@ -12,7 +12,6 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from "react";
-import { createPortal } from "react-dom";
 import { GlassButton } from "../../components/GlassButton";
 import { useIconScale } from "../../hooks/useIconScale";
 import {
@@ -21,6 +20,7 @@ import {
 } from "../detail/DetailPanelSlot";
 import { useDetailPanelStore } from "../../stores/useDetailPanelStore";
 import { useMemoStore, type MemoItem } from "../../stores/useMemoStore";
+import { TrashHoldConfirm } from "../trash/TrashHoldConfirm";
 import { cn } from "../../utils/cn";
 
 type DraftValue = { title: string; body: string; tags: string[] };
@@ -49,7 +49,7 @@ export function MemoScreen({ pageId }: { pageId: string }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [cardsOverflow, setCardsOverflow] = useState(false);
   const cardScrollRef = useRef<HTMLDivElement>(null);
-  const pageMemos = memos.filter((memo) => memo.pageId === pageId);
+  const pageMemos = memos.filter((memo) => memo.pageId === pageId && memo.deletedAt == null);
   const visible = sortMemos(pageMemos).filter(
     (memo) => !pinOnly || memo.pinned,
   );
@@ -75,7 +75,7 @@ export function MemoScreen({ pageId }: { pageId: string }) {
 
   useEffect(() => {
     setConfirmingDelete(false);
-  }, [opened?.id, view?.kind]);
+  }, [opened?.id]);
 
   useEffect(() => {
     return useDetailPanelStore.subscribe((state, previous) => {
@@ -107,7 +107,6 @@ export function MemoScreen({ pageId }: { pageId: string }) {
   const deleteMemo = () => {
     if (!opened) return;
     removeMemo(opened.id);
-    setConfirmingDelete(false);
   };
 
   useLayoutEffect(() => {
@@ -210,14 +209,15 @@ export function MemoScreen({ pageId }: { pageId: string }) {
           </DetailPanelBody>
         </>
       )}
-      {confirmingDelete &&
-        createPortal(
-          <MemoDeleteConfirm
-            onCancel={() => setConfirmingDelete(false)}
-            onConfirm={deleteMemo}
-          />,
-          document.body,
-        )}
+      {confirmingDelete && opened && (
+        <TrashHoldConfirm
+          onCancel={() => setConfirmingDelete(false)}
+          onConfirm={() => {
+            deleteMemo();
+            setConfirmingDelete(false);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -424,41 +424,6 @@ function MemoMenu({
           </button>
         </div>
       )}
-    </div>
-  );
-}
-
-function MemoDeleteConfirm({
-  onCancel,
-  onConfirm,
-}: {
-  onCancel: () => void;
-  onConfirm: () => void;
-}) {
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-base/80"
-      onMouseDown={onCancel}
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="memo-delete-title"
-        className="dialog-sm rounded-2xl border border-border bg-surface"
-        onMouseDown={(event) => event.stopPropagation()}
-      >
-        <p id="memo-delete-title" className="text-sm text-fg">
-          내용이 있는데 삭제하시겠습니까?
-        </p>
-        <div className="mt-[1.143em] flex justify-end gap-[0.571em]">
-          <GlassButton className="pad-sm text-sm" onClick={onCancel} autoFocus>
-            취소
-          </GlassButton>
-          <GlassButton className="pad-sm text-sm" onClick={onConfirm}>
-            삭제
-          </GlassButton>
-        </div>
-      </div>
     </div>
   );
 }

@@ -23,6 +23,7 @@ import {
   type TodoStatusDef,
 } from "../../stores/useTimelineStore";
 import { cn } from "../../utils/cn";
+import { TrashHoldConfirm } from "../trash/TrashHoldConfirm";
 import { FilterMenu } from "./FilterMenu";
 import { setSeriesOpen } from "./fold";
 import { TimelineBars } from "./TimelineBars";
@@ -76,10 +77,15 @@ export function TimelineScreen({ pageId }: { pageId: string }) {
   monthsRef.current = months;
   const today = todayIso();
   const days = useMemo(() => daysInMonths(months), [months]);
-  const pageTodos = useMemo(
-    () => todos.filter((todo) => todo.pageId === pageId),
-    [todos, pageId],
-  );
+  const pageTodos = useMemo(() => {
+    const onPage = todos.filter((todo) => todo.pageId === pageId);
+    const hidden = new Set(
+      onPage.filter((todo) => todo.deletedAt != null).map((todo) => todo.seriesId),
+    );
+    return onPage.filter(
+      (todo) => todo.deletedAt == null && !hidden.has(todo.parentSeriesId),
+    );
+  }, [todos, pageId]);
   const catalog = useMemo(
     () => statusesFor(savedStatuses, pageId),
     [savedStatuses, pageId],
@@ -534,6 +540,7 @@ function ItemDetail({
   const setSeriesSpan = useTimelineStore((state) => state.setSeriesSpan);
   const setStatus = useTimelineStore((state) => state.setStatus);
   const removeSeries = useTimelineStore((state) => state.removeSeries);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const catalog = statusesFor(savedStatuses, pageId);
   const start = todos[0]?.date ?? "";
   const end = todos[todos.length - 1]?.date ?? "";
@@ -559,11 +566,17 @@ function ItemDetail({
           type="button"
           aria-label={`${title} 삭제`}
           className="shrink-0 rounded-full p-1 text-fg-secondary hover:bg-fg/10"
-          onClick={() => removeSeries(seriesId)}
+          onClick={() => setConfirmingDelete(true)}
         >
           <XIcon aria-hidden="true" size={icon(14)} />
         </button>
       </div>
+      {confirmingDelete && (
+        <TrashHoldConfirm
+          onCancel={() => setConfirmingDelete(false)}
+          onConfirm={() => removeSeries(seriesId)}
+        />
+      )}
       <div className="scrollbar min-h-0 flex-1 overflow-y-auto px-4 py-3">
         <BodyField
           body={body}

@@ -132,6 +132,9 @@ fn validate_memos(memos: &Value) -> Result<(), String> {
         {
             return Err("memo 날짜 형식이 올바르지 않습니다.".into());
         }
+        if !optional_stamp(memo) {
+            return Err("memo.deletedAt 형식이 올바르지 않습니다.".into());
+        }
     }
     Ok(())
 }
@@ -219,6 +222,15 @@ fn validate_todos(todos: &Value) -> Result<(), String> {
             || !todo.get("updatedAt").is_some_and(Value::is_number)
         {
             return Err("todo 정렬 형식이 올바르지 않습니다.".into());
+        }
+        if !optional_stamp(todo) {
+            return Err("todo.deletedAt 형식이 올바르지 않습니다.".into());
+        }
+        if todo
+            .get("trashedWith")
+            .is_some_and(|value| !value.is_string())
+        {
+            return Err("todo 휴지통 형식이 올바르지 않습니다.".into());
         }
     }
     Ok(())
@@ -381,6 +393,13 @@ fn valid_todo_date(value: &str) -> bool {
         _ => 0,
     };
     (1..=max).contains(&day)
+}
+
+fn optional_stamp(item: &Map<String, Value>) -> bool {
+    match item.get("deletedAt") {
+        None => true,
+        Some(value) => value.is_null() || value.is_number(),
+    }
 }
 
 fn required_text(memo: &Map<String, Value>, key: &str) -> bool {
@@ -723,6 +742,79 @@ mod tests {
         assert!(err.contains("결합"));
         let raw = fs::read_to_string(&path).unwrap();
         assert!(raw.contains("\"desc\""));
+        let _ = fs::remove_file(path);
+    }
+
+    #[test]
+    fn trashed_memo_and_todo_roundtrip() {
+        let path = test_path("trash");
+        save_memos_at(
+            &path,
+            serde_json::json!([{
+                "id": "m1",
+                "pageId": "p1",
+                "title": "메모",
+                "body": "",
+                "tags": [],
+                "pinned": false,
+                "pinnedAt": null,
+                "createdAt": 1,
+                "updatedAt": 2,
+                "deletedAt": 3
+            }]),
+        )
+        .unwrap();
+        let mut todo = sample_todo();
+        todo["deletedAt"] = serde_json::json!(4);
+        todo["trashedWith"] = serde_json::json!("");
+        save_todos_at(
+            &path,
+            serde_json::json!([todo]),
+            serde_json::json!([]),
+            serde_json::json!([]),
+        )
+        .unwrap();
+        save_menu_at(
+            &path,
+            serde_json::json!({
+                "groups": [{
+                    "id": "g1",
+                    "name": "프로젝트",
+                    "collapsed": false,
+                    "updatedAt": 1,
+                    "deletedAt": 5
+                }],
+                "pages": [],
+                "selection": { "pageId": null, "groupId": null }
+            }),
+        )
+        .unwrap();
+
+        let doc: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
+        assert_eq!(doc["memos"][0]["deletedAt"], 3);
+        assert_eq!(doc["todos"][0]["deletedAt"], 4);
+        assert_eq!(doc["todos"][0]["trashedWith"], "");
+        assert_eq!(doc["menu"]["groups"][0]["deletedAt"], 5);
+
+        let err = save_memos_at(
+            &path,
+            serde_json::json!([{
+                "id": "m1",
+                "pageId": "p1",
+                "title": "메모",
+                "body": "",
+                "tags": [],
+                "pinned": false,
+                "pinnedAt": null,
+                "createdAt": 1,
+                "updatedAt": 2,
+                "deletedAt": "어제"
+            }]),
+        )
+        .unwrap_err();
+        assert!(err.contains("deletedAt"));
+        let raw = fs::read_to_string(&path).unwrap();
+        assert!(raw.contains("\"deletedAt\": 3"));
         let _ = fs::remove_file(path);
     }
 }

@@ -1,4 +1,4 @@
-import { CaretRightIcon, GearIcon, PlusIcon, SidebarIcon } from "@phosphor-icons/react";
+import { CaretRightIcon, GearIcon, PlusIcon, SidebarIcon, TrashIcon } from "@phosphor-icons/react";
 import { useState, type FormEvent } from "react";
 import { useIconScale } from "../../hooks/useIconScale";
 import { cn } from "../../utils/cn";
@@ -8,6 +8,9 @@ import {
   type SidebarPage,
 } from "../../stores/useSidebarStore";
 import { pageIcons, pageTypes, type PageTypeId } from "./pageTypes";
+import { useMemoStore } from "../../stores/useMemoStore";
+import { useTimelineStore } from "../../stores/useTimelineStore";
+import { trashRows } from "../trash/trash";
 
 type Draft = { kind: "group" } | null;
 
@@ -267,7 +270,12 @@ export function SidebarTree({ onToggle }: { onToggle: () => void }) {
   const selectedPageId = useSidebarStore((state) => state.selectedPageId);
   const selectedGroupId = useSidebarStore((state) => state.selectedGroupId);
   const settingsOpen = useSidebarStore((state) => state.settingsOpen);
+  const trashOpen = useSidebarStore((state) => state.trashOpen);
   const toggleSettings = useSidebarStore((state) => state.toggleSettings);
+  const toggleTrash = useSidebarStore((state) => state.toggleTrash);
+  const memos = useMemoStore((state) => state.memos);
+  const todos = useTimelineStore((state) => state.todos);
+  const trashCount = trashRows(groups, pages, memos, todos).length;
   const [draft, setDraft] = useState<Draft>(null);
   const icon = useIconScale();
   const addingGroup = draft?.kind === "group";
@@ -312,11 +320,13 @@ export function SidebarTree({ onToggle }: { onToggle: () => void }) {
       )}
       {/* 프로젝트 및 하위 목록 */}
       <div className="scrollbar pointer-events-auto flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-2.5 pb-2">
-        {groups.map((group) => (
+        {groups
+          .filter((group) => group.deletedAt == null)
+          .map((group) => (
           <GroupBlock
             key={group.id}
             group={group}
-            pages={pages.filter((page) => page.groupId === group.id)}
+            pages={pages.filter((page) => page.groupId === group.id && page.deletedAt == null)}
             selectedPageId={selectedPageId}
             selectedGroupId={selectedGroupId}
             settingsOpen={settingsOpen}
@@ -324,6 +334,26 @@ export function SidebarTree({ onToggle }: { onToggle: () => void }) {
         ))}
       </div>
       <div className="pointer-events-auto shrink-0 px-2.5 pb-2">
+        <button
+          type="button"
+          aria-current={trashOpen ? "page" : undefined}
+          className={cn(
+            "flex w-full items-center gap-2 rounded-lg px-3.5 py-2.5 text-left",
+            trashOpen ? "bg-fg/10" : "hover:bg-fg/5",
+          )}
+          onClick={toggleTrash}
+        >
+          <TrashIcon
+            aria-hidden="true"
+            size={icon(16)}
+            weight="light"
+            className="shrink-0 text-fg-secondary"
+          />
+          <span className="min-w-0 flex-1 font-medium text-fg">휴지통</span>
+          {trashCount > 0 && (
+            <span className="text-xs text-fg-secondary">{trashCount}</span>
+          )}
+        </button>
         <button
           type="button"
           aria-current={settingsOpen ? "page" : undefined}

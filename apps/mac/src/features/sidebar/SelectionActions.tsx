@@ -2,6 +2,7 @@ import { DotsThreeIcon, PlusIcon } from "@phosphor-icons/react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useIconScale } from "../../hooks/useIconScale";
 import { useSidebarStore } from "../../stores/useSidebarStore";
+import { TrashHoldConfirm } from "../trash/TrashHoldConfirm";
 import { AddPageForm } from "./SidebarTree";
 
 type Panel = "add" | "menu" | "rename" | null;
@@ -13,8 +14,10 @@ export function SelectionActions() {
   const selectedPageId = useSidebarStore((state) => state.selectedPageId);
   const renameGroup = useSidebarStore((state) => state.renameGroup);
   const renamePage = useSidebarStore((state) => state.renamePage);
-  const requestDelete = useSidebarStore((state) => state.requestDelete);
+  const trashGroup = useSidebarStore((state) => state.trashGroup);
+  const trashPage = useSidebarStore((state) => state.trashPage);
   const [panel, setPanel] = useState<Panel>(null);
+  const [confirming, setConfirming] = useState(false);
   const icon = useIconScale();
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -41,6 +44,7 @@ export function SelectionActions() {
 
   useEffect(() => {
     setPanel(null);
+    setConfirming(false);
   }, [selectedGroupId, selectedPageId]);
 
   useEffect(() => {
@@ -113,8 +117,8 @@ export function SelectionActions() {
               type="button"
               className="rounded-md pad-xs text-left text-xs text-fg hover:bg-fg/10"
               onClick={() => {
-                requestDelete({ kind: target.kind, id: target.id });
                 setPanel(null);
+                setConfirming(true);
               }}
             >
               삭제
@@ -151,6 +155,16 @@ export function SelectionActions() {
           </form>
         )}
       </div>
+      {confirming && target && (
+        <TrashHoldConfirm
+          onCancel={() => setConfirming(false)}
+          onConfirm={() => {
+            if (target.kind === "group") trashGroup(target.id);
+            else trashPage(target.id);
+            setConfirming(false);
+          }}
+        />
+      )}
     </div>
   );
 }

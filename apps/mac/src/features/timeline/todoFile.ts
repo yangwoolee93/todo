@@ -87,6 +87,7 @@ function parseTodo(value: unknown): TimelineTodo | null {
   if (!number(raw.sortOrder) || !number(raw.createdAt) || !number(raw.updatedAt)) {
     return null;
   }
+  const deletedAt = stamp(raw.deletedAt);
   return {
     id,
     pageId,
@@ -100,6 +101,8 @@ function parseTodo(value: unknown): TimelineTodo | null {
     sortOrder: raw.sortOrder as number,
     createdAt: raw.createdAt as number,
     updatedAt: raw.updatedAt as number,
+    deletedAt,
+    trashedWith: deletedAt == null ? "" : (text(raw.trashedWith) ?? ""),
   };
 }
 
@@ -139,4 +142,8 @@ function text(value: unknown) {
 
 function number(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
+}
+
+function stamp(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
 }

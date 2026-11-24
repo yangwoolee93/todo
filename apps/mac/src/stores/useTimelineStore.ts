@@ -27,6 +27,8 @@ export type TimelineTodo = {
   sortOrder: number;
   createdAt: number;
   updatedAt: number;
+  deletedAt: number | null;
+  trashedWith: string;
 };
 
 export type TodoStatusDef = {
@@ -111,10 +113,38 @@ type TimelineState = {
   removeStatus: (pageId: string, id: string) => void;
   removeTodo: (id: string) => void;
   removeSeries: (seriesId: string) => void;
+  restoreSeries: (seriesId: string) => void;
+  restorePages: (pageIds: string[]) => void;
+  purgeSeries: (seriesId: string) => void;
   removePages: (pageIds: string[]) => void;
   setTimelineView: (pageId: string, view: TimelineView) => void;
   hydrate: () => Promise<void>;
 };
+
+function seriesFamily(todos: TimelineTodo[], rootId: string) {
+  const children = new Map<string, string[]>();
+  for (const todo of todos) {
+    if (!todo.parentSeriesId) continue;
+    const list = children.get(todo.parentSeriesId);
+    if (list) {
+      if (!list.includes(todo.seriesId)) list.push(todo.seriesId);
+    } else {
+      children.set(todo.parentSeriesId, [todo.seriesId]);
+    }
+  }
+  const family = new Set<string>([rootId]);
+  const pending = [rootId];
+  while (pending.length > 0) {
+    const id = pending.pop();
+    if (!id) continue;
+    for (const child of children.get(id) ?? []) {
+      if (family.has(child)) continue;
+      family.add(child);
+      pending.push(child);
+    }
+  }
+  return family;
+}
 
 function sameTags(left: string[], right: string[]) {
   return left.length === right.length && left.every((tag, index) => tag === right[index]);
@@ -153,6 +183,8 @@ export const useTimelineStore = create<TimelineState>((set, get) => ({
             sortOrder,
             createdAt: now,
             updatedAt: now,
+            deletedAt: null,
+            trashedWith: "",
           },
         ],
       };
@@ -190,6 +222,8 @@ export const useTimelineStore = create<TimelineState>((set, get) => ({
             sortOrder,
             createdAt: now,
             updatedAt: now,
+            deletedAt: null,
+            trashedWith: "",
           })),
         ],
       };
@@ -206,7 +240,7 @@ export const useTimelineStore = create<TimelineState>((set, get) => ({
       (todo) => todo.seriesId === parentSeriesId && todo.pageId === pageId,
     );
     const parent = parentDays[0];
-    if (!parent || parent.parentSeriesId) return "";
+    if (!parent || parent.parentSeriesId || parent.deletedAt != null) return "";
     const parentStart = parentDays.reduce(
       (min, todo) => (todo.date < min ? todo.date : min),
       parent.date,
@@ -242,6 +276,8 @@ export const useTimelineStore = create<TimelineState>((set, get) => ({
           sortOrder,
           createdAt: now,
           updatedAt: now,
+          deletedAt: null,
+          trashedWith: "",
         })),
       ],
     }));
@@ -338,6 +374,8 @@ export const useTimelineStore = create<TimelineState>((set, get) => ({
               sortOrder: sample.sortOrder,
               createdAt: now,
               updatedAt: now,
+              deletedAt: sample.deletedAt,
+              trashedWith: sample.trashedWith,
             };
           });
       const allowed = new Set(dates);
@@ -425,6 +463,49 @@ export const useTimelineStore = create<TimelineState>((set, get) => ({
     })),
 
   removeSeries: (seriesId) =>
+    set((state) => {
+      const sample = state.todos.find((todo) => todo.seriesId === seriesId && todo.deletedAt == null);
+      if (!sample) return state;
+      const stamp = Date.now();
+      return {
+        todos: state.todos.map((todo) => {
+          if (todo.seriesId === seriesId) {
+            return { ...todo, deletedAt: stamp, trashedWith: "", updatedAt: stamp };
+          }
+          if (todo.parentSeriesId === seriesId && todo.deletedAt == null) {
+            return { ...todo, deletedAt: stamp, trashedWith: seriesId, updatedAt: stamp };
+          }
+          return todo;
+        }),
+      };
+    }),
+
+  restoreSeries: (seriesId) => {
+    const family = seriesFamily(get().todos, seriesId);
+    const stamp = Date.now();
+    set((state) => ({
+      todos: state.todos.map((todo) =>
+        family.has(todo.seriesId) && todo.deletedAt != null
+          ? { ...todo, deletedAt: null, trashedWith: "", updatedAt: stamp }
+          : todo,
+      ),
+    }));
+  },
+
+  restorePages: (pageIds) =>
+    set((state) => {
+      const ids = new Set(pageIds);
+      const stamp = Date.now();
+      let changed = false;
+      const todos = state.todos.map((todo) => {
+        if (!ids.has(todo.pageId) || todo.deletedAt == null) return todo;
+        changed = true;
+        return { ...todo, deletedAt: null, trashedWith: "", updatedAt: stamp };
+      });
+      return changed ? { todos } : state;
+    }),
+
+  purgeSeries: (seriesId) =>
     set((state) => ({
       todos: state.todos.filter(
         (todo) => todo.seriesId !== seriesId && todo.parentSeriesId !== seriesId,

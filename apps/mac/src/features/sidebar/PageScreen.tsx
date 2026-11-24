@@ -13,7 +13,10 @@ export function PageScreen() {
   const selectedGroupId = useSidebarStore((state) => state.selectedGroupId);
   const selectPage = useSidebarStore((state) => state.selectPage);
   const icon = useIconScale();
-  const page = pages.find((item) => item.id === selectedPageId);
+  const page = pages.find((item) => item.id === selectedPageId && item.deletedAt == null);
+  const pageGroup = groups.find(
+    (group) => group.id === page?.groupId && group.deletedAt == null,
+  );
 
   useEffect(() => {
     return () => {
@@ -21,7 +24,7 @@ export function PageScreen() {
     };
   }, [selectedPageId]);
 
-  if (page) {
+  if (page && pageGroup) {
     const PageIcon = pageIcons[page.type];
     return (
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-2 pt-1">
@@ -44,9 +47,9 @@ export function PageScreen() {
     );
   }
 
-  const group = groups.find((item) => item.id === selectedGroupId);
+  const group = groups.find((item) => item.id === selectedGroupId && item.deletedAt == null);
   if (!group) return null;
-  const children = pages.filter((item) => item.groupId === group.id);
+  const children = pages.filter((item) => item.groupId === group.id && item.deletedAt == null);
 
   return (
     <div className="scrollbar min-h-0 flex-1 overflow-y-auto px-4 py-3">

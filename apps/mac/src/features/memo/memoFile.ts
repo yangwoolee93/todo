@@ -49,6 +49,7 @@ function parseMemo(value: unknown): MemoItem | null {
     pinnedAt: pinned ? time(raw.pinnedAt) : null,
     createdAt: time(raw.createdAt) ?? 0,
     updatedAt: time(raw.updatedAt) ?? 0,
+    deletedAt: stamp(raw.deletedAt),
   };
 }
 
@@ -69,5 +70,9 @@ function text(value: unknown) {
 }
 
 function time(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function stamp(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }

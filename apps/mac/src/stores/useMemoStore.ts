@@ -12,6 +12,7 @@ export type MemoItem = {
   pinnedAt: number | null;
   createdAt: number;
   updatedAt: number;
+  deletedAt: number | null;
 };
 
 type MemoPatch = {
@@ -26,6 +27,9 @@ type MemoState = {
   updateMemo: (id: string, patch: MemoPatch) => void;
   togglePin: (id: string) => void;
   removeMemo: (id: string) => void;
+  restoreMemo: (id: string) => void;
+  restorePages: (pageIds: string[]) => void;
+  purgeMemo: (id: string) => void;
   removePages: (pageIds: string[]) => void;
   hydrate: () => Promise<void>;
 };
@@ -49,6 +53,7 @@ export const useMemoStore = create<MemoState>((set) => ({
           pinnedAt: null,
           createdAt: now,
           updatedAt: now,
+          deletedAt: null,
         },
       ],
     }));
@@ -72,6 +77,37 @@ export const useMemoStore = create<MemoState>((set) => ({
     })),
 
   removeMemo: (id) =>
+    set((state) => ({
+      memos: state.memos.map((memo) =>
+        memo.id === id && memo.deletedAt == null
+          ? { ...memo, deletedAt: Date.now(), updatedAt: Date.now() }
+          : memo,
+      ),
+    })),
+
+  restoreMemo: (id) =>
+    set((state) => ({
+      memos: state.memos.map((item) =>
+        item.id === id && item.deletedAt != null
+          ? { ...item, deletedAt: null, updatedAt: Date.now() }
+          : item,
+      ),
+    })),
+
+  restorePages: (pageIds) =>
+    set((state) => {
+      const ids = new Set(pageIds);
+      const stamp = Date.now();
+      let changed = false;
+      const memos = state.memos.map((memo) => {
+        if (!ids.has(memo.pageId) || memo.deletedAt == null) return memo;
+        changed = true;
+        return { ...memo, deletedAt: null, updatedAt: stamp };
+      });
+      return changed ? { memos } : state;
+    }),
+
+  purgeMemo: (id) =>
     set((state) => ({
       memos: state.memos.filter((memo) => memo.id !== id),
     })),
