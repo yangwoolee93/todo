@@ -257,6 +257,7 @@ function PreviewBar({ box }: { box: { left: string; width: string } }) {
 
 function insertSlot(bars: TimelineBar[], preview: TimelinePreview, sorts: SortRule[]) {
   const probe = {
+    title: "",
     firstDate: preview.start,
     lastDate: preview.end,
     sortOrder: Number.POSITIVE_INFINITY,

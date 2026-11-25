@@ -232,6 +232,32 @@ fn validate_todos(todos: &Value) -> Result<(), String> {
         {
             return Err("todo 휴지통 형식이 올바르지 않습니다.".into());
         }
+        if let Some(checks) = todo.get("checks") {
+            validate_checks(checks)?;
+        }
+    }
+    Ok(())
+}
+
+fn validate_checks(checks: &Value) -> Result<(), String> {
+    let Some(items) = checks.as_array() else {
+        return Err("todo 할일 형식이 올바르지 않습니다.".into());
+    };
+    let mut seen = std::collections::HashSet::new();
+    for item in items {
+        let Some(check) = item.as_object() else {
+            return Err("todo 할일 형식이 올바르지 않습니다.".into());
+        };
+        if !required_text(check, "id") || !required_text(check, "text") {
+            return Err("todo 할일 형식이 올바르지 않습니다.".into());
+        }
+        if !check.get("done").is_some_and(Value::is_boolean) {
+            return Err("todo 할일 형식이 올바르지 않습니다.".into());
+        }
+        let id = check.get("id").and_then(Value::as_str).unwrap_or("");
+        if !seen.insert(id.to_string()) {
+            return Err("todo 할일이 중복되었습니다.".into());
+        }
     }
     Ok(())
 }
@@ -272,7 +298,7 @@ fn validate_views(views: &Value) -> Result<(), String> {
     let Some(items) = views.as_array() else {
         return Err("timelineViews 형식이 올바르지 않습니다.".into());
     };
-    let mut pages = std::collections::HashSet::new();
+    let mut seen = std::collections::HashSet::new();
     for item in items {
         let Some(view) = item.as_object() else {
             return Err("timelineView 형식이 올바르지 않습니다.".into());
@@ -281,7 +307,26 @@ fn validate_views(views: &Value) -> Result<(), String> {
             return Err("timelineView 페이지가 올바르지 않습니다.".into());
         }
         let page_id = view.get("pageId").and_then(Value::as_str).unwrap_or("");
-        if !pages.insert(page_id.to_string()) {
+        let id = match view.get("id") {
+            None => page_id.to_string(),
+            Some(value) => {
+                let Some(text) = value.as_str().filter(|text| !text.trim().is_empty()) else {
+                    return Err("timelineView 식별자가 올바르지 않습니다.".into());
+                };
+                text.to_string()
+            }
+        };
+        if let Some(name) = view.get("name") {
+            if !name.is_string() {
+                return Err("timelineView 이름이 올바르지 않습니다.".into());
+            }
+        }
+        if let Some(active) = view.get("active") {
+            if !active.is_boolean() {
+                return Err("timelineView 선택이 올바르지 않습니다.".into());
+            }
+        }
+        if !seen.insert(format!("{page_id}\0{id}")) {
             return Err("timelineView 페이지가 중복되었습니다.".into());
         }
         match view.get("join").and_then(Value::as_str) {
@@ -290,6 +335,9 @@ fn validate_views(views: &Value) -> Result<(), String> {
         }
         validate_sorts(view.get("sorts"))?;
         validate_filters(view.get("filters"))?;
+        if let Some(bars) = view.get("bars") {
+            validate_text_list(bars, "timelineView 막대", true)?;
+        }
     }
     Ok(())
 }
@@ -312,7 +360,7 @@ fn validate_sorts(value: Option<&Value>) -> Result<(), String> {
             return Err("timelineView 정렬 식별자가 중복되었습니다.".into());
         }
         let key = rule.get("key").and_then(Value::as_str).unwrap_or("");
-        if key != "start" && key != "end" {
+        if key != "start" && key != "end" && key != "title" {
             return Err("timelineView 정렬 기준이 올바르지 않습니다.".into());
         }
         if !keys.insert(key.to_string()) {
@@ -342,20 +390,57 @@ fn validate_filters(value: Option<&Value>) -> Result<(), String> {
         if !ids.insert(id.to_string()) {
             return Err("timelineView 필터 식별자가 중복되었습니다.".into());
         }
+        if rule.contains_key("property") {
+            let Some(property) = rule.get("property").and_then(Value::as_str) else {
+                return Err("timelineView 필터 속성이 올바르지 않습니다.".into());
+            };
+            let op = rule.get("op").and_then(Value::as_str).unwrap_or("");
+            let op_ok = match property {
+                "status" => op == "is" || op == "isNot",
+                "tag" | "title" => op == "contains" || op == "notContains",
+                _ => false,
+            };
+            if property != "status" && property != "tag" && property != "title" {
+                return Err("timelineView 필터 속성이 올바르지 않습니다.".into());
+            }
+            if !op_ok {
+                return Err("timelineView 필터 조건이 올바르지 않습니다.".into());
+            }
+            let Some(values) = rule.get("values") else {
+                return Err("timelineView 필터 값이 올바르지 않습니다.".into());
+            };
+            validate_text_list(values, "timelineView 필터 값", true)?;
+            continue;
+        }
         let Some(statuses) = rule.get("statuses").and_then(Value::as_array) else {
             return Err("timelineView 필터 상태가 올바르지 않습니다.".into());
         };
         if statuses.is_empty() {
             return Err("timelineView 필터 상태가 올바르지 않습니다.".into());
         }
-        let mut seen = std::collections::HashSet::new();
-        for status in statuses {
-            let Some(name) = status.as_str().filter(|name| !name.trim().is_empty()) else {
-                return Err("timelineView 필터 상태가 올바르지 않습니다.".into());
-            };
-            if !seen.insert(name.to_string()) {
-                return Err("timelineView 필터 상태가 중복되었습니다.".into());
-            }
+        validate_text_list(
+            &Value::Array(statuses.clone()),
+            "timelineView 필터 상태",
+            false,
+        )?;
+    }
+    Ok(())
+}
+
+fn validate_text_list(value: &Value, label: &str, allow_empty: bool) -> Result<(), String> {
+    let Some(items) = value.as_array() else {
+        return Err(format!("{label} 형식이 올바르지 않습니다."));
+    };
+    if !allow_empty && items.is_empty() {
+        return Err(format!("{label} 형식이 올바르지 않습니다."));
+    }
+    let mut seen = std::collections::HashSet::new();
+    for item in items {
+        let Some(text) = item.as_str().filter(|text| !text.trim().is_empty()) else {
+            return Err(format!("{label} 형식이 올바르지 않습니다."));
+        };
+        if !seen.insert(text.to_string()) {
+            return Err(format!("{label} 항목이 중복되었습니다."));
         }
     }
     Ok(())
@@ -664,6 +749,44 @@ mod tests {
     }
 
     #[test]
+    fn save_day_checks_keeps_them_on_the_day() {
+        let path = test_path("todos-checks");
+        fs::write(&path, r#"{"version":1,"menu":{"groups":[]}}"#).unwrap();
+        let mut todo = sample_todo();
+        todo["checks"] = serde_json::json!([{
+            "id": "c1",
+            "text": "화면 확인",
+            "done": true
+        }]);
+        save_todos_at(
+            &path,
+            serde_json::json!([todo]),
+            serde_json::json!([]),
+            serde_json::json!([]),
+        )
+        .unwrap();
+        let raw = fs::read_to_string(&path).unwrap();
+        let doc: Value = serde_json::from_str(&raw).unwrap();
+        assert_eq!(doc["todos"][0]["checks"][0]["text"], "화면 확인");
+        assert_eq!(doc["todos"][0]["checks"][0]["done"], true);
+        assert_eq!(doc["menu"]["groups"], serde_json::json!([]));
+
+        let mut broken = sample_todo();
+        broken["checks"] = serde_json::json!([{ "id": "c1", "text": "화면 확인", "done": "yes" }]);
+        let err = save_todos_at(
+            &path,
+            serde_json::json!([broken]),
+            serde_json::json!([]),
+            serde_json::json!([]),
+        )
+        .unwrap_err();
+        assert!(err.contains("할일"));
+        let raw = fs::read_to_string(&path).unwrap();
+        assert!(raw.contains("화면 확인"));
+        let _ = fs::remove_file(path);
+    }
+
+    #[test]
     fn invalid_status_color_does_not_replace_the_file() {
         let path = test_path("statuses-invalid");
         fs::write(&path, r#"{"menu":{"ok":true}}"#).unwrap();
@@ -742,6 +865,116 @@ mod tests {
         assert!(err.contains("결합"));
         let raw = fs::read_to_string(&path).unwrap();
         assert!(raw.contains("\"desc\""));
+        let _ = fs::remove_file(path);
+    }
+
+    #[test]
+    fn save_property_filter_title_sort_and_bars() {
+        let path = test_path("views-property");
+        save_todos_at(
+            &path,
+            serde_json::json!([sample_todo()]),
+            serde_json::json!([]),
+            serde_json::json!([{
+                "pageId": "p1",
+                "join": "and",
+                "sorts": [{ "id": "sort-1", "key": "title", "dir": "asc" }],
+                "filters": [
+                    { "id": "filter-1", "property": "status", "op": "isNot", "values": ["failed"] },
+                    { "id": "filter-2", "property": "tag", "op": "contains", "values": ["운동"] },
+                    { "id": "filter-3", "property": "title", "op": "contains", "values": [] }
+                ],
+                "bars": ["success"]
+            }]),
+        )
+        .unwrap();
+        let views = load_timeline_views_at(&path).unwrap();
+        assert_eq!(views[0]["sorts"][0]["key"], "title");
+        assert_eq!(views[0]["filters"][1]["property"], "tag");
+        assert_eq!(views[0]["filters"][2]["values"].as_array().unwrap().len(), 0);
+        assert_eq!(views[0]["bars"][0], "success");
+
+        let err = save_todos_at(
+            &path,
+            serde_json::json!([sample_todo()]),
+            serde_json::json!([]),
+            serde_json::json!([{
+                "pageId": "p1",
+                "join": "and",
+                "sorts": [],
+                "filters": [{ "id": "filter-1", "property": "date", "op": "is", "values": [] }]
+            }]),
+        )
+        .unwrap_err();
+        assert!(err.contains("속성"));
+        let raw = fs::read_to_string(&path).unwrap();
+        assert!(raw.contains("\"title\""));
+        let _ = fs::remove_file(path);
+    }
+
+    #[test]
+    fn save_named_views_on_one_page() {
+        let path = test_path("views-named");
+        save_todos_at(
+            &path,
+            serde_json::json!([sample_todo()]),
+            serde_json::json!([]),
+            serde_json::json!([
+                {
+                    "pageId": "p1",
+                    "id": "p1",
+                    "name": "",
+                    "active": false,
+                    "join": "and",
+                    "sorts": [{ "id": "sort-1", "key": "title", "dir": "asc" }],
+                    "filters": [{ "id": "filter-1", "property": "title", "op": "contains", "values": ["아크"] }],
+                    "bars": []
+                },
+                {
+                    "pageId": "p1",
+                    "id": "view-2",
+                    "name": "파사코브",
+                    "active": true,
+                    "join": "or",
+                    "sorts": [],
+                    "filters": [],
+                    "bars": []
+                }
+            ]),
+        )
+        .unwrap();
+        let views = load_timeline_views_at(&path).unwrap();
+        assert_eq!(views.as_array().unwrap().len(), 2);
+        assert_eq!(views[1]["name"], "파사코브");
+        assert_eq!(views[1]["active"], true);
+
+        let err = save_todos_at(
+            &path,
+            serde_json::json!([sample_todo()]),
+            serde_json::json!([]),
+            serde_json::json!([
+                {
+                    "pageId": "p1",
+                    "id": "same",
+                    "name": "하나",
+                    "join": "or",
+                    "sorts": [],
+                    "filters": []
+                },
+                {
+                    "pageId": "p1",
+                    "id": "same",
+                    "name": "둘",
+                    "join": "or",
+                    "sorts": [],
+                    "filters": []
+                }
+            ]),
+        )
+        .unwrap_err();
+        assert!(err.contains("중복"));
+        let raw = fs::read_to_string(&path).unwrap();
+        assert!(raw.contains("파사코브"));
         let _ = fs::remove_file(path);
     }
 

@@ -96,6 +96,7 @@ function parseTodo(value: unknown): TimelineTodo | null {
     body: typeof raw.body === "string" ? raw.body : "",
     tags: parseTags(raw.tags),
     status,
+    checks: parseChecks(raw.checks),
     seriesId,
     parentSeriesId: text(raw.parentSeriesId) ?? "",
     sortOrder: raw.sortOrder as number,
@@ -122,6 +123,21 @@ function parseStatus(value: unknown): TodoStatusDef | null {
     color: color.toLowerCase(),
     sortOrder: raw.sortOrder as number,
   };
+}
+
+function parseChecks(value: unknown) {
+  if (!Array.isArray(value)) return [];
+  const checks: TimelineTodo["checks"] = [];
+  for (const item of value) {
+    if (!item || typeof item !== "object" || Array.isArray(item)) continue;
+    const raw = item as Record<string, unknown>;
+    const id = text(raw.id);
+    if (!id || typeof raw.text !== "string" || typeof raw.done !== "boolean") continue;
+    const label = raw.text.trim();
+    if (!label || checks.some((check) => check.id === id)) continue;
+    checks.push({ id, text: label, done: raw.done });
+  }
+  return checks;
 }
 
 function parseTags(value: unknown) {

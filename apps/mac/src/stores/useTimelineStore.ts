@@ -7,12 +7,21 @@ import {
   saveTodos,
 } from "../features/timeline/todoFile";
 import {
+  activeViewId,
   clearLocalTimelineViews,
   readLocalTimelineViews,
+  replacePageViews,
+  viewsForPage,
   type SavedTimelineView,
   type TimelineView,
 } from "../features/timeline/view";
 import { useSidebarStore } from "./useSidebarStore";
+
+export type DayCheck = {
+  id: string;
+  text: string;
+  done: boolean;
+};
 
 export type TimelineTodo = {
   id: string;
@@ -22,6 +31,7 @@ export type TimelineTodo = {
   body: string;
   tags: string[];
   status: string;
+  checks: DayCheck[];
   seriesId: string;
   parentSeriesId: string;
   sortOrder: number;
@@ -107,8 +117,13 @@ type TimelineState = {
   setSeriesTags: (seriesId: string, tags: string[]) => void;
   setSeriesSpan: (seriesId: string, start: string, end: string) => void;
   setStatus: (id: string, status: string) => void;
+  addDayCheck: (todoId: string, text: string) => void;
+  toggleDayCheck: (todoId: string, checkId: string) => void;
+  renameDayCheck: (todoId: string, checkId: string, text: string) => void;
+  removeDayCheck: (todoId: string, checkId: string) => void;
   renameStatus: (pageId: string, id: string, name: string) => void;
   recolorStatus: (pageId: string, id: string, color: string) => void;
+  moveStatus: (pageId: string, id: string, direction: -1 | 1) => void;
   addStatus: (pageId: string, name: string, color: string) => string;
   removeStatus: (pageId: string, id: string) => void;
   removeTodo: (id: string) => void;
@@ -118,6 +133,10 @@ type TimelineState = {
   purgeSeries: (seriesId: string) => void;
   removePages: (pageIds: string[]) => void;
   setTimelineView: (pageId: string, view: TimelineView) => void;
+  selectTimelineView: (pageId: string, viewId: string) => void;
+  addTimelineView: (pageId: string, name: string) => void;
+  renameTimelineView: (pageId: string, viewId: string, name: string) => void;
+  removeTimelineView: (pageId: string, viewId: string) => void;
   hydrate: () => Promise<void>;
 };
 
@@ -178,6 +197,7 @@ export const useTimelineStore = create<TimelineState>((set, get) => ({
             body: "",
             tags: [],
             status: "pending",
+            checks: [],
             seriesId,
             parentSeriesId: "",
             sortOrder,
@@ -217,6 +237,7 @@ export const useTimelineStore = create<TimelineState>((set, get) => ({
             body,
             tags,
             status: "pending",
+            checks: [],
             seriesId,
             parentSeriesId: "",
             sortOrder,
@@ -271,6 +292,7 @@ export const useTimelineStore = create<TimelineState>((set, get) => ({
           body,
           tags,
           status: "pending",
+          checks: [],
           seriesId,
           parentSeriesId,
           sortOrder,
@@ -369,6 +391,7 @@ export const useTimelineStore = create<TimelineState>((set, get) => ({
               body: sample.body,
               tags: [...sample.tags],
               status: "pending",
+              checks: [],
               seriesId,
               parentSeriesId: sample.parentSeriesId,
               sortOrder: sample.sortOrder,
@@ -401,6 +424,74 @@ export const useTimelineStore = create<TimelineState>((set, get) => ({
     }));
   },
 
+  addDayCheck: (todoId, text) => {
+    const label = text.trim();
+    if (!label) return;
+    const id = crypto.randomUUID();
+    set((state) => ({
+      todos: state.todos.map((todo) =>
+        todo.id === todoId
+          ? {
+              ...todo,
+              checks: [...(todo.checks ?? []), { id, text: label, done: false }],
+              updatedAt: Date.now(),
+            }
+          : todo,
+      ),
+    }));
+  },
+
+  toggleDayCheck: (todoId, checkId) => {
+    set((state) => ({
+      todos: state.todos.map((todo) => {
+        if (todo.id !== todoId) return todo;
+        const checks = todo.checks ?? [];
+        if (!checks.some((check) => check.id === checkId)) return todo;
+        return {
+          ...todo,
+          checks: checks.map((check) =>
+            check.id === checkId ? { ...check, done: !check.done } : check,
+          ),
+          updatedAt: Date.now(),
+        };
+      }),
+    }));
+  },
+
+  renameDayCheck: (todoId, checkId, text) => {
+    const label = text.trim();
+    set((state) => ({
+      todos: state.todos.map((todo) => {
+        if (todo.id !== todoId) return todo;
+        const checks = todo.checks ?? [];
+        const current = checks.find((check) => check.id === checkId);
+        if (!current || current.text === label) return todo;
+        return {
+          ...todo,
+          checks: label
+            ? checks.map((check) => (check.id === checkId ? { ...check, text: label } : check))
+            : checks.filter((check) => check.id !== checkId),
+          updatedAt: Date.now(),
+        };
+      }),
+    }));
+  },
+
+  removeDayCheck: (todoId, checkId) => {
+    set((state) => ({
+      todos: state.todos.map((todo) => {
+        if (todo.id !== todoId) return todo;
+        const checks = todo.checks ?? [];
+        if (!checks.some((check) => check.id === checkId)) return todo;
+        return {
+          ...todo,
+          checks: checks.filter((check) => check.id !== checkId),
+          updatedAt: Date.now(),
+        };
+      }),
+    }));
+  },
+
   renameStatus: (pageId, id, name) => {
     const next = name.trim();
     if (!next) return;
@@ -420,6 +511,26 @@ export const useTimelineStore = create<TimelineState>((set, get) => ({
         status.id === id && status.color !== next ? { ...status, color: next } : status,
       );
       return { statuses: replacePageStatuses(state.statuses, pageId, current) };
+    });
+  },
+
+  moveStatus: (pageId, id, direction) => {
+    set((state) => {
+      const current = statusesFor(state.statuses, pageId);
+      const index = current.findIndex((status) => status.id === id);
+      const target = index + direction;
+      if (index < 0 || target < 0 || target >= current.length) return state;
+      const next = [...current];
+      const [item] = next.splice(index, 1);
+      if (!item) return state;
+      next.splice(target, 0, item);
+      return {
+        statuses: replacePageStatuses(
+          state.statuses,
+          pageId,
+          next.map((status, sortOrder) => ({ ...status, pageId, sortOrder })),
+        ),
+      };
     });
   },
 
@@ -529,14 +640,64 @@ export const useTimelineStore = create<TimelineState>((set, get) => ({
     }),
 
   setTimelineView: (pageId, view) => {
-    const next = { pageId, ...view };
-    const keep = next.sorts.length > 0 || next.filters.length > 0;
     set((state) => ({
-      views: [
-        ...state.views.filter((item) => item.pageId !== pageId),
-        ...(keep ? [next] : []),
-      ],
+      views: replacePageViews(
+        state.views,
+        pageId,
+        (current) =>
+          current.map((item) =>
+            item.id === view.id ? { ...view, id: item.id, name: item.name } : item,
+          ),
+        view.id || pageId,
+      ),
     }));
+  },
+
+  selectTimelineView: (pageId, viewId) => {
+    set((state) => ({
+      views: replacePageViews(state.views, pageId, (current) => current, viewId),
+    }));
+  },
+
+  addTimelineView: (pageId, name) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    const id = crypto.randomUUID();
+    set((state) => ({
+      views: replacePageViews(
+        state.views,
+        pageId,
+        (current) => [...current, { id, name: trimmed, sorts: [], join: "or", filters: [], bars: [] }],
+        id,
+      ),
+    }));
+  },
+
+  renameTimelineView: (pageId, viewId, name) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    set((state) => ({
+      views: replacePageViews(
+        state.views,
+        pageId,
+        (current) => current.map((item) => (item.id === viewId ? { ...item, name: trimmed } : item)),
+        viewId,
+      ),
+    }));
+  },
+
+  removeTimelineView: (pageId, viewId) => {
+    set((state) => {
+      const current = viewsForPage(state.views, pageId);
+      if (current.length <= 1) return state;
+      const index = current.findIndex((item) => item.id === viewId);
+      if (index < 0) return state;
+      const next = current.filter((item) => item.id !== viewId);
+      const active = activeViewId(state.views, pageId);
+      const neighbor = next[Math.min(index, next.length - 1)];
+      const chosen = next.some((item) => item.id === active) ? active : neighbor.id;
+      return { views: replacePageViews(state.views, pageId, () => next, chosen) };
+    });
   },
 
   hydrate: async () => {

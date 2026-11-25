@@ -1,6 +1,7 @@
 import { DotsThreeIcon, PlusIcon } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
 import { useIconScale } from "../../hooks/useIconScale";
+import { useDetailPanelStore } from "../../stores/useDetailPanelStore";
 import { useSidebarStore } from "../../stores/useSidebarStore";
 import { TrashHoldConfirm } from "../trash/TrashHoldConfirm";
 import { AddPageForm } from "./SidebarTree";
@@ -84,6 +85,18 @@ export function SelectionActions() {
         </button>
         {panel === "menu" && (
           <div className="menu-xs absolute top-full right-0 z-30 mt-2 flex flex-col rounded-xl border border-border bg-surface">
+            {page?.type === "timeline" && (
+              <button
+                type="button"
+                className="whitespace-nowrap rounded-md pad-xs text-left text-xs text-fg hover:bg-fg/10"
+                onClick={() => {
+                  setPanel(null);
+                  useDetailPanelStore.getState().openStatuses();
+                }}
+              >
+                상태 관리
+              </button>
+            )}
             <button
               type="button"
               className="rounded-md pad-xs text-left text-xs text-fg hover:bg-fg/10"
