@@ -16,9 +16,9 @@
   --color-fg: #1c1917;
   --color-fg-secondary: #57534e;
   --color-fg-muted: #a8a29e;
-  --color-accent: #45ada5;
-  --color-accent-hover: #3d968f;
-  --color-accent-soft: #dce8e6;
+  --color-accent: #a78bfa;
+  --color-accent-hover: #8b5cf6;
+  --color-accent-soft: #ddd6fe;
   --color-border: #d6d0c6;
   --color-border-strong: #c4bcb0;
   --color-danger: #dc2626;
@@ -26,7 +26,7 @@
   --color-success: #15803d;
   --color-failed: #ea580c;
   --color-failed-soft: #ffedd5;
-  --color-today-ring: #45ada5;
+  --color-today-ring: #a78bfa;
   --font-sans: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --radius-card: 0.5rem;
   --radius-btn: 0.5rem;
@@ -57,9 +57,9 @@
   --color-fg: #1c1917;
   --color-fg-secondary: #57534e;
   --color-fg-muted: #a8a29e;
-  --color-accent: #45ada5;
-  --color-accent-hover: #3d968f;
-  --color-accent-soft: #dce8e6;
+  --color-accent: #a78bfa;
+  --color-accent-hover: #8b5cf6;
+  --color-accent-soft: #ddd6fe;
   --color-border: #d6d0c6;
   --color-border-strong: #c4bcb0;
   --color-danger: #dc2626;
@@ -67,7 +67,7 @@
   --color-success: #16885a;
   --color-failed: #ea580c;
   --color-failed-soft: #ffedd5;
-  --color-today-ring: #45ada5;
+  --color-today-ring: #a78bfa;
   --scrollbar-thumb: #78716c;
   --scrollbar-thumb-hover: #57534e;
   --color-saturday: #2563eb;
@@ -90,9 +90,9 @@
   --color-fg: #ececec;
   --color-fg-secondary: #a3a3a3;
   --color-fg-muted: #737373;
-  --color-accent: #2dd4bf;
-  --color-accent-hover: #14b8a6;
-  --color-accent-soft: #134e4a;
+  --color-accent: #a78bfa;
+  --color-accent-hover: #8b5cf6;
+  --color-accent-soft: #2e1065;
   --color-border: #333333;
   --color-border-strong: #404040;
   --color-danger: #f87171;
@@ -100,7 +100,7 @@
   --color-success: #22c55e;
   --color-failed: #fb923c;
   --color-failed-soft: #431407;
-  --color-today-ring: #2dd4bf;
+  --color-today-ring: #a78bfa;
   /* --scrollbar-thumb: #525252; */
   --scrollbar-thumb: #333;
   --scrollbar-thumb-hover: #666;
