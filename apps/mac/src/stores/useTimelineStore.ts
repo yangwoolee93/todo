@@ -7,7 +7,6 @@ import {
   saveTodos,
 } from "../features/timeline/todoFile";
 import {
-  activeViewId,
   clearLocalTimelineViews,
   readLocalTimelineViews,
   replacePageViews,
@@ -38,6 +37,8 @@ export type TimelineTodo = {
   createdAt: number;
   updatedAt: number;
   deletedAt: number | null;
+  /** 기간을 줄여 화면에서는 빠졌지만, 다른 기기 파일과 합칠 때 되살아나지 않게 남긴다. */
+  omittedAt: number | null;
   trashedWith: string;
 };
 
@@ -47,6 +48,8 @@ export type TodoStatusDef = {
   name: string;
   color: string;
   sortOrder: number;
+  updatedAt: number;
+  deletedAt: number | null;
 };
 
 export type SeriesDraft = {
@@ -73,12 +76,18 @@ export function isBuiltinStatus(id: string) {
 }
 
 export function defaultStatuses(pageId: string): TodoStatusDef[] {
-  return STATUS_PRESETS.map((item, sortOrder) => ({ ...item, pageId, sortOrder }));
+  return STATUS_PRESETS.map((item, sortOrder) => ({
+    ...item,
+    pageId,
+    sortOrder,
+    updatedAt: 0,
+    deletedAt: null,
+  }));
 }
 
 export function statusesFor(statuses: TodoStatusDef[], pageId: string) {
   const saved = statuses
-    .filter((status) => status.pageId === pageId)
+    .filter((status) => status.pageId === pageId && status.deletedAt == null)
     .sort((a, b) => a.sortOrder - b.sortOrder || (a.id < b.id ? -1 : 1));
   if (saved.length === 0) return defaultStatuses(pageId);
   const missing = defaultStatuses(pageId).filter(
@@ -96,7 +105,11 @@ function replacePageStatuses(
   pageId: string,
   next: TodoStatusDef[],
 ) {
-  return [...statuses.filter((status) => status.pageId !== pageId), ...next];
+  const liveIds = new Set(next.map((status) => status.id));
+  const kept = statuses.filter(
+    (status) => status.pageId === pageId && status.deletedAt != null && !liveIds.has(status.id),
+  );
+  return [...statuses.filter((status) => status.pageId !== pageId), ...next, ...kept];
 }
 
 type TimelineState = {
@@ -204,6 +217,7 @@ export const useTimelineStore = create<TimelineState>((set, get) => ({
             createdAt: now,
             updatedAt: now,
             deletedAt: null,
+            omittedAt: null,
             trashedWith: "",
           },
         ],
@@ -244,6 +258,7 @@ export const useTimelineStore = create<TimelineState>((set, get) => ({
             createdAt: now,
             updatedAt: now,
             deletedAt: null,
+            omittedAt: null,
             trashedWith: "",
           })),
         ],
@@ -258,7 +273,11 @@ export const useTimelineStore = create<TimelineState>((set, get) => ({
     if (!name || !parentSeriesId || unique.length === 0) return "";
     const current = get();
     const parentDays = current.todos.filter(
-      (todo) => todo.seriesId === parentSeriesId && todo.pageId === pageId,
+      (todo) =>
+        todo.seriesId === parentSeriesId &&
+        todo.pageId === pageId &&
+        todo.deletedAt == null &&
+        todo.omittedAt == null,
     );
     const parent = parentDays[0];
     if (!parent || parent.parentSeriesId || parent.deletedAt != null) return "";
@@ -299,6 +318,7 @@ export const useTimelineStore = create<TimelineState>((set, get) => ({
           createdAt: now,
           updatedAt: now,
           deletedAt: null,
+          omittedAt: null,
           trashedWith: "",
         })),
       ],
@@ -353,14 +373,18 @@ export const useTimelineStore = create<TimelineState>((set, get) => ({
 
   setSeriesSpan: (seriesId, start, end) => {
     set((state) => {
-      const existing = state.todos
-        .filter((todo) => todo.seriesId === seriesId)
-        .sort((a, b) => (a.date < b.date ? -1 : 1));
-      const sample = existing[0];
+      const existing = state.todos.filter((todo) => todo.seriesId === seriesId);
+      const live = existing.filter((todo) => todo.deletedAt == null && todo.omittedAt == null);
+      const sample = live[0];
       if (!sample) return state;
       let dates = datesFrom(start, end).filter((date) => parseIso(date));
       if (sample.parentSeriesId) {
-        const parentDays = state.todos.filter((todo) => todo.seriesId === sample.parentSeriesId);
+        const parentDays = state.todos.filter(
+          (todo) =>
+            todo.seriesId === sample.parentSeriesId &&
+            todo.deletedAt == null &&
+            todo.omittedAt == null,
+        );
         const parent = parentDays[0];
         if (parent) {
           const parentStart = parentDays.reduce(
@@ -375,15 +399,34 @@ export const useTimelineStore = create<TimelineState>((set, get) => ({
         }
       }
       if (dates.length === 0) return state;
-      const sameSpan = existing.map((todo) => todo.date).join("\0") === dates.join("\0");
-      const byDate = new Map(existing.map((todo) => [todo.date, todo]));
-      const now = Date.now();
+      const stamp = Date.now();
+      const allowed = new Set(dates);
+      const sameSpan =
+        live
+          .map((todo) => todo.date)
+          .sort()
+          .join("\0") === dates.join("\0");
+      const byDate = new Map<string, TimelineTodo>();
+      for (const todo of existing) {
+        const prev = byDate.get(todo.date);
+        const rowLive = todo.deletedAt == null && todo.omittedAt == null;
+        const prevLive = prev != null && prev.deletedAt == null && prev.omittedAt == null;
+        if (!prev || (rowLive && !prevLive)) byDate.set(todo.date, todo);
+      }
+      const chosen = new Set<string>();
       const nextDays = sameSpan
-        ? existing
+        ? live
         : dates.map((date) => {
             const kept = byDate.get(date);
-            if (kept) return kept;
-            return {
+            if (kept && kept.deletedAt == null && kept.omittedAt == null) {
+              chosen.add(kept.id);
+              return kept;
+            }
+            if (kept && kept.deletedAt == null) {
+              chosen.add(kept.id);
+              return { ...kept, omittedAt: null, updatedAt: stamp };
+            }
+            const created: TimelineTodo = {
               id: crypto.randomUUID(),
               pageId: sample.pageId,
               date,
@@ -395,20 +438,39 @@ export const useTimelineStore = create<TimelineState>((set, get) => ({
               seriesId,
               parentSeriesId: sample.parentSeriesId,
               sortOrder: sample.sortOrder,
-              createdAt: now,
-              updatedAt: now,
-              deletedAt: sample.deletedAt,
-              trashedWith: sample.trashedWith,
+              createdAt: stamp,
+              updatedAt: stamp,
+              deletedAt: null,
+              omittedAt: null,
+              trashedWith: "",
             };
+            chosen.add(created.id);
+            return created;
           });
-      const allowed = new Set(dates);
-      const todos = (
-        sameSpan
-          ? state.todos
-          : [...state.todos.filter((todo) => todo.seriesId !== seriesId), ...nextDays]
-      ).filter((todo) => todo.parentSeriesId !== seriesId || allowed.has(todo.date));
-      if (todos.length === state.todos.length && sameSpan) return state;
-      return { todos };
+      const dropped = sameSpan
+        ? []
+        : existing
+            .filter((todo) => !chosen.has(todo.id))
+            .map((todo) =>
+              todo.deletedAt != null || todo.omittedAt != null
+                ? todo
+                : { ...todo, omittedAt: stamp, updatedAt: stamp },
+            );
+      let changed = !sameSpan;
+      const todos = state.todos.flatMap((todo) => {
+        if (!sameSpan && todo.seriesId === seriesId) return [];
+        if (todo.parentSeriesId !== seriesId || todo.deletedAt != null) return [todo];
+        if (allowed.has(todo.date)) {
+          if (todo.omittedAt == null) return [todo];
+          changed = true;
+          return [{ ...todo, omittedAt: null, updatedAt: stamp }];
+        }
+        if (todo.omittedAt != null) return [todo];
+        changed = true;
+        return [{ ...todo, omittedAt: stamp, updatedAt: stamp }];
+      });
+      if (!changed) return state;
+      return { todos: sameSpan ? todos : [...todos, ...nextDays, ...dropped] };
     });
   },
 
@@ -497,7 +559,9 @@ export const useTimelineStore = create<TimelineState>((set, get) => ({
     if (!next) return;
     set((state) => {
       const current = statusesFor(state.statuses, pageId).map((status) =>
-        status.id === id && status.name !== next ? { ...status, name: next } : status,
+        status.id === id && status.name !== next
+          ? { ...status, name: next, updatedAt: Date.now() }
+          : status,
       );
       return { statuses: replacePageStatuses(state.statuses, pageId, current) };
     });
@@ -508,7 +572,9 @@ export const useTimelineStore = create<TimelineState>((set, get) => ({
     const next = color.toLowerCase();
     set((state) => {
       const current = statusesFor(state.statuses, pageId).map((status) =>
-        status.id === id && status.color !== next ? { ...status, color: next } : status,
+        status.id === id && status.color !== next
+          ? { ...status, color: next, updatedAt: Date.now() }
+          : status,
       );
       return { statuses: replacePageStatuses(state.statuses, pageId, current) };
     });
@@ -524,11 +590,14 @@ export const useTimelineStore = create<TimelineState>((set, get) => ({
       const [item] = next.splice(index, 1);
       if (!item) return state;
       next.splice(target, 0, item);
+      const stamp = Date.now();
       return {
         statuses: replacePageStatuses(
           state.statuses,
           pageId,
-          next.map((status, sortOrder) => ({ ...status, pageId, sortOrder })),
+          next.map((status, sortOrder) =>
+            status.sortOrder === sortOrder ? status : { ...status, pageId, sortOrder, updatedAt: stamp },
+          ),
         ),
       };
     });
@@ -544,7 +613,15 @@ export const useTimelineStore = create<TimelineState>((set, get) => ({
       return {
         statuses: replacePageStatuses(state.statuses, pageId, [
           ...current,
-          { id, pageId, name: label, color: color.toLowerCase(), sortOrder },
+          {
+            id,
+            pageId,
+            name: label,
+            color: color.toLowerCase(),
+            sortOrder,
+            updatedAt: Date.now(),
+            deletedAt: null,
+          },
         ]),
       };
     });
@@ -554,11 +631,17 @@ export const useTimelineStore = create<TimelineState>((set, get) => ({
   removeStatus: (pageId, id) => {
     if (isBuiltinStatus(id)) return;
     set((state) => {
-      const current = statusesFor(state.statuses, pageId).filter((status) => status.id !== id);
-      if (current.length === statusesFor(state.statuses, pageId).length) return state;
+      const current = state.statuses.find(
+        (status) => status.pageId === pageId && status.id === id && status.deletedAt == null,
+      );
+      if (!current) return state;
       const now = Date.now();
       return {
-        statuses: replacePageStatuses(state.statuses, pageId, current),
+        statuses: state.statuses.map((status) =>
+          status.pageId === pageId && status.id === id
+            ? { ...status, deletedAt: now, updatedAt: now }
+            : status,
+        ),
         todos: state.todos.map((todo) =>
           todo.pageId === pageId && todo.status === id
             ? { ...todo, status: "pending", updatedAt: now }
@@ -646,7 +729,9 @@ export const useTimelineStore = create<TimelineState>((set, get) => ({
         pageId,
         (current) =>
           current.map((item) =>
-            item.id === view.id ? { ...view, id: item.id, name: item.name } : item,
+            item.id === view.id
+              ? { ...view, id: item.id, name: item.name, updatedAt: Date.now(), deletedAt: null }
+              : item,
           ),
         view.id || pageId,
       ),
@@ -667,7 +752,19 @@ export const useTimelineStore = create<TimelineState>((set, get) => ({
       views: replacePageViews(
         state.views,
         pageId,
-        (current) => [...current, { id, name: trimmed, sorts: [], join: "or", filters: [], bars: [] }],
+        (current) => [
+          ...current,
+          {
+            id,
+            name: trimmed,
+            sorts: [],
+            join: "or",
+            filters: [],
+            bars: [],
+            updatedAt: Date.now(),
+            deletedAt: null,
+          },
+        ],
         id,
       ),
     }));
@@ -680,24 +777,33 @@ export const useTimelineStore = create<TimelineState>((set, get) => ({
       views: replacePageViews(
         state.views,
         pageId,
-        (current) => current.map((item) => (item.id === viewId ? { ...item, name: trimmed } : item)),
+        (current) =>
+          current.map((item) =>
+            item.id === viewId ? { ...item, name: trimmed, updatedAt: Date.now() } : item,
+          ),
         viewId,
       ),
     }));
   },
 
   removeTimelineView: (pageId, viewId) => {
-    set((state) => {
-      const current = viewsForPage(state.views, pageId);
-      if (current.length <= 1) return state;
-      const index = current.findIndex((item) => item.id === viewId);
-      if (index < 0) return state;
-      const next = current.filter((item) => item.id !== viewId);
-      const active = activeViewId(state.views, pageId);
-      const neighbor = next[Math.min(index, next.length - 1)];
-      const chosen = next.some((item) => item.id === active) ? active : neighbor.id;
-      return { views: replacePageViews(state.views, pageId, () => next, chosen) };
-    });
+    const live = viewsForPage(get().views, pageId);
+    if (live.length <= 1) return;
+    const index = live.findIndex((item) => item.id === viewId);
+    if (index < 0) return;
+    const next = live.filter((item) => item.id !== viewId);
+    const neighbor = next[Math.min(index, next.length - 1)];
+    if (!neighbor) return;
+    const stamp = Date.now();
+    set((state) => ({
+      views: state.views.map((view) => {
+        if (view.pageId !== pageId) return view;
+        if (view.id === viewId) {
+          return { ...view, deletedAt: stamp, updatedAt: stamp, active: false };
+        }
+        return { ...view, active: view.id === neighbor.id };
+      }),
+    }));
   },
 
   hydrate: async () => {

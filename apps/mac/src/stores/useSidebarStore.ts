@@ -161,7 +161,7 @@ function reveal(state: SidebarState, location: HistoryLocation): Partial<Sidebar
       selectedGroupId: null,
       groups: state.groups.map((group) =>
         group.id === page.groupId && group.collapsed
-          ? { ...group, collapsed: false, updatedAt: now() }
+          ? { ...group, collapsed: false }
           : group,
       ),
     };
@@ -240,7 +240,7 @@ export const useSidebarStore = create<SidebarState & SidebarActions>()(
         pushed(state, {
           groups: state.groups.map((group) =>
             group.id === groupId && group.collapsed
-              ? { ...group, collapsed: false, updatedAt: now() }
+              ? { ...group, collapsed: false }
               : group,
           ),
           pages: [
@@ -281,7 +281,7 @@ export const useSidebarStore = create<SidebarState & SidebarActions>()(
       set((state) => ({
         groups: state.groups.map((group) =>
           group.id === id
-            ? { ...group, collapsed: !group.collapsed, updatedAt: now() }
+            ? { ...group, collapsed: !group.collapsed }
             : group,
         ),
       })),
@@ -311,7 +311,7 @@ export const useSidebarStore = create<SidebarState & SidebarActions>()(
           trashOpen: false,
           groups: state.groups.map((group) =>
             group.id === page.groupId && group.collapsed
-              ? { ...group, collapsed: false, updatedAt: now() }
+              ? { ...group, collapsed: false }
               : group,
           ),
         });

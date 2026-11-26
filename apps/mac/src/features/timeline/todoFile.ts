@@ -103,6 +103,7 @@ function parseTodo(value: unknown): TimelineTodo | null {
     createdAt: raw.createdAt as number,
     updatedAt: raw.updatedAt as number,
     deletedAt,
+    omittedAt: stamp(raw.omittedAt),
     trashedWith: deletedAt == null ? "" : (text(raw.trashedWith) ?? ""),
   };
 }
@@ -122,6 +123,8 @@ function parseStatus(value: unknown): TodoStatusDef | null {
     name,
     color: color.toLowerCase(),
     sortOrder: raw.sortOrder as number,
+    updatedAt: number(raw.updatedAt) ? (raw.updatedAt as number) : 0,
+    deletedAt: stamp(raw.deletedAt),
   };
 }
 

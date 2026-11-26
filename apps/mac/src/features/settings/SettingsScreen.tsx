@@ -1,6 +1,15 @@
 import { CaretRightIcon, MonitorIcon, MoonIcon, SunIcon } from "@phosphor-icons/react";
-import type { CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
+import { createPortal } from "react-dom";
+import { GlassButton } from "../../components/GlassButton";
 import { fontStepLabel, fontSteps } from "./fontSteps";
+import {
+  exportDocument,
+  importDocument,
+  loadTransferTimes,
+  reloadDocument,
+  type TransferTimes,
+} from "./transfer";
 import { useIconScale } from "../../hooks/useIconScale";
 import { useFontSizeStore } from "../../stores/useFontSizeStore";
 import {
@@ -72,7 +81,7 @@ function SettingsHome() {
         />
         <SettingsLink
           title={settingsSectionLabel("data")}
-          detail="Google Drive"
+          detail="이 기기 파일 · Google Drive"
           onClick={() => setSection("data")}
         />
       </div>
@@ -189,11 +198,79 @@ function DisplaySection() {
 }
 
 function DataSection() {
+  const [times, setTimes] = useState<TransferTimes>({ exportedAt: null, importedAt: null });
+  const [step, setStep] = useState<"choose" | "replace" | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
+
+  useEffect(() => {
+    let live = true;
+    void loadTransferTimes()
+      .then((next) => {
+        if (live) setTimes(next);
+      })
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, []);
+
+  async function refreshTimes() {
+    try {
+      setTimes(await loadTransferTimes());
+    } catch {
+      /* 시각은 없어도 파일 작업 결과는 보여 준다. */
+    }
+  }
+
+  async function onExport() {
+    if (busy) return;
+    setBusy(true);
+    setMessage(null);
+    try {
+      const path = await exportDocument();
+      if (!path) return;
+      await refreshTimes();
+      setMessage({ tone: "ok", text: "내보냈습니다." });
+    } catch (error) {
+      setMessage({ tone: "error", text: explainTransfer(error) });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onImport(mode: "merge" | "replace") {
+    setStep(null);
+    setBusy(true);
+    setMessage(null);
+    try {
+      const report = await importDocument(mode);
+      if (!report) return;
+      await reloadDocument();
+      await refreshTimes();
+      const changed = report.added + report.updated + report.deleted;
+      setMessage({
+        tone: "ok",
+        text:
+          mode === "replace"
+            ? "파일로 바꿨습니다."
+            : changed === 0
+              ? "이미 같은 내용입니다."
+              : `추가 ${report.added} · 수정 ${report.updated} · 삭제 ${report.deleted}`,
+      });
+    } catch (error) {
+      setMessage({ tone: "error", text: explainTransfer(error) });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const exported = clock(times.exportedAt);
+  const imported = clock(times.importedAt);
+
   return (
     <div className="px-4 py-3">
-      <h1 className="text-2xl font-medium text-fg">
-        {settingsSectionLabel("data")}
-      </h1>
+      <h1 className="text-2xl font-medium text-fg">{settingsSectionLabel("data")}</h1>
       <p className="mt-1 text-sm text-fg-secondary">Google Drive</p>
       <div className="mt-4 max-w-xl rounded-2xl border border-border bg-surface p-4">
         <p className="text-sm font-medium text-fg">계정</p>
@@ -202,8 +279,141 @@ function DataSection() {
         </p>
         <p className="mt-3 text-xs text-fg-secondary">연결 전</p>
       </div>
+      <p className="mt-6 text-sm text-fg-secondary">이 기기 파일</p>
+      <div className="mt-4 max-w-xl overflow-hidden rounded-2xl border border-border bg-surface">
+        <FileRow
+          title="내보내기"
+          detail="지금 데이터를 JSON 파일로 저장"
+          disabled={busy}
+          onClick={() => void onExport()}
+        />
+        <div className="mx-4 border-t border-border" />
+        <FileRow
+          title="가져오기"
+          detail="JSON 파일을 병합하거나 덮어쓰기"
+          disabled={busy}
+          onClick={() => setStep("choose")}
+        />
+      </div>
+      <p className="mt-3 max-w-xl text-xs text-fg-secondary">
+        병합은 같은 항목 중 더 최근에 고친 쪽을 남기고, 덮어쓰기는 파일로 바꿉니다. 둘 다 바꾸기
+        전에 백업합니다.
+      </p>
+      {exported || imported ? (
+        <p className="mt-2 max-w-xl text-xs text-fg-secondary">
+          {exported ? `마지막 내보내기 ${exported}` : null}
+          {exported && imported ? " · " : null}
+          {imported ? `마지막 가져오기 ${imported}` : null}
+        </p>
+      ) : null}
+      {message ? (
+        <p
+          className={cn("mt-2 max-w-xl text-xs", message.tone === "error" ? "text-danger" : "text-fg-secondary")}
+          role={message.tone === "error" ? "alert" : "status"}
+        >
+          {message.text}
+        </p>
+      ) : null}
+      {step === "choose" ? (
+        <TransferDialog
+          title="가져오기"
+          body="병합은 지금 데이터를 유지하고, 같은 항목은 더 최근에 고친 쪽을 남깁니다. 덮어쓰기는 지금 데이터를 파일로 바꿉니다."
+          onCancel={() => setStep(null)}
+          actions={[
+            { label: "병합", onClick: () => void onImport("merge") },
+            { label: "덮어쓰기", onClick: () => setStep("replace") },
+          ]}
+        />
+      ) : null}
+      {step === "replace" ? (
+        <TransferDialog
+          title="덮어쓰기"
+          body="현재 저장된 데이터가 선택한 파일로 바뀝니다. 바꾸기 전에 이 기기에 백업을 남깁니다."
+          onCancel={() => setStep(null)}
+          actions={[{ label: "확인", onClick: () => void onImport("replace") }]}
+        />
+      ) : null}
     </div>
   );
+}
+
+function FileRow({
+  title,
+  detail,
+  disabled,
+  onClick,
+}: {
+  title: string;
+  detail: string;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className="flex w-full flex-col px-4 py-3 text-left hover:bg-fg/5 disabled:opacity-50"
+      disabled={disabled}
+      onClick={onClick}
+    >
+      <span className="text-sm font-medium text-fg">{title}</span>
+      <span className="mt-1 text-xs text-fg-secondary">{detail}</span>
+    </button>
+  );
+}
+
+function TransferDialog({
+  title,
+  body,
+  actions,
+  onCancel,
+}: {
+  title: string;
+  body: string;
+  actions: { label: string; onClick: () => void }[];
+  onCancel: () => void;
+}) {
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-fg/20" onMouseDown={onCancel}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="transfer-title"
+        className="dialog-sm rounded-2xl border border-border bg-surface"
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <p id="transfer-title" className="text-sm font-medium text-fg">
+          {title}
+        </p>
+        <p className="mt-2 text-sm text-fg-secondary">{body}</p>
+        <div className="mt-[1.143em] flex justify-end gap-[0.571em]">
+          <GlassButton className="pad-sm text-sm" onClick={onCancel} autoFocus>
+            취소
+          </GlassButton>
+          {actions.map((action) => (
+            <GlassButton key={action.label} className="pad-sm text-sm" onClick={action.onClick}>
+              {action.label}
+            </GlassButton>
+          ))}
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+function explainTransfer(error: unknown) {
+  const text = error instanceof Error ? error.message : String(error);
+  if (/not found|not allowed|export_document|import_document|transfer_times/i.test(text)) {
+    return "앱을 다시 열면 파일을 주고받을 수 있습니다.";
+  }
+  return text || "파일을 처리하지 못했습니다.";
+}
+
+function clock(value: number | null) {
+  if (value == null) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleString("ko-KR", { dateStyle: "medium", timeStyle: "short" });
 }
 
 export function SettingsScreen() {

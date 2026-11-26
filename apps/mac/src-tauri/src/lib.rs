@@ -1,5 +1,6 @@
 mod dev_icon;
 mod document;
+mod transfer;
 
 use serde_json::Value;
 use tauri::{webview::PageLoadEvent, AppHandle, Manager};
@@ -55,7 +56,10 @@ pub fn run() {
             load_todos,
             load_todo_statuses,
             load_timeline_views,
-            save_todos
+            save_todos,
+            transfer::export_document,
+            transfer::import_document,
+            transfer::transfer_times
         ])
         .setup(|app| {
             dev_icon::apply_all(app.handle());

@@ -111,7 +111,8 @@ export function TimelineScreen({ pageId }: { pageId: string }) {
       onPage.filter((todo) => todo.deletedAt != null).map((todo) => todo.seriesId),
     );
     return onPage.filter(
-      (todo) => todo.deletedAt == null && !hidden.has(todo.parentSeriesId),
+      (todo) =>
+        todo.deletedAt == null && todo.omittedAt == null && !hidden.has(todo.parentSeriesId),
     );
   }, [todos, pageId]);
   const catalog = useMemo(

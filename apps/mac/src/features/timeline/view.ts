@@ -26,6 +26,8 @@ export type TimelineView = {
   filters: FilterRule[];
   /** 막대에 그릴 상태. 비어 있으면 남은 항목의 모든 날을 그린다. */
   bars: string[];
+  updatedAt: number;
+  deletedAt: number | null;
 };
 
 export type SavedTimelineView = TimelineView & { pageId: string; active: boolean };
@@ -45,7 +47,7 @@ type SeriesFact = {
 };
 
 export function emptyTimelineView(id = ""): TimelineView {
-  return { id, name: "", sorts: [], join: "or", filters: [], bars: [] };
+  return { id, name: "", sorts: [], join: "or", filters: [], bars: [], updatedAt: 0, deletedAt: null };
 }
 
 function viewCarries(view: { name: string; sorts: readonly unknown[]; filters: readonly unknown[]; bars: readonly unknown[] }) {
@@ -53,7 +55,7 @@ function viewCarries(view: { name: string; sorts: readonly unknown[]; filters: r
 }
 
 export function viewsForPage(saved: readonly SavedTimelineView[], pageId: string): TimelineView[] {
-  const own = saved.filter((view) => view.pageId === pageId);
+  const own = saved.filter((view) => view.pageId === pageId && view.deletedAt == null);
   if (own.length === 0) return [emptyTimelineView(pageId)];
   return own.map((view) => ({
     id: view.id,
@@ -62,11 +64,13 @@ export function viewsForPage(saved: readonly SavedTimelineView[], pageId: string
     join: view.join,
     filters: view.filters,
     bars: view.bars,
+    updatedAt: view.updatedAt,
+    deletedAt: null,
   }));
 }
 
 export function activeViewId(saved: readonly SavedTimelineView[], pageId: string) {
-  const own = saved.filter((view) => view.pageId === pageId);
+  const own = saved.filter((view) => view.pageId === pageId && view.deletedAt == null);
   const active = own.find((view) => view.active);
   return active?.id || own[0]?.id || pageId;
 }
@@ -77,10 +81,15 @@ export function replacePageViews(
   update: (views: TimelineView[]) => TimelineView[],
   activeId: string,
 ): SavedTimelineView[] {
+  const tombs = saved.filter((view) => view.pageId === pageId && view.deletedAt != null);
   const next = update(viewsForPage(saved, pageId));
   const list = next.length > 0 ? next : [emptyTimelineView(pageId)];
   const others = saved.filter((view) => view.pageId !== pageId);
-  if (list.length === 1 && !viewCarries(list[0])) return [...others];
+  const liveIds = new Set(list.map((view) => view.id));
+  const kept = tombs
+    .filter((view) => !liveIds.has(view.id))
+    .map((view) => ({ ...view, active: false }));
+  if (list.length === 1 && !viewCarries(list[0])) return [...others, ...kept];
   const chosen = list.some((view) => view.id === activeId) ? activeId : list[0].id;
   return [
     ...others,
@@ -89,7 +98,9 @@ export function replacePageViews(
       name: view.name.trim(),
       pageId,
       active: view.id === chosen,
+      deletedAt: null,
     })),
+    ...kept,
   ];
 }
 
@@ -142,7 +153,7 @@ export function parseTimelineViews(value: unknown): SavedTimelineView[] {
   const pages = new Set(views.map((view) => view.pageId));
   for (const pageId of pages) {
     const own = views.filter((view) => view.pageId === pageId);
-    if (own.every((view) => !viewCarries(view))) blankPages.add(pageId);
+    if (own.every((view) => view.deletedAt == null && !viewCarries(view))) blankPages.add(pageId);
   }
   return views.filter((view) => !blankPages.has(view.pageId));
 }
@@ -226,6 +237,9 @@ function parseSavedView(value: unknown): SavedTimelineView | null {
     join: raw.join === "and" ? "and" : "or",
     filters,
     bars,
+    updatedAt: typeof raw.updatedAt === "number" && Number.isFinite(raw.updatedAt) ? raw.updatedAt : 0,
+    deletedAt:
+      typeof raw.deletedAt === "number" && Number.isFinite(raw.deletedAt) ? raw.deletedAt : null,
   };
 }
 

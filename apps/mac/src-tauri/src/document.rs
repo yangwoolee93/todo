@@ -57,7 +57,7 @@ pub fn save_todos(app: &AppHandle, todos: Value, statuses: Value, views: Value) 
     with_document(|| save_todos_at(&path, todos, statuses, views))
 }
 
-fn with_document<T>(write: impl FnOnce() -> Result<T, String>) -> Result<T, String> {
+pub(crate) fn with_document<T>(write: impl FnOnce() -> Result<T, String>) -> Result<T, String> {
     let _guard = DOCUMENT_LOCK.lock().map_err(|err| err.to_string())?;
     write()
 }
@@ -96,7 +96,7 @@ fn save_memos_at(path: &Path, memos: Value) -> Result<(), String> {
     write_document(path, &doc)
 }
 
-fn validate_memos(memos: &Value) -> Result<(), String> {
+pub(crate) fn validate_memos(memos: &Value) -> Result<(), String> {
     let Some(items) = memos.as_array() else {
         return Err("memos 형식이 올바르지 않습니다.".into());
     };
@@ -178,7 +178,7 @@ fn save_todos_at(path: &Path, todos: Value, statuses: Value, views: Value) -> Re
     write_document(path, &doc)
 }
 
-fn validate_todos(todos: &Value) -> Result<(), String> {
+pub(crate) fn validate_todos(todos: &Value) -> Result<(), String> {
     let Some(items) = todos.as_array() else {
         return Err("todos 형식이 올바르지 않습니다.".into());
     };
@@ -226,6 +226,9 @@ fn validate_todos(todos: &Value) -> Result<(), String> {
         if !optional_stamp(todo) {
             return Err("todo.deletedAt 형식이 올바르지 않습니다.".into());
         }
+        if !optional_stamp_key(todo, "omittedAt") {
+            return Err("todo 기간 형식이 올바르지 않습니다.".into());
+        }
         if todo
             .get("trashedWith")
             .is_some_and(|value| !value.is_string())
@@ -262,7 +265,7 @@ fn validate_checks(checks: &Value) -> Result<(), String> {
     Ok(())
 }
 
-fn validate_statuses(statuses: &Value) -> Result<(), String> {
+pub(crate) fn validate_statuses(statuses: &Value) -> Result<(), String> {
     let Some(items) = statuses.as_array() else {
         return Err("todoStatuses 형식이 올바르지 않습니다.".into());
     };
@@ -282,6 +285,12 @@ fn validate_statuses(statuses: &Value) -> Result<(), String> {
         if !status.get("sortOrder").is_some_and(Value::is_number) {
             return Err("todoStatus 정렬 형식이 올바르지 않습니다.".into());
         }
+        if !optional_number(status, "updatedAt") {
+            return Err("todoStatus 수정 시각이 올바르지 않습니다.".into());
+        }
+        if !optional_stamp_key(status, "deletedAt") {
+            return Err("todoStatus 삭제 형식이 올바르지 않습니다.".into());
+        }
         let key = format!(
             "{}\0{}",
             status.get("pageId").and_then(Value::as_str).unwrap_or(""),
@@ -294,7 +303,7 @@ fn validate_statuses(statuses: &Value) -> Result<(), String> {
     Ok(())
 }
 
-fn validate_views(views: &Value) -> Result<(), String> {
+pub(crate) fn validate_views(views: &Value) -> Result<(), String> {
     let Some(items) = views.as_array() else {
         return Err("timelineViews 형식이 올바르지 않습니다.".into());
     };
@@ -337,6 +346,12 @@ fn validate_views(views: &Value) -> Result<(), String> {
         validate_filters(view.get("filters"))?;
         if let Some(bars) = view.get("bars") {
             validate_text_list(bars, "timelineView 막대", true)?;
+        }
+        if !optional_number(view, "updatedAt") {
+            return Err("timelineView 수정 시각이 올바르지 않습니다.".into());
+        }
+        if !optional_stamp_key(view, "deletedAt") {
+            return Err("timelineView 삭제 형식이 올바르지 않습니다.".into());
         }
     }
     Ok(())
@@ -481,9 +496,20 @@ fn valid_todo_date(value: &str) -> bool {
 }
 
 fn optional_stamp(item: &Map<String, Value>) -> bool {
-    match item.get("deletedAt") {
+    optional_stamp_key(item, "deletedAt")
+}
+
+pub(crate) fn optional_stamp_key(item: &Map<String, Value>, key: &str) -> bool {
+    match item.get(key) {
         None => true,
         Some(value) => value.is_null() || value.is_number(),
+    }
+}
+
+pub(crate) fn optional_number(item: &Map<String, Value>, key: &str) -> bool {
+    match item.get(key) {
+        None => true,
+        Some(value) => value.is_number(),
     }
 }
 
@@ -493,7 +519,7 @@ fn required_text(memo: &Map<String, Value>, key: &str) -> bool {
         .is_some_and(|value| !value.trim().is_empty())
 }
 
-fn empty_menu() -> Value {
+pub(crate) fn empty_menu() -> Value {
     serde_json::json!({
         "groups": [],
         "pages": [],
@@ -501,7 +527,7 @@ fn empty_menu() -> Value {
     })
 }
 
-fn validate_menu(menu: &Value) -> Result<(), String> {
+pub(crate) fn validate_menu(menu: &Value) -> Result<(), String> {
     let Some(menu) = menu.as_object() else {
         return Err("menu 형식이 올바르지 않습니다.".into());
     };
@@ -517,7 +543,7 @@ fn validate_menu(menu: &Value) -> Result<(), String> {
     Ok(())
 }
 
-fn read_document(path: &Path) -> Result<Map<String, Value>, String> {
+pub(crate) fn read_document(path: &Path) -> Result<Map<String, Value>, String> {
     if !path.exists() {
         return Ok(Map::new());
     }
@@ -531,7 +557,7 @@ fn read_document(path: &Path) -> Result<Map<String, Value>, String> {
     }
 }
 
-fn write_document(path: &Path, doc: &Map<String, Value>) -> Result<(), String> {
+pub(crate) fn write_document(path: &Path, doc: &Map<String, Value>) -> Result<(), String> {
     if let Some(dir) = path.parent() {
         fs::create_dir_all(dir).map_err(|err| err.to_string())?;
     }
