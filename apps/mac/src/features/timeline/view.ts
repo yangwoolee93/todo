@@ -97,6 +97,37 @@ export function viewNarrows(view: TimelineView) {
   return view.bars.length > 0 || view.filters.some((rule) => rule.values.some((value) => value.trim()));
 }
 
+/** 새 할일에 미리 넣을 태그. 포함 조건만 쓰고, 또는일 때는 태그가 하나일 때만 고른다. */
+export function tagsForDraft(view: TimelineView): string[] {
+  const singles: string[] = [];
+  let ambiguous = false;
+  for (const rule of view.filters) {
+    if (rule.property !== "tag" || rule.op !== "contains") continue;
+    const values = textList(rule.values);
+    if (values.length > 1) ambiguous = true;
+    if (values.length === 1) singles.push(values[0]);
+  }
+  const unique = [...new Set(singles)];
+  if (view.join === "or" && (ambiguous || unique.length !== 1)) return [];
+  return unique;
+}
+
+/** 대기 상태로 만든 할일이 이 보기의 필터와 막대에 남는지 본다. */
+export function showsInView(
+  view: TimelineView,
+  item: { title: string; tags: string[] },
+  catalogIds: ReadonlySet<string>,
+) {
+  const fact: SeriesFact = {
+    title: item.title.trim(),
+    tags: textList(item.tags),
+    statuses: new Set(["pending"]),
+  };
+  if (!seriesMatches(fact, activeRules(view.filters, catalogIds), view.join)) return false;
+  const paint = view.bars.filter((status) => catalogIds.has(status));
+  return paint.length === 0 || paint.includes("pending");
+}
+
 export function parseTimelineViews(value: unknown): SavedTimelineView[] {
   if (!Array.isArray(value)) return [];
   const views: SavedTimelineView[] = [];

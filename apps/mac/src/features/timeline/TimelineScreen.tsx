@@ -36,7 +36,15 @@ import { TrashHoldConfirm } from "../trash/TrashHoldConfirm";
 import { ViewToolbar } from "./FilterMenu";
 import { setSeriesOpen } from "./fold";
 import { TimelineBars } from "./TimelineBars";
-import { activeViewId, emptyTimelineView, presentBars, viewNarrows, viewsForPage } from "./view";
+import {
+  activeViewId,
+  emptyTimelineView,
+  presentBars,
+  showsInView,
+  tagsForDraft,
+  viewNarrows,
+  viewsForPage,
+} from "./view";
 import {
   datesFrom,
   daysInMonth,
@@ -67,6 +75,7 @@ export function TimelineScreen({ pageId }: { pageId: string }) {
   const [hoverRange, setHoverRange] = useState<DateSpan | null>(null);
   const [pendingRange, setPendingRange] = useState<DateSpan | null>(null);
   const [draftKey, setDraftKey] = useState(0);
+  const [freshId, setFreshId] = useState<string | null>(null);
   const [childParentId, setChildParentId] = useState<string | null>(null);
   const savedViews = useTimelineStore((state) => state.views);
   const pageTitle = useSidebarStore(
@@ -120,6 +129,8 @@ export function TimelineScreen({ pageId }: { pageId: string }) {
     () => presentBars(pageTodos, days, view, new Set(catalog.map((status) => status.id))),
     [pageTodos, days, view, catalog],
   );
+  const freshHidden =
+    freshId != null && freshId === selectedId && !bars.some((bar) => bar.seriesId === freshId);
   const seriesTodos = pageTodos
     .filter((todo) => todo.seriesId === selectedId)
     .sort((a, b) => (a.date < b.date ? -1 : 1));
@@ -130,6 +141,13 @@ export function TimelineScreen({ pageId }: { pageId: string }) {
       end: seriesTodos[seriesTodos.length - 1]?.date ?? "",
     };
   }, [seriesTodos]);
+
+  useEffect(() => {
+    if (!freshId) return;
+    if (selectedId !== freshId || bars.some((bar) => bar.seriesId === freshId)) {
+      setFreshId(null);
+    }
+  }, [freshId, selectedId, bars]);
 
   useEffect(() => {
     return () => {
@@ -305,7 +323,14 @@ export function TimelineScreen({ pageId }: { pageId: string }) {
     if (childParentId) setSeriesOpen(childParentId, true);
     setPendingRange(null);
     setChildParentId(null);
-    if (seriesId) setSelectedId(seriesId);
+    if (!seriesId) return;
+    setSelectedId(seriesId);
+    const visible = showsInView(
+      view,
+      { title: draft.title, tags: draft.tags },
+      new Set(catalog.map((status) => status.id)),
+    );
+    setFreshId(visible ? null : seriesId);
   };
 
   const childLimit = (() => {
@@ -359,12 +384,18 @@ export function TimelineScreen({ pageId }: { pageId: string }) {
             오늘
           </GlassButton>
         )}
-        {bars.length === 0 && (
-          <p className="min-w-0 truncate text-sm text-fg-secondary">
-            {pageTodos.length > 0 && viewNarrows(view)
-              ? "필터에 맞는 할일이 없습니다."
-              : "막대를 누르면 그 할일이 열립니다. 빈 칸을 누르거나 끌면 새 할일을 만듭니다."}
+        {freshHidden ? (
+          <p className="min-w-0 truncate text-sm text-fg-secondary" role="status">
+            이 보기에서는 방금 만든 할일이 보이지 않습니다.
           </p>
+        ) : (
+          bars.length === 0 && (
+            <p className="min-w-0 truncate text-sm text-fg-secondary">
+              {pageTodos.length > 0 && viewNarrows(view)
+                ? "필터에 맞는 할일이 없습니다."
+                : "막대를 누르면 그 할일이 열립니다. 빈 칸을 누르거나 끌면 새 할일을 만듭니다."}
+            </p>
+          )
         )}
       </ViewToolbar>
       <div
@@ -472,6 +503,7 @@ export function TimelineScreen({ pageId }: { pageId: string }) {
             key={draftKey}
             range={pendingRange}
             limit={childLimit}
+            initialTags={tagsForDraft(view)}
             onRange={(span) => setPendingRange(clampSpan(span, childLimit))}
             onSave={saveRange}
             onCancel={() => {
@@ -754,20 +786,22 @@ function StatusBoard({
 function ItemDraft({
   range,
   limit,
+  initialTags,
   onRange,
   onSave,
   onCancel,
 }: {
   range: DateSpan;
   limit: DateSpan | null;
+  initialTags: string[];
   onRange: (span: DateSpan) => void;
   onSave: (draft: SeriesDraft) => void;
   onCancel: () => void;
 }) {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
-  const [tags, setTags] = useState<string[]>([]);
-  const tagsRef = useRef(tags);
+  const [tags, setTags] = useState(initialTags);
+  const tagsRef = useRef(initialTags);
 
   const setTagList = (next: string[]) => {
     tagsRef.current = next;
